@@ -1,69 +1,109 @@
-/* Clipboard-Flux -- Milestone 17: compact PDF export for the active
-   inspection, via a printable HTML document + the browser's native
-   print-to-PDF (window.print()) -- no PDF-generating library, matching
-   every prior milestone's zero-new-dependency posture and the one
-   approach that's reliably available on Windows Chrome, iPad/iPhone
-   Safari, and Android Chrome without a backend. Confirmed by reading
-   clipboard-test's own PDF/print code read-only before starting (never
-   modified): same underlying technique there, and its own release notes
-   documented moving from a CSS `column-count` two-column layout to CSS
-   Grid rows because the multi-column version's full-width escape hatch
-   for long values never reliably fired. This implementation goes
-   straight to CSS Grid rows (pdfRowHtml()) for that same reason.
-   The `pdf*()` model-building functions (pdfHasAnswer/pdfFieldValueText/
-   pdfFieldPairHtml/pdfBuildMainSectionsHtml/pdfBuildExitInterviewSection
-   Html/pdfBuildPhotosSectionHtml/etc.) are deliberately pure and
-   parameterized on an explicit {values, disregarded, otherText,
-   fieldNotes} snapshot, never the live module-level state -- a PDF must
-   be able to represent "Export Last Saved" while the working draft is
-   dirty, so generatePdfExport() always re-reads the target inspection's
-   metadata/data/photos fresh from IndexedDB, exactly like
-   exportInspectionJson() already does. Several of these functions are
-   small, intentionally-parallel copies of the live
-   isFollowUpGroupActive()/activeFollowUpGroups()/isShowWhenSatisfied()
-   functions (parameterized instead of closing over module state) rather
-   than refactoring the heavily-exercised live versions -- see the PDF
-   section's own header comment.
-   Only answered/visible content prints: hasAnswer() gates every MAIN/
-   FOLLOW_UP field, isFollowUpGroupActive()/isShowWhenSatisfied() gate
-   Dynamic and Exit Interview visibility exactly like the live app, and
-   an active-but-Disregarded Exit Interview group (and its photos) is
-   excluded entirely, with no "Disregarded" label. Short fields render
-   two-up via CSS Grid rows; LongText, notes, Other-supplemental text,
-   and any answer longer than PDF_LONG_VALUE_THRESHOLD automatically
-   span full width. Photos are laid out 2-per-row from the actual
-   full-resolution Blob (never the thumbnail), grouped by field in
-   workbook order, each image+caption pair kept intact across a page
-   break while the group itself is allowed to flow across pages (no
-   forced whole-group togetherness, which would create large gaps).
-   True "Page X of Y" numbering isn't attempted -- browsers' print
-   engines don't expose total page count to page content at all; see the
-   PDF_PRINT_CSS comment. The preview window opens synchronously, in the
-   same click that triggered it, before any async IndexedDB work starts
-   -- the same popup-blocker risk this project already avoided once
-   before for Milestone 14's photo full-size viewer.
-   Milestone 16's JSON export/import (same schema/versioning, same
-   renderChoiceModal() reused verbatim for the saved-vs-unsaved PDF
-   prompt), Milestone 15's inspection identity and switchToInspection()
-   as the one place that makes an inspection active, and every earlier
-   milestone (Photo action, action-icon system, FN-011 first-tap
-   constraint, Other-supplemental-text, LAN launcher, Exit Interview
-   badge/Disregard, SHOW WHEN, DESTINATION routing, trigger engine) are
-   all unchanged. render() itself stays fully synchronous throughout --
-   PDF export never touches it at all, since the print document is an
-   entirely separate window/document. */
+/* Clipboard-Flux -- Milestone 18: field-workflow cleanup -- auto-save,
+   a compact global header, and a synthetic "Inspection" app tab that
+   absorbs the New/Save/Load/Reset/Export controls that used to sit in a
+   permanent top-of-screen bar on every MAIN/Exit Interview tab.
+
+   Auto-save replaces the old explicit-Save-or-lose-it model. Every
+   mutation that used to call setDirty(true) (saveValues/saveDisregarded/
+   saveOtherText/saveFieldNotes, plus photo add/delete) now calls
+   scheduleAutoSave() instead, which (re)arms a single
+   AUTOSAVE_DEBOUNCE_MS setTimeout via performSave() -- the same
+   Milestone 15 saveCurrentInspection() write, unchanged, just triggered
+   automatically instead of only from a Save button click. Concurrent
+   triggers coalesce onto one in-flight write (saveInFlightPromise) since
+   IndexedDB put() on the same inspectionId is naturally idempotent, so
+   there's never a risk of two overlapping writes racing each other.
+   saveStatus ('saving' | 'saved' | 'failed') drives the compact
+   indicator in #inspection-bar and the Inspection tab -- 'saving' covers
+   both "debounce pending" and "write in flight" as one continuous state,
+   exactly matching what a field user actually needs to know ("is my
+   data safe yet"). A failed write leaves values/disregarded/otherText/
+   fieldNotes/activeInspection untouched in memory (nothing is ever
+   silently discarded) and simply stays 'failed' until the next edit
+   re-arms the debounce or the user retries via the Inspection tab's
+   explicit "Save Now" (performSave() called directly, no debounce).
+
+   Old unsaved-changes-on-switch behavior (confirmDiscardUnsavedIfNeeded's
+   window.confirm) no longer makes sense once edits save themselves, so
+   it's gone. New/Load instead call flushPendingSave() first -- if a
+   debounced write is pending it fires immediately and is awaited; if it
+   fails, the switch is aborted with an alert (data was never abandoned,
+   just not yet durable) rather than silently discarding it. Reset takes
+   the opposite tack on purpose: it *is* the explicit "clear this
+   inspection" action, so it first waits out (never fires) any pending/
+   in-flight autosave for the pre-reset state, so a stale write can never
+   land after Reset's own cleared write and resurrect old data.
+
+   The compact header (#inspection-bar) now shows only the active
+   inspection's address plus the save-status word -- no buttons -- so
+   Property's first field sits materially higher on a phone screen.
+   Every inspection-management/export action that used to live there
+   moved into a new synthetic "Inspection" tab (navTabs() appends it
+   after the workbook-driven tabs and Exit Interview, same pattern
+   Milestone 8 already used to append Exit Interview itself) -- large,
+   stacked, touch-friendly buttons, grouped Inspection vs. Export/Import
+   per this milestone's spec. It reuses the exact same handler functions
+   (handleNewInspectionClick/handleLoadInspectionClick/handleReset
+   InspectionClick/handleExportInspectionClick/handleExportPdfClick/
+   handleImportFile) as before -- only where they're wired from changed.
+
+   Address synchronization: the workbook's own Property/Address MAIN
+   field (resolved once at boot, by tab+label rather than a hardcoded id,
+   into ADDRESS_FIELD_ID) is the single source of truth once an
+   inspection has that field. New Inspection's address prompt seeds both
+   activeInspection.propertyAddress (so Load Inspection/the header can
+   show it before any field renders) and values[ADDRESS_FIELD_ID] (so
+   the Property tab shows it too) at creation time. From then on, editing
+   the Property Address field's input also writes
+   activeInspection.propertyAddress directly and repaints just the
+   header bar (renderInspectionBar(), never a full render()) so the
+   header never goes stale while the user is mid-type -- the same
+   never-blow-away-a-focused-input discipline activateFieldNoRender()
+   already established. There is deliberately no second address input
+   anywhere (the Inspection tab only *displays* the current address).
+
+   visibilitychange (on hidden) and pagehide both flush any pending
+   autosave -- deliberately not beforeunload, which mobile Safari does
+   not reliably fire on tab switch/backgrounding/screen lock. In
+   practice this is a safety net more than a requirement: values/
+   disregarded/otherText/fieldNotes are already mirrored to localStorage
+   on every keystroke (unchanged since Milestone 5), and boot's fast
+   path (resolveActiveInspectionAndBoot(), pointedId found) already
+   trusts that localStorage snapshot over IndexedDB -- so a refresh or
+   relaunch before a debounced write ever reached IndexedDB still
+   restores full working state from memory/localStorage, and boot now
+   also immediately calls performSave() once to reconcile IndexedDB with
+   whatever localStorage was actually holding, closing any gap a killed
+   tab could have left.
+
+   Milestone 17's PDF export, Milestone 16's JSON export/import,
+   Milestone 15's inspection identity, and every earlier milestone
+   (Photo action, action-icon system, FN-011 first-tap constraint,
+   Other-supplemental-text, Exit Interview badge/Disregard, SHOW WHEN,
+   DESTINATION routing, trigger engine) are functionally unchanged --
+   this milestone only changes *when* a save happens and *where* its
+   controls live, never what Save/Load/Reset/Export actually do to
+   IndexedDB. */
 (function () {
   var STORAGE_KEY = 'clipboard-flux-values';
   var DISREGARD_STORAGE_KEY = 'clipboard-flux-disregarded';
   var OTHER_TEXT_STORAGE_KEY = 'clipboard-flux-other-text';
   var FIELD_NOTES_STORAGE_KEY = 'clipboard-flux-field-notes';
   var ACTIVE_INSPECTION_KEY = 'clipboard-flux-active-inspection';
-  var DIRTY_KEY = 'clipboard-flux-dirty';
   var OTHER_OPTION = 'Other';
   var EXIT_INTERVIEW_TAB = 'Exit Interview';
+  // Synthetic app-management tab (Milestone 18) -- not a workbook MAIN
+  // tab, appended after Exit Interview by navTabs(), same pattern
+  // Milestone 8 used to append Exit Interview itself onto CFG.main.tabs.
+  var INSPECTION_TAB = 'Inspection';
+  // How long to wait after the last edit before actually writing to
+  // IndexedDB -- long enough that rapid typing collapses into one write,
+  // short enough that "Saved" reliably lands well within this milestone's
+  // 500-1000ms target even accounting for the write itself.
+  var AUTOSAVE_DEBOUNCE_MS = 700;
   var MIGRATED_INSPECTION_ADDRESS = 'Unsaved / Migrated Inspection';
   // The exported-file schema is versioned independently of
-  // 0.17 -- app releases and the inspection-file format can
+  // 0.18 -- app releases and the inspection-file format can
   // and will drift out of step (a future app version might still need
   // to read a schemaVersion 1 file, or refuse a newer one it doesn't
   // understand yet), so import validation checks schema/schemaVersion
@@ -71,10 +111,10 @@
   var EXPORT_SCHEMA = 'clipboard-flux-inspection';
   var EXPORT_SCHEMA_VERSION = 1;
   var SUPPORTED_SCHEMA_VERSIONS = [1];
-  // Stamped at build time exactly like every other 0.17
+  // Stamped at build time exactly like every other 0.18
   // token in this file -- informational only in the export, never
   // itself validated on import.
-  var APP_VERSION = '0.17';
+  var APP_VERSION = '0.18';
   // Same database as Milestone 14's photos -- name kept for continuity
   // even though it now also holds inspection records; renaming it would
   // mean either abandoning existing photo data or writing a whole
@@ -119,11 +159,27 @@
   var fullViewerState = null;
   // The currently open inspection's metadata record ({inspectionId,
   // propertyAddress, createdAt, updatedAt}) -- what the inspection bar
-  // displays and what Save/Reset write back to. inspectionDirty tracks
-  // whether values/disregarded/otherText/fieldNotes/photos have
-  // diverged from that inspection's last-saved IndexedDB snapshot.
+  // displays and what Save/Reset write back to.
   var activeInspection = null;
-  var inspectionDirty = false;
+  // 'saving' | 'saved' | 'failed' -- drives the compact save-status word
+  // in #inspection-bar and the Inspection tab. See scheduleAutoSave()/
+  // performSave()/flushPendingSave() below for the full design.
+  var saveStatus = 'saved';
+  var autosaveTimer = null;
+  // The one in-flight IndexedDB write, if any -- lets concurrent
+  // triggers (a keystroke firing scheduleAutoSave() while
+  // flushPendingSave() is already awaiting a write, for instance)
+  // coalesce onto the same Promise instead of issuing overlapping
+  // put()s. Always cleared back to null once that write settles either
+  // way, in performSave() itself.
+  var saveInFlightPromise = null;
+  // The workbook's own Property/Address MAIN field id, resolved once
+  // config.json loads (see resolveAddressFieldId()) -- never hardcoded,
+  // so a workbook that renames or reorders that field still resolves
+  // correctly as long as a Property-tab field labeled "Address" exists.
+  // null if no such field exists, in which case address synchronization
+  // (Milestone 18 #6) simply no-ops.
+  var ADDRESS_FIELD_ID = null;
   // Milestone 16: imported photo *metadata* (id/fieldId/filename/etc,
   // never Blobs) from a JSON file that had no accompanying binaries --
   // kept separate from the real `photos` IndexedDB store/photosByField
@@ -150,7 +206,7 @@
   }
 
   function saveValues() {
-    setDirty(true);
+    scheduleAutoSave();
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(values));
     } catch (e) {
@@ -176,7 +232,7 @@
   }
 
   function saveDisregarded() {
-    setDirty(true);
+    scheduleAutoSave();
     try {
       localStorage.setItem(DISREGARD_STORAGE_KEY, JSON.stringify(disregarded));
     } catch (e) {
@@ -214,7 +270,7 @@
   }
 
   function saveOtherText() {
-    setDirty(true);
+    scheduleAutoSave();
     try {
       localStorage.setItem(OTHER_TEXT_STORAGE_KEY, JSON.stringify(otherText));
     } catch (e) {
@@ -238,7 +294,7 @@
   }
 
   function saveFieldNotes() {
-    setDirty(true);
+    scheduleAutoSave();
     try {
       localStorage.setItem(FIELD_NOTES_STORAGE_KEY, JSON.stringify(fieldNotes));
     } catch (e) {
@@ -264,34 +320,92 @@
     }
   }
 
-  function loadDirty() {
-    try {
-      return localStorage.getItem(DIRTY_KEY) === '1';
-    } catch (e) {
-      return false;
-    }
-  }
-
-  // The single place that flips inspectionDirty. Called unconditionally
-  // by every save*() function (so every real mutation marks dirty
-  // without each individual click/input handler having to remember to),
-  // and explicitly forced back to false right after Save/Load/New/Reset
-  // bring the working draft back in sync with its IndexedDB snapshot.
-  // No-ops if the flag isn't actually changing, so the common case
-  // (typing while already dirty) doesn't redraw the bar on every
+  // The single place that decides what the save-status word says.
+  // Called by scheduleAutoSave()/performSave() as edits happen and
+  // writes settle; no-ops if the status isn't actually changing, so
+  // rapid typing while already 'saving' doesn't redraw the bar on every
   // keystroke. Deliberately calls the *inspection bar's own* render
   // function, not the full render() -- the bar lives outside #screen,
   // so patching it can never disturb a focused text input mid-type the
   // way a full render() would (see activateFieldNoRender()'s comment).
-  function setDirty(flag) {
-    if (inspectionDirty === flag) return;
-    inspectionDirty = flag;
-    try {
-      localStorage.setItem(DIRTY_KEY, flag ? '1' : '0');
-    } catch (e) {
-      // Same graceful degradation as saveValues().
-    }
+  function setSaveStatus(status) {
+    if (saveStatus === status) return;
+    saveStatus = status;
     renderInspectionBar();
+  }
+
+  function saveStatusLabel() {
+    if (saveStatus === 'saving') return 'Saving…';
+    if (saveStatus === 'failed') return 'Save failed';
+    return 'Saved';
+  }
+
+  // Called by every save*() function (saveValues/saveDisregarded/
+  // saveOtherText/saveFieldNotes) and by photo add/delete -- every
+  // mutation this milestone's spec requires auto-save to cover. Shows
+  // 'saving' immediately (even though the actual write is still
+  // AUTOSAVE_DEBOUNCE_MS away) since that's the accurate answer to "is
+  // my data safe yet" the whole time a write is pending, and re-arms a
+  // single timer so a burst of keystrokes collapses into one write
+  // AUTOSAVE_DEBOUNCE_MS after the *last* one, not one write per key.
+  function scheduleAutoSave() {
+    setSaveStatus('saving');
+    if (autosaveTimer) clearTimeout(autosaveTimer);
+    autosaveTimer = setTimeout(function () {
+      autosaveTimer = null;
+      // performSave() already surfaces failure via saveStatus/'Save
+      // failed' -- nothing left for this unattended timer callback to do
+      // with the rejection itself, so it's swallowed here rather than
+      // left as an unhandled promise rejection in the console.
+      performSave().catch(function () {});
+    }, AUTOSAVE_DEBOUNCE_MS);
+  }
+
+  // The one function that actually writes to IndexedDB (via the
+  // unchanged Milestone 15 saveCurrentInspection()). Coalesces
+  // concurrent callers onto a single in-flight write rather than firing
+  // two overlapping put()s -- harmless either way since put() on the
+  // same inspectionId is idempotent, but this keeps saveStatus
+  // transitions single-threaded and predictable. No-ops (and reports
+  // 'saved') if there's no real inspection to write, e.g. the
+  // storage-unavailable pseudo-inspection from resolveActiveInspection
+  // AndBoot()'s fallback path.
+  function performSave() {
+    if (saveInFlightPromise) return saveInFlightPromise;
+    if (!activeInspection || !activeInspection.inspectionId) {
+      setSaveStatus('saved');
+      return Promise.resolve();
+    }
+    setSaveStatus('saving');
+    saveInFlightPromise = saveCurrentInspection().then(function () {
+      setSaveStatus('saved');
+    }, function (e) {
+      window.console && console.error && console.error('Clipboard-Flux: auto-save failed', e);
+      setSaveStatus('failed');
+      throw e;
+    }).then(function () {
+      saveInFlightPromise = null;
+    }, function (e) {
+      saveInFlightPromise = null;
+      throw e;
+    });
+    return saveInFlightPromise;
+  }
+
+  // Flushes any pending debounced write immediately and returns a
+  // Promise that resolves once the current in-memory state is durably
+  // in IndexedDB, or rejects if that write failed -- used before New/
+  // Load switch to a different inspection (Milestone 18 #7), and
+  // opportunistically on visibilitychange/pagehide. If nothing is
+  // pending, returns the already-in-flight write (if any) or an
+  // already-resolved Promise (nothing to flush).
+  function flushPendingSave() {
+    if (autosaveTimer) {
+      clearTimeout(autosaveTimer);
+      autosaveTimer = null;
+      return performSave();
+    }
+    return saveInFlightPromise || Promise.resolve();
   }
 
   // Independent of propertyAddress by design (Milestone 15's explicit
@@ -647,7 +761,7 @@
           if (!photosByField[fieldId]) photosByField[fieldId] = [];
           photosByField[fieldId].push(toCacheEntry(record));
           sortByOrder(photosByField[fieldId]);
-          setDirty(true);
+          scheduleAutoSave();
           render();
         });
       });
@@ -682,7 +796,7 @@
         URL.revokeObjectURL(arr[idx].thumbnailUrl);
         arr.splice(idx, 1);
       }
-      setDirty(true);
+      scheduleAutoSave();
       render();
     }).catch(function (e) {
       window.console && console.error && console.error('Clipboard-Flux: photo delete failed', e);
@@ -746,11 +860,12 @@
   // Replaces values/disregarded/otherText/fieldNotes wholesale (an
   // inspection switch, not a merge) and immediately syncs the result to
   // localStorage via the existing save*() functions, so the new
-  // inspection's data becomes the live working draft. Every save*()
-  // call marks dirty=true as a side effect (see setDirty()) -- callers
-  // of applyInspectionDataToMemory() always correct that with an
-  // explicit setDirty(false) right after, since freshly applied data by
-  // definition matches its own IndexedDB snapshot.
+  // inspection's data becomes the live working draft. Every save*() call
+  // arms a fresh autosave timer as a side effect (see scheduleAutoSave())
+  // -- callers of applyInspectionDataToMemory() always correct that with
+  // an explicit clearTimeout()+setSaveStatus('saved') right after (see
+  // switchToInspection()), since freshly applied data by definition
+  // matches its own IndexedDB snapshot.
   function applyInspectionDataToMemory(data) {
     values = (data && data.values) || {};
     disregarded = (data && data.disregarded) || {};
@@ -778,8 +893,16 @@
       return idbGetInspectionData(inspectionId).then(function (data) {
         activeInspection = meta;
         saveActiveInspectionId(meta.inspectionId);
+        // applyInspectionDataToMemory() calls the same save*() functions
+        // any other edit does, which arm a fresh autosave timer via
+        // scheduleAutoSave() -- but data freshly loaded from IndexedDB
+        // (or a just-written empty snapshot, for New/Reset) already
+        // matches what's durably stored, so that timer is pointless.
+        // Clearing it and forcing 'saved' *after* this call, not before,
+        // is what makes this override win.
         applyInspectionDataToMemory(data);
-        setDirty(false);
+        if (autosaveTimer) { clearTimeout(autosaveTimer); autosaveTimer = null; }
+        setSaveStatus('saved');
         activeFieldId = null;
         noteOpenFieldId = null;
         photoOpenFieldId = null;
@@ -868,10 +991,6 @@
         };
         activeInspection = meta;
         return idbPutInspection(meta);
-      })
-      .then(function () {
-        setDirty(false);
-        render();
       });
   }
 
@@ -947,11 +1066,21 @@
   // otherText/fieldNotes (already loaded at module-init time from
   // localStorage) are already correct as-is -- no need to round-trip
   // through IndexedDB just to reapply the same data a plain refresh
-  // didn't touch. inspectionDirty is explicitly restored from its own
-  // persisted flag in that path (not reset), so refreshing mid-edit
-  // without saving still shows "Unsaved" afterward instead of silently
-  // looking clean. A missing/stale pointer (or any other failure) falls
-  // through to bootstrapFresh().
+  // didn't touch. That localStorage snapshot can still be *ahead* of
+  // IndexedDB, though -- a previous session could have been killed
+  // (tab closed, phone locked and never resumed, browser crash) before
+  // its debounced autosave ever fired. performSave() here reconciles
+  // that gap unconditionally: it's the same write autosave always does,
+  // just triggered once immediately at boot instead of after an edit,
+  // and is a harmless no-op write if there was nothing to reconcile. Its
+  // rejection is deliberately swallowed (not rethrown into `boot`) --
+  // saveStatus already reflects 'failed' via performSave()'s own catch,
+  // and activeInspection/values/etc. are all still correct in memory;
+  // this must not fall through to the dbUnavailable pseudo-inspection
+  // fallback below, which is reserved for IndexedDB being unreachable at
+  // all, not one write failing. A missing/stale pointer (or any other
+  // failure reading the pointed-to inspection itself) falls through to
+  // bootstrapFresh().
   function resolveActiveInspectionAndBoot() {
     var pointedId = loadActiveInspectionId();
     var boot;
@@ -959,8 +1088,11 @@
       boot = idbGetInspection(pointedId).then(function (meta) {
         if (!meta) return bootstrapFresh();
         activeInspection = meta;
-        inspectionDirty = loadDirty();
-        return loadAllPhotosIntoCache();
+        return loadAllPhotosIntoCache().then(function () {
+          return performSave().catch(function (e) {
+            window.console && console.error && console.error('Clipboard-Flux: boot reconciliation save failed', e);
+          });
+        });
       });
     } else {
       boot = bootstrapFresh();
@@ -990,42 +1122,65 @@
     });
   }
 
-  // Shared guard for New Inspection / Load Inspection -- both abandon
-  // the current working draft for a different inspection, which is
-  // exactly what Milestone 15 says must never happen silently while
-  // unsaved changes exist. Reset has its own separate, always-shown
-  // confirmation instead (it's not "switching away from," it's
-  // "clearing this inspection"), so it doesn't call this.
-  function confirmDiscardUnsavedIfNeeded() {
-    if (!inspectionDirty) return true;
-    var addr = (activeInspection && activeInspection.propertyAddress) || '(no address)';
-    return window.confirm(
-      'You have unsaved changes to "' + addr + '". Discard them and continue?'
-    );
+  // Under auto-save there's no separate "unsaved working draft" to lose
+  // -- New/Load just need whatever's currently in memory durably
+  // written before switching away from it (Milestone 18 #7). Flushes
+  // any pending/in-flight autosave and resolves once IndexedDB is
+  // confirmed caught up; a rejection means the write actually failed,
+  // in which case the caller must warn and abort the switch rather than
+  // silently abandoning data that was never made durable.
+  function flushBeforeSwitch() {
+    return flushPendingSave();
   }
 
   function handleNewInspectionClick() {
-    if (!confirmDiscardUnsavedIfNeeded()) return;
-    var address = window.prompt('Property address for the new inspection:', '');
-    if (address === null) return;
-    createNewInspection(address.trim())
-      .then(function () { render(); })
-      .catch(function (e) {
-        window.console && console.error && console.error('Clipboard-Flux: could not create inspection', e);
-        window.alert('Could not create the new inspection: ' + e.message);
+    flushBeforeSwitch().then(function () {
+      var address = window.prompt('Property address for the new inspection:', '');
+      if (address === null) return null;
+      var trimmed = address.trim();
+      return createNewInspection(trimmed).then(function () {
+        // Milestone 18 #6: seed the workbook-driven Property Address
+        // field from the same address just given to the new inspection,
+        // so there's only ever one place to type it. saveValues() mirrors
+        // this to localStorage and schedules the normal autosave, same
+        // as any other edit -- no special-cased immediate write needed.
+        if (ADDRESS_FIELD_ID) {
+          values[ADDRESS_FIELD_ID] = trimmed;
+          saveValues();
+        }
+        return true;
       });
+    }, function (e) {
+      window.console && console.error && console.error('Clipboard-Flux: could not save before New', e);
+      window.alert('Could not save your current changes (' + e.message + '). The new inspection was not started -- resolve Save Now in the Inspection tab, then try again.');
+    }).then(function (started) {
+      if (started) render();
+    }).catch(function (e) {
+      window.console && console.error && console.error('Clipboard-Flux: could not create inspection', e);
+      window.alert('Could not create the new inspection: ' + e.message);
+    });
   }
 
+  // Explicit manual checkpoint (Milestone 18 #2's fallback action, now
+  // living in the Inspection tab as "Save Now") -- bypasses the debounce
+  // and writes immediately. Also how a 'failed' status gets retried:
+  // performSave() itself doesn't remember *why* the last write failed,
+  // it just tries again with whatever's currently in memory, which is
+  // exactly what a retry should do.
   function handleSaveInspectionClick() {
-    saveCurrentInspection().catch(function (e) {
+    performSave().catch(function (e) {
       window.console && console.error && console.error('Clipboard-Flux: could not save inspection', e);
       window.alert('Could not save this inspection: ' + e.message);
     });
   }
 
   function handleLoadInspectionClick() {
-    if (!confirmDiscardUnsavedIfNeeded()) return;
-    openInspectionLoadModal();
+    flushBeforeSwitch().then(function () {
+      openInspectionLoadModal();
+    }, function (e) {
+      window.console && console.error && console.error('Clipboard-Flux: could not save before Load', e);
+      window.alert('Could not save your current changes (' + e.message + '). Load was cancelled -- resolve Save Now in the Inspection tab, then try again.');
+    });
   }
 
   function handleResetInspectionClick() {
@@ -1036,8 +1191,17 @@
       'and photos for this inspection. This cannot be undone.'
     );
     if (!ok) return;
-    resetCurrentInspection()
-      .then(function () { render(); })
+    // Reset is the opposite of flush-before-switch: it must make sure no
+    // stale pending/in-flight write for the *pre-reset* state can land
+    // after Reset's own cleared write and resurrect old data. Cancelling
+    // the debounce timer is enough for the pending case; for an already
+    // in-flight write, waiting it out (ignoring its outcome either way)
+    // guarantees ordering without needing to cancel an XHR-like request
+    // that IndexedDB has no API to cancel anyway.
+    if (autosaveTimer) { clearTimeout(autosaveTimer); autosaveTimer = null; }
+    (saveInFlightPromise || Promise.resolve()).catch(function () {}).then(function () {
+      return resetCurrentInspection();
+    }).then(function () { render(); })
       .catch(function (e) {
         window.console && console.error && console.error('Clipboard-Flux: could not reset inspection', e);
         window.alert('Could not reset this inspection: ' + e.message);
@@ -1202,12 +1366,10 @@
 
   // Builds and downloads the export file for `inspectionId` -- always
   // reads from IndexedDB (never the live in-memory values/etc.), which
-  // is what makes "Export Last Saved" simply "call this the same way as
-  // any other export": IndexedDB already holds exactly the last-saved
-  // snapshot, dirty or not. "Save and Export" is the same function,
-  // just called after saveCurrentInspection() has brought IndexedDB
-  // back in sync with memory first -- see handleExportInspectionClick().
-  // Only photo *metadata* is included (id/fieldId/filename/mimeType/
+  // is exactly what's expected to already match memory by the time this
+  // runs: handleExportInspectionClick() flushes any pending autosave
+  // write first (see flushPendingSave()) before calling this. Only
+  // photo *metadata* is included (id/fieldId/filename/mimeType/
   // addedAt/width/height/order) -- explicitly never blob, thumbnailBlob,
   // or any object URL, so the file can never carry binary image data.
   function exportInspectionJson(inspectionId) {
@@ -1255,11 +1417,16 @@
     });
   }
 
-  // Export always reflects what's durably saved, never a half-edited
-  // screen -- if the working draft has diverged from the last save,
-  // this asks which of the two the user actually wants on disk instead
-  // of silently picking one. Not dirty: no prompt needed, IndexedDB
-  // already matches memory.
+  // Export always reflects what's durably saved. Under Milestone 15's
+  // model that meant asking the user to choose between the working
+  // draft and the last save whenever they'd diverged; under Milestone
+  // 18's auto-save, that distinction barely exists any more (autosave
+  // already keeps IndexedDB within AUTOSAVE_DEBOUNCE_MS of memory) --
+  // so this simply flushes any pending write first, then exports
+  // whatever IndexedDB now holds. If the flush itself fails, this still
+  // exports rather than blocking entirely -- the last successfully
+  // saved snapshot is better than no export at all, and the failure is
+  // already visible via the 'Save failed' status.
   function handleExportInspectionClick() {
     if (dbUnavailable) {
       window.alert('Export isn\'t available in this browser (IndexedDB is blocked or unsupported).');
@@ -1270,32 +1437,12 @@
       return;
     }
     var id = activeInspection.inspectionId;
-    if (!inspectionDirty) {
+    flushPendingSave().then(function () {
       exportInspectionJson(id);
-      return;
-    }
-    renderChoiceModal({
-      title: 'Unsaved Changes',
-      message: 'This inspection has unsaved changes. Choose what to export.',
-      choices: [
-        {
-          label: 'Save and Export',
-          action: function () {
-            closeInspectionModal();
-            saveCurrentInspection().then(function () {
-              exportInspectionJson(id);
-            });
-          }
-        },
-        {
-          label: 'Export Last Saved',
-          action: function () {
-            closeInspectionModal();
-            exportInspectionJson(id);
-          }
-        },
-        { label: 'Cancel', action: closeInspectionModal }
-      ]
+    }, function (e) {
+      window.console && console.error && console.error('Clipboard-Flux: could not save latest changes before export', e);
+      window.alert('Could not save your latest changes (' + e.message + '). Exporting the last successfully saved version instead.');
+      exportInspectionJson(id);
     });
   }
 
@@ -1918,7 +2065,12 @@
     );
     printWin.document.close();
 
-    var savePromise = saveFirst ? saveCurrentInspection() : Promise.resolve();
+    var savePromise = saveFirst
+      ? saveCurrentInspection().then(function () { setSaveStatus('saved'); }, function (e) {
+          setSaveStatus('failed');
+          throw e;
+        })
+      : Promise.resolve();
     savePromise.then(function () {
       return Promise.all([
         idbGetInspection(inspectionId),
@@ -1965,9 +2117,18 @@
     });
   }
 
-  // Same saved-vs-unsaved safety concept as Export JSON, reusing the
-  // exact same renderChoiceModal() -- PDF export must never silently
-  // represent a different state than what the user sees on screen.
+  // PDF export must open its preview window synchronously in the same
+  // click that triggered it (see generatePdfExport()'s own comment) --
+  // so unlike Export JSON, this can't await flushPendingSave() first
+  // without breaking that guarantee. Instead it clears any pending
+  // debounce timer synchronously (cheap, no async wait) and always
+  // passes saveFirst=true, which makes generatePdfExport() do the actual
+  // save itself as the first step of its own promise chain, after the
+  // window has already opened. Always-save-first is a deliberate
+  // simplification over Milestone 17's saved-vs-unsaved choice modal --
+  // under auto-save that distinction is no longer meaningful, and a
+  // forced save here is always safe (idempotent put(), and it's exactly
+  // what would have happened within AUTOSAVE_DEBOUNCE_MS anyway).
   function handleExportPdfClick() {
     if (dbUnavailable) {
       window.alert('PDF export isn\'t available in this browser (IndexedDB is blocked or unsupported).');
@@ -1977,72 +2138,74 @@
       window.alert('No active inspection to export.');
       return;
     }
-    var id = activeInspection.inspectionId;
-    if (!inspectionDirty) {
-      generatePdfExport(id, false);
-      return;
-    }
-    renderChoiceModal({
-      title: 'Unsaved Changes',
-      message: 'This inspection has unsaved changes. Choose what to export.',
-      choices: [
-        {
-          label: 'Save and Export',
-          action: function () {
-            closeInspectionModal();
-            generatePdfExport(id, true);
-          }
-        },
-        {
-          label: 'Export Last Saved',
-          action: function () {
-            closeInspectionModal();
-            generatePdfExport(id, false);
-          }
-        },
-        { label: 'Cancel', action: closeInspectionModal }
-      ]
-    });
+    if (autosaveTimer) { clearTimeout(autosaveTimer); autosaveTimer = null; }
+    generatePdfExport(activeInspection.inspectionId, true);
   }
 
   // Compact, always-visible strip showing which inspection is active
-  // (address, truncated by CSS rather than JS) plus an Unsaved badge
-  // when dirty, and the four New/Save/Load/Reset actions -- lives
-  // outside #screen (its own #inspection-bar element) specifically so
-  // setDirty() can redraw just this on every keystroke without ever
-  // touching a focused field input elsewhere on the page. Called both
-  // from here directly (the fast, focus-safe path) and from the bottom
-  // of the main render() (so a full re-render, e.g. after Load/tab
-  // switch, always reflects the current activeInspection too).
+  // (address, truncated by CSS rather than JS) and the current save
+  // status word -- no buttons here any more (Milestone 18 #5 moved all
+  // of New/Save/Load/Reset/Export into the Inspection tab, see
+  // renderInspectionTabHtml()). Lives outside #screen (its own
+  // #inspection-bar element) specifically so setSaveStatus() can redraw
+  // just this on every keystroke without ever touching a focused field
+  // input elsewhere on the page. Called both from here directly (the
+  // fast, focus-safe path) and from the bottom of the main render() (so
+  // a full re-render, e.g. after Load/tab switch, always reflects the
+  // current activeInspection too).
   function renderInspectionBar() {
     var el = document.getElementById('inspection-bar');
     if (!el) return;
     var addr = activeInspection ? (activeInspection.propertyAddress || '(no address)') : 'Loading…';
-    var dirtyBadge = inspectionDirty ? '<span class="unsaved-badge">Unsaved</span>' : '';
+    var statusHtml = '<span class="save-status save-status-' + saveStatus + '">' + esc(saveStatusLabel()) + '</span>';
     var warningHtml = dbUnavailable
       ? '<div class="shell-note error">Inspection save/load isn\'t available in this browser ' +
         '(IndexedDB is blocked or unsupported) -- changes will only last for this session.</div>'
       : '';
     el.innerHTML =
       '<div class="inspection-bar-row">' +
-        '<div class="inspection-summary">' +
-          '<span class="inspection-address">' + esc(addr) + '</span>' + dirtyBadge +
-        '</div>' +
-        '<div class="inspection-actions">' +
-          '<button type="button" class="insp-btn" data-role="insp-new">New</button>' +
-          '<button type="button" class="insp-btn" data-role="insp-save">Save</button>' +
-          '<button type="button" class="insp-btn" data-role="insp-load">Load</button>' +
-          '<button type="button" class="insp-btn" data-role="insp-reset">Reset</button>' +
-          '<button type="button" class="insp-btn" data-role="insp-export">Export JSON</button>' +
-          '<button type="button" class="insp-btn" data-role="insp-import">Import JSON</button>' +
-          '<button type="button" class="insp-btn" data-role="insp-export-pdf">Export PDF</button>' +
-        '</div>' +
-      '</div>' + warningHtml +
-      '<input type="file" accept=".json,application/json" data-role="import-json-input" hidden>';
-    wireInspectionBar();
+        '<span class="inspection-address">' + esc(addr) + '</span>' +
+        statusHtml +
+      '</div>' + warningHtml;
   }
 
-  function wireInspectionBar() {
+  // The synthetic Inspection tab's content -- every inspection-
+  // management and export/import action, grouped per Milestone 18 #11
+  // (Inspection actions, then a separate Export/Import group), as large
+  // stacked touch targets instead of the old top-bar's compact row.
+  // Property Address is shown here read-only (never a second input --
+  // see the address-synchronization comment at the top of this file)
+  // alongside the same save-status word the compact header shows, plus
+  // when that status last actually landed.
+  function renderInspectionTabHtml() {
+    var addr = activeInspection ? (activeInspection.propertyAddress || '(no address)') : 'Loading…';
+    var updated = (activeInspection && activeInspection.updatedAt) ? formatDate(activeInspection.updatedAt) : '';
+    var warningHtml = dbUnavailable
+      ? '<div class="shell-note error">Inspection save/load isn\'t available in this browser ' +
+        '(IndexedDB is blocked or unsupported) -- changes will only last for this session.</div>'
+      : '';
+    return warningHtml +
+      '<div class="insp-tab-section">' +
+        '<div class="insp-tab-address">' + esc(addr) + '</div>' +
+        '<div class="insp-tab-status">' + esc(saveStatusLabel()) +
+          (updated ? ' &middot; Last saved ' + esc(updated) : '') + '</div>' +
+      '</div>' +
+      '<div class="insp-tab-group">' +
+        '<button type="button" class="insp-tab-btn" data-role="insp-new">New Inspection</button>' +
+        '<button type="button" class="insp-tab-btn" data-role="insp-load">Load Inspection</button>' +
+        '<button type="button" class="insp-tab-btn" data-role="insp-save">Save Now</button>' +
+        '<button type="button" class="insp-tab-btn insp-tab-btn-danger" data-role="insp-reset">Reset Current Inspection</button>' +
+      '</div>' +
+      '<div class="insp-tab-heading">Export / Import</div>' +
+      '<div class="insp-tab-group">' +
+        '<button type="button" class="insp-tab-btn" data-role="insp-export-pdf">Export PDF</button>' +
+        '<button type="button" class="insp-tab-btn" data-role="insp-export">Export JSON</button>' +
+        '<button type="button" class="insp-tab-btn" data-role="insp-import">Import JSON</button>' +
+      '</div>' +
+      '<input type="file" accept=".json,application/json" data-role="import-json-input" hidden>';
+  }
+
+  function wireInspectionTabControls() {
     var newBtn = document.querySelector('[data-role="insp-new"]');
     if (newBtn) newBtn.onclick = handleNewInspectionClick;
     var saveBtn = document.querySelector('[data-role="insp-save"]');
@@ -2557,7 +2720,7 @@
   }
 
   function navTabs() {
-    return CFG.main.tabs.concat([EXIT_INTERVIEW_TAB]);
+    return CFG.main.tabs.concat([EXIT_INTERVIEW_TAB, INSPECTION_TAB]);
   }
 
   function renderTabs() {
@@ -2588,6 +2751,12 @@
       return;
     }
 
+    if (activeTab === INSPECTION_TAB) {
+      $('#screen').innerHTML = renderInspectionTabHtml();
+      wireInspectionTabControls();
+      return;
+    }
+
     var unsupported = CFG.main.unsupportedTypes || [];
     var warning = unsupported.length
       ? '<div class="shell-note error">' + unsupported.length +
@@ -2614,7 +2783,21 @@
 
       var textInput = el.querySelector('[data-role="text"]');
       if (textInput) {
-        textInput.oninput = function () { values[id] = textInput.value; saveValues(); };
+        textInput.oninput = function () {
+          values[id] = textInput.value;
+          // Milestone 18 #6: the Property Address field is the single
+          // source of truth for the inspection's own identity address
+          // once one exists -- keep activeInspection.propertyAddress
+          // (what the header/Inspection tab/Load list all show) in sync
+          // on every keystroke, and repaint just the bar directly so it
+          // never looks stale while typing without disturbing this
+          // input's focus (same discipline as activateFieldNoRender()).
+          if (id === ADDRESS_FIELD_ID && activeInspection) {
+            activeInspection.propertyAddress = textInput.value;
+            renderInspectionBar();
+          }
+          saveValues();
+        };
         // Focusing the input IS the field's own control action (it's
         // what puts the cursor there to type) -- activation piggybacks
         // on that same first tap via activateFieldNoRender(), never a
@@ -2779,6 +2962,21 @@
     $('#screen').innerHTML = '<div class="shell-note error">' + esc(message) + '</div>';
   }
 
+  // Resolves the workbook's own Property/Address field once, at boot --
+  // see ADDRESS_FIELD_ID's own comment for why this is a lookup by
+  // tab+label rather than a hardcoded id. Exact, case-insensitive match
+  // on "Address" (trimmed) so "Address " or "address" in the workbook
+  // still resolves; anything else (no such field at all) leaves
+  // ADDRESS_FIELD_ID null and address synchronization simply never
+  // fires, same degrade-gracefully posture as every other optional
+  // workbook-shape assumption in this file.
+  function resolveAddressFieldId() {
+    var f = CFG.main.fields.filter(function (x) {
+      return x.tab === 'Property' && String(x.label || '').trim().toLowerCase() === 'address';
+    })[0];
+    return f ? f.id : null;
+  }
+
   // Best-effort only -- most browsers grant "persistent" storage
   // automatically for a frequently-visited/installed origin and may
   // silently no-op or reject elsewhere (notably older/non-installed
@@ -2788,7 +2986,28 @@
     navigator.storage.persist().catch(function () {});
   }
 
-  fetch('config.json?v=0.17', { cache: 'no-store' })
+  // Milestone 18 #9: flush any pending debounced write on the two
+  // signals that actually fire reliably around mobile backgrounding
+  // (tab switch, app switch, screen lock) -- deliberately not
+  // beforeunload, which iOS/Android Safari do not consistently fire in
+  // those situations. Registered once, unconditionally, rather than
+  // inside render()/boot, so they're active for the whole page
+  // lifetime regardless of which tab/inspection is current. Failures
+  // are swallowed here (already surfaced via saveStatus/'Save failed'
+  // -- there's no UI to show an alert to at this point, the user may
+  // already be looking at a different app).
+  document.addEventListener('visibilitychange', function () {
+    if (document.visibilityState === 'hidden') {
+      flushPendingSave().catch(function (e) {
+        window.console && console.error && console.error('Clipboard-Flux: flush on visibilitychange failed', e);
+      });
+    }
+  });
+  window.addEventListener('pagehide', function () {
+    flushPendingSave().catch(function () {});
+  });
+
+  fetch('config.json?v=0.18', { cache: 'no-store' })
     .then(function (r) {
       if (!r.ok) throw new Error('HTTP ' + r.status);
       return r.json();
@@ -2800,6 +3019,7 @@
         showFatalError('config.json has no tabs to render.');
         return;
       }
+      ADDRESS_FIELD_ID = resolveAddressFieldId();
       render();
       // Inspection resolution (which inspection is active, migrating
       // pre-0.15 data if needed, loading its photos) happens after this
