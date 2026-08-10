@@ -1,0 +1,2299 @@
+{
+  "version": "0.17",
+  "inputRules": {
+    "sheet": "INPUT RULES",
+    "validTypes": [
+      "Text",
+      "LongText",
+      "Button",
+      "Dropdown",
+      "MultiSelect",
+      "Checkbox",
+      "Toggle",
+      "Counter",
+      "Date",
+      "Time",
+      "Camera",
+      "Sketch",
+      "Rating",
+      "Currency"
+    ],
+    "rules": [
+      {
+        "type": "Text",
+        "description": "Single-line free text"
+      },
+      {
+        "type": "LongText",
+        "description": "Multi-line notes"
+      },
+      {
+        "type": "Button",
+        "description": "One selection shown as large touch buttons"
+      },
+      {
+        "type": "Dropdown",
+        "description": "One selection from a reusable list"
+      },
+      {
+        "type": "MultiSelect",
+        "description": "Multiple selections from a reusable list"
+      },
+      {
+        "type": "Checkbox",
+        "description": "Independent checklist item"
+      },
+      {
+        "type": "Toggle",
+        "description": "Yes / No"
+      },
+      {
+        "type": "Counter",
+        "description": "Numeric plus/minus control"
+      },
+      {
+        "type": "Date",
+        "description": "Date picker"
+      },
+      {
+        "type": "Time",
+        "description": "Time picker"
+      },
+      {
+        "type": "Camera",
+        "description": "Photo capture or selection"
+      },
+      {
+        "type": "Sketch",
+        "description": "Sketch workspace control"
+      },
+      {
+        "type": "Rating",
+        "description": "Optional numeric or categorical rating"
+      },
+      {
+        "type": "Currency",
+        "description": "Currency input"
+      }
+    ]
+  },
+  "main": {
+    "sheet": "MAIN",
+    "fieldCount": 96,
+    "tabs": [
+      "Property",
+      "Site",
+      "Exterior",
+      "Interior"
+    ],
+    "fields": [
+      {
+        "id": "address",
+        "label": "Address",
+        "urar": "Subject",
+        "tab": "Property",
+        "type": "Text",
+        "options": [],
+        "followUpTrigger": [],
+        "followUpGroup": "",
+        "reminder": ""
+      },
+      {
+        "id": "occupancy",
+        "label": "Occupancy",
+        "urar": "Subject",
+        "tab": "Property",
+        "type": "MultiSelect",
+        "options": [
+          "Owner",
+          "Tenant",
+          "Vacant",
+          "Vacation Rental",
+          "Unknown",
+          "Other"
+        ],
+        "followUpTrigger": [],
+        "followUpGroup": "",
+        "reminder": ""
+      },
+      {
+        "id": "pud_association",
+        "label": "PUD / Association",
+        "urar": "Subject",
+        "tab": "Property",
+        "type": "Button",
+        "options": [
+          "Yes",
+          "No"
+        ],
+        "followUpTrigger": [
+          "Yes"
+        ],
+        "followUpGroup": "pud_association",
+        "reminder": ""
+      },
+      {
+        "id": "access_provided",
+        "label": "Access Provided",
+        "urar": "Subject",
+        "tab": "Property",
+        "type": "MultiSelect",
+        "options": [
+          "Owner",
+          "Tenant",
+          "Realtor",
+          "LockBox",
+          "Other"
+        ],
+        "followUpTrigger": [],
+        "followUpGroup": "",
+        "reminder": ""
+      },
+      {
+        "id": "attachment_type",
+        "label": "Attachment Type",
+        "urar": "Subject",
+        "tab": "Property",
+        "type": "MultiSelect",
+        "options": [
+          "Detached",
+          "Attached",
+          "Semi-Detached/End Unit",
+          "Other"
+        ],
+        "followUpTrigger": [],
+        "followUpGroup": "",
+        "reminder": ""
+      },
+      {
+        "id": "construction_stage",
+        "label": "Construction Stage",
+        "urar": "Subject",
+        "tab": "Property",
+        "type": "MultiSelect",
+        "options": [
+          "Existing",
+          "Proposed",
+          "Under Construction",
+          "Other"
+        ],
+        "followUpTrigger": [],
+        "followUpGroup": "",
+        "reminder": ""
+      },
+      {
+        "id": "location",
+        "label": "Location",
+        "urar": "Site",
+        "tab": "Property",
+        "type": "MultiSelect",
+        "options": [
+          "Residential",
+          "Busy Road",
+          "Adj Park",
+          "Adj Commercial",
+          "Other"
+        ],
+        "followUpTrigger": [],
+        "followUpGroup": "",
+        "reminder": ""
+      },
+      {
+        "id": "property_notes",
+        "label": "Property Notes",
+        "urar": "Subject",
+        "tab": "Property",
+        "type": "LongText",
+        "options": [],
+        "followUpTrigger": [],
+        "followUpGroup": "",
+        "reminder": ""
+      },
+      {
+        "id": "street_surface",
+        "label": "Street Surface",
+        "urar": "Site",
+        "tab": "Site",
+        "type": "MultiSelect",
+        "options": [
+          "Asphalt",
+          "Pavers",
+          "Concrete",
+          "Grass",
+          "Packed Dirt",
+          "Other"
+        ],
+        "followUpTrigger": [],
+        "followUpGroup": "",
+        "reminder": ""
+      },
+      {
+        "id": "street_access",
+        "label": "Street Access",
+        "urar": "Site",
+        "tab": "Site",
+        "type": "Button",
+        "options": [
+          "Public",
+          "Private"
+        ],
+        "followUpTrigger": [],
+        "followUpGroup": "",
+        "reminder": ""
+      },
+      {
+        "id": "alley",
+        "label": "Alley",
+        "urar": "Site",
+        "tab": "Site",
+        "type": "Button",
+        "options": [
+          "Yes",
+          "No"
+        ],
+        "followUpTrigger": [
+          "Yes"
+        ],
+        "followUpGroup": "alley",
+        "reminder": "Take photo"
+      },
+      {
+        "id": "lot_shape",
+        "label": "Lot Shape",
+        "urar": "Site",
+        "tab": "Site",
+        "type": "MultiSelect",
+        "options": [
+          "Rectangular",
+          "Irregular",
+          "Pie",
+          "Corner",
+          "Other"
+        ],
+        "followUpTrigger": [],
+        "followUpGroup": "",
+        "reminder": ""
+      },
+      {
+        "id": "view",
+        "label": "View",
+        "urar": "Site",
+        "tab": "Site",
+        "type": "MultiSelect",
+        "options": [
+          "Residential",
+          "City",
+          "Lake",
+          "Canal",
+          "Bay",
+          "Ocean",
+          "Commercial",
+          "Busy Road",
+          "Utility",
+          "Power Lines",
+          "Other"
+        ],
+        "followUpTrigger": [],
+        "followUpGroup": "",
+        "reminder": ""
+      },
+      {
+        "id": "electricity",
+        "label": "Electricity",
+        "urar": "Site",
+        "tab": "Site",
+        "type": "Button",
+        "options": [
+          "Public",
+          "Private"
+        ],
+        "followUpTrigger": [],
+        "followUpGroup": "",
+        "reminder": "FHA: Take photo of working utility"
+      },
+      {
+        "id": "electricity_on",
+        "label": "Electricity On",
+        "urar": "Site",
+        "tab": "Site",
+        "type": "Button",
+        "options": [
+          "Yes",
+          "No"
+        ],
+        "followUpTrigger": [],
+        "followUpGroup": "",
+        "reminder": ""
+      },
+      {
+        "id": "water",
+        "label": "Water",
+        "urar": "Site",
+        "tab": "Site",
+        "type": "Button",
+        "options": [
+          "Public",
+          "Private",
+          "Well",
+          "Other"
+        ],
+        "followUpTrigger": [],
+        "followUpGroup": "",
+        "reminder": "FHA: Take photo of utility/locate if well"
+      },
+      {
+        "id": "water_on",
+        "label": "Water On",
+        "urar": "Site",
+        "tab": "Site",
+        "type": "Button",
+        "options": [
+          "Yes",
+          "No"
+        ],
+        "followUpTrigger": [],
+        "followUpGroup": "",
+        "reminder": ""
+      },
+      {
+        "id": "gas_available",
+        "label": "Gas Available",
+        "urar": "Site",
+        "tab": "Site",
+        "type": "Button",
+        "options": [
+          "Yes",
+          "No"
+        ],
+        "followUpTrigger": [],
+        "followUpGroup": "",
+        "reminder": ""
+      },
+      {
+        "id": "gas_supply",
+        "label": "Gas Supply",
+        "urar": "Site",
+        "tab": "Site",
+        "type": "Button",
+        "options": [
+          "Public",
+          "Private",
+          "Other"
+        ],
+        "followUpTrigger": [],
+        "followUpGroup": "",
+        "reminder": ""
+      },
+      {
+        "id": "sanitary_sewer",
+        "label": "Sanitary Sewer",
+        "urar": "Site",
+        "tab": "Site",
+        "type": "Button",
+        "options": [
+          "City/Public",
+          "Septic",
+          "Private Sewer",
+          "Unknown",
+          "Other"
+        ],
+        "followUpTrigger": [],
+        "followUpGroup": "",
+        "reminder": "FHA: Septic tank needs to be located on lot"
+      },
+      {
+        "id": "site_notes",
+        "label": "Site Notes",
+        "urar": "Site",
+        "tab": "Site",
+        "type": "LongText",
+        "options": [],
+        "followUpTrigger": [],
+        "followUpGroup": "",
+        "reminder": "Extras/Adverse conditions?"
+      },
+      {
+        "id": "driveway_surface",
+        "label": "Driveway Surface",
+        "urar": "Improvements",
+        "tab": "Exterior",
+        "type": "MultiSelect",
+        "options": [
+          "Concrete",
+          "Brick Pavers",
+          "Asphalt",
+          "Tile",
+          "Travertine",
+          "Stone",
+          "Grass",
+          "Gravel",
+          "Dirt",
+          "Other"
+        ],
+        "followUpTrigger": [],
+        "followUpGroup": "",
+        "reminder": ""
+      },
+      {
+        "id": "driveway_capacity",
+        "label": "Driveway Capacity",
+        "urar": "Improvements",
+        "tab": "Exterior",
+        "type": "Counter",
+        "options": [],
+        "followUpTrigger": [],
+        "followUpGroup": "",
+        "reminder": ""
+      },
+      {
+        "id": "car_storage",
+        "label": "Car Storage",
+        "urar": "Improvements",
+        "tab": "Exterior",
+        "type": "MultiSelect",
+        "options": [
+          "Garage",
+          "Carport",
+          "Covered",
+          "Street",
+          "Other"
+        ],
+        "followUpTrigger": [],
+        "followUpGroup": "",
+        "reminder": ""
+      },
+      {
+        "id": "car_storage_capacity",
+        "label": "Car Storage Capacity",
+        "urar": "Improvements",
+        "tab": "Exterior",
+        "type": "Counter",
+        "options": [],
+        "followUpTrigger": [],
+        "followUpGroup": "",
+        "reminder": ""
+      },
+      {
+        "id": "car_storage_attachment",
+        "label": "Car Storage Attachment",
+        "urar": "Improvements",
+        "tab": "Exterior",
+        "type": "MultiSelect",
+        "options": [
+          "Attached",
+          "Detached",
+          "Built-In",
+          "Other"
+        ],
+        "followUpTrigger": [],
+        "followUpGroup": "",
+        "reminder": ""
+      },
+      {
+        "id": "car_storage_notes",
+        "label": "Car Storage Notes",
+        "urar": "Improvements",
+        "tab": "Exterior",
+        "type": "Text",
+        "options": [],
+        "followUpTrigger": [],
+        "followUpGroup": "",
+        "reminder": ""
+      },
+      {
+        "id": "stories",
+        "label": "Stories",
+        "urar": "Improvements",
+        "tab": "Exterior",
+        "type": "Counter",
+        "options": [],
+        "followUpTrigger": [],
+        "followUpGroup": "",
+        "reminder": ""
+      },
+      {
+        "id": "number_of_units",
+        "label": "Number of Units",
+        "urar": "Improvements",
+        "tab": "Exterior",
+        "type": "Counter",
+        "options": [],
+        "followUpTrigger": [],
+        "followUpGroup": "",
+        "reminder": ""
+      },
+      {
+        "id": "adu",
+        "label": "ADU",
+        "urar": "Improvements",
+        "tab": "Exterior",
+        "type": "Button",
+        "options": [
+          "Yes",
+          "No"
+        ],
+        "followUpTrigger": [
+          "Yes"
+        ],
+        "followUpGroup": "adu",
+        "reminder": ""
+      },
+      {
+        "id": "design_style",
+        "label": "Design / Style",
+        "urar": "Improvements",
+        "tab": "Exterior",
+        "type": "MultiSelect",
+        "options": [
+          "Ranch",
+          "Mediterranean",
+          "Villa",
+          "Contemporary",
+          "Bungalow",
+          "Cottage",
+          "Townhouse",
+          "Condo",
+          "Twinhome",
+          "Other"
+        ],
+        "followUpTrigger": [],
+        "followUpGroup": "",
+        "reminder": ""
+      },
+      {
+        "id": "elevation",
+        "label": "Elevation",
+        "urar": "Improvements",
+        "tab": "Exterior",
+        "type": "Text",
+        "options": [],
+        "followUpTrigger": [],
+        "followUpGroup": "",
+        "reminder": ""
+      },
+      {
+        "id": "foundation",
+        "label": "Foundation",
+        "urar": "Improvements",
+        "tab": "Exterior",
+        "type": "MultiSelect",
+        "options": [
+          "Concrete",
+          "Crawl Space",
+          "Pier and Beam",
+          "Piles",
+          "Piers",
+          "Full",
+          "Basement",
+          "Partial Basement",
+          "Other"
+        ],
+        "followUpTrigger": [],
+        "followUpGroup": "",
+        "reminder": ""
+      },
+      {
+        "id": "foundation_walls",
+        "label": "Foundation Walls",
+        "urar": "Improvements",
+        "tab": "Exterior",
+        "type": "MultiSelect",
+        "options": [
+          "Concrete",
+          "CBS",
+          "Brick",
+          "None",
+          "Other"
+        ],
+        "followUpTrigger": [],
+        "followUpGroup": "",
+        "reminder": ""
+      },
+      {
+        "id": "exterior_walls",
+        "label": "Exterior Walls",
+        "urar": "Improvements",
+        "tab": "Exterior",
+        "type": "MultiSelect",
+        "options": [
+          "CBS",
+          "Wood",
+          "Concrete",
+          "Stucco",
+          "Aluminum",
+          "Vinyl",
+          "Other"
+        ],
+        "followUpTrigger": [],
+        "followUpGroup": "",
+        "reminder": ""
+      },
+      {
+        "id": "solar_panels",
+        "label": "Solar Panels",
+        "urar": "Improvements",
+        "tab": "Exterior",
+        "type": "Button",
+        "options": [
+          "Yes",
+          "No"
+        ],
+        "followUpTrigger": [
+          "Yes"
+        ],
+        "followUpGroup": "solar_panels",
+        "reminder": ""
+      },
+      {
+        "id": "roof_surface",
+        "label": "Roof Surface",
+        "urar": "Improvements",
+        "tab": "Exterior",
+        "type": "MultiSelect",
+        "options": [
+          "S-Tile",
+          "Flat Tile",
+          "Asphalt",
+          "Metal",
+          "Comp.Roll",
+          "Mod.Bit",
+          "Other"
+        ],
+        "followUpTrigger": [],
+        "followUpGroup": "",
+        "reminder": ""
+      },
+      {
+        "id": "roof_updated",
+        "label": "Roof Updated",
+        "urar": "Improvements",
+        "tab": "Exterior",
+        "type": "Button",
+        "options": [
+          "Yes",
+          "No",
+          "Partial"
+        ],
+        "followUpTrigger": [
+          "Yes",
+          "Partial"
+        ],
+        "followUpGroup": "roof_updated",
+        "reminder": ""
+      },
+      {
+        "id": "gutters_downspouts",
+        "label": "Gutters / Downspouts",
+        "urar": "Improvements",
+        "tab": "Exterior",
+        "type": "Button",
+        "options": [
+          "None",
+          "Yes",
+          "Partial"
+        ],
+        "followUpTrigger": [],
+        "followUpGroup": "",
+        "reminder": ""
+      },
+      {
+        "id": "gutters_updated",
+        "label": "Gutters Updated",
+        "urar": "Improvements",
+        "tab": "Exterior",
+        "type": "Button",
+        "options": [
+          "Yes",
+          "No",
+          "Partial"
+        ],
+        "followUpTrigger": [
+          "Yes",
+          "Partial"
+        ],
+        "followUpGroup": "gutters_updated",
+        "reminder": ""
+      },
+      {
+        "id": "windows_type",
+        "label": "Windows Type",
+        "urar": "Improvements",
+        "tab": "Exterior",
+        "type": "MultiSelect",
+        "options": [
+          "Sliding",
+          "S-Hung",
+          "Casement",
+          "Awning",
+          "Jalousie",
+          "Bay",
+          "Other"
+        ],
+        "followUpTrigger": [],
+        "followUpGroup": "",
+        "reminder": ""
+      },
+      {
+        "id": "windows_updated",
+        "label": "Windows Updated",
+        "urar": "Improvements",
+        "tab": "Exterior",
+        "type": "Button",
+        "options": [
+          "Yes",
+          "No",
+          "Partial"
+        ],
+        "followUpTrigger": [
+          "Yes",
+          "Partial"
+        ],
+        "followUpGroup": "windows_updated",
+        "reminder": ""
+      },
+      {
+        "id": "windows_impact",
+        "label": "Windows Impact",
+        "urar": "Improvements",
+        "tab": "Exterior",
+        "type": "Button",
+        "options": [
+          "Yes",
+          "No",
+          "Partial"
+        ],
+        "followUpTrigger": [],
+        "followUpGroup": "",
+        "reminder": ""
+      },
+      {
+        "id": "screens",
+        "label": "Screens",
+        "urar": "Improvements",
+        "tab": "Exterior",
+        "type": "MultiSelect",
+        "options": [
+          "None",
+          "Nylon",
+          "Aluminum",
+          "Other"
+        ],
+        "followUpTrigger": [],
+        "followUpGroup": "",
+        "reminder": ""
+      },
+      {
+        "id": "shutters",
+        "label": "Shutters",
+        "urar": "Improvements",
+        "tab": "Exterior",
+        "type": "Button",
+        "options": [
+          "Yes",
+          "No",
+          "Partial"
+        ],
+        "followUpTrigger": [
+          "Yes",
+          "Partial"
+        ],
+        "followUpGroup": "shutters",
+        "reminder": ""
+      },
+      {
+        "id": "security_bars",
+        "label": "Security Bars",
+        "urar": "Improvements",
+        "tab": "Exterior",
+        "type": "Button",
+        "options": [
+          "Yes",
+          "No",
+          "Partial"
+        ],
+        "followUpTrigger": [
+          "Yes",
+          "Partial"
+        ],
+        "followUpGroup": "security_bars",
+        "reminder": ""
+      },
+      {
+        "id": "storm_sash_insulated",
+        "label": "Storm Sash / Insulated",
+        "urar": "Improvements",
+        "tab": "Exterior",
+        "type": "Button",
+        "options": [
+          "Yes",
+          "No",
+          "Partial"
+        ],
+        "followUpTrigger": [],
+        "followUpGroup": "",
+        "reminder": ""
+      },
+      {
+        "id": "fireplace",
+        "label": "Fireplace",
+        "urar": "Improvements",
+        "tab": "Exterior",
+        "type": "Button",
+        "options": [
+          "Yes",
+          "No"
+        ],
+        "followUpTrigger": [],
+        "followUpGroup": "",
+        "reminder": ""
+      },
+      {
+        "id": "fence",
+        "label": "Fence",
+        "urar": "Improvements",
+        "tab": "Exterior",
+        "type": "MultiSelect",
+        "options": [
+          "None",
+          "Wood",
+          "Aluminum",
+          "CBS",
+          "Iron",
+          "Wire",
+          "Other"
+        ],
+        "followUpTrigger": [],
+        "followUpGroup": "",
+        "reminder": ""
+      },
+      {
+        "id": "patio",
+        "label": "Patio",
+        "urar": "Improvements",
+        "tab": "Exterior",
+        "type": "MultiSelect",
+        "options": [
+          "None",
+          "Open",
+          "Covered",
+          "Aluminum",
+          "Canvas",
+          "Other"
+        ],
+        "followUpTrigger": [],
+        "followUpGroup": "",
+        "reminder": ""
+      },
+      {
+        "id": "patio_attachment",
+        "label": "Patio Attachment",
+        "urar": "Improvements",
+        "tab": "Exterior",
+        "type": "MultiSelect",
+        "options": [
+          "Attached",
+          "Detached"
+        ],
+        "followUpTrigger": [],
+        "followUpGroup": "",
+        "reminder": ""
+      },
+      {
+        "id": "deck",
+        "label": "Deck",
+        "urar": "Improvements",
+        "tab": "Exterior",
+        "type": "MultiSelect",
+        "options": [
+          "None",
+          "Concrete",
+          "Wood",
+          "Brick",
+          "Engineered Wood",
+          "Tile",
+          "Travertine",
+          "Stone",
+          "Other"
+        ],
+        "followUpTrigger": [],
+        "followUpGroup": "",
+        "reminder": ""
+      },
+      {
+        "id": "balcony",
+        "label": "Balcony",
+        "urar": "Improvements",
+        "tab": "Exterior",
+        "type": "Button",
+        "options": [
+          "Yes",
+          "No"
+        ],
+        "followUpTrigger": [
+          "Yes"
+        ],
+        "followUpGroup": "balcony",
+        "reminder": ""
+      },
+      {
+        "id": "porch",
+        "label": "Porch",
+        "urar": "Improvements",
+        "tab": "Exterior",
+        "type": "MultiSelect",
+        "options": [
+          "None",
+          "Open",
+          "Covered",
+          "Aluminum",
+          "Canvas",
+          "Other"
+        ],
+        "followUpTrigger": [],
+        "followUpGroup": "",
+        "reminder": ""
+      },
+      {
+        "id": "pool",
+        "label": "Pool",
+        "urar": "Improvements",
+        "tab": "Exterior",
+        "type": "Button",
+        "options": [
+          "Yes",
+          "No"
+        ],
+        "followUpTrigger": [
+          "Yes"
+        ],
+        "followUpGroup": "pool",
+        "reminder": ""
+      },
+      {
+        "id": "other_amenities",
+        "label": "Other Amenities",
+        "urar": "Improvements",
+        "tab": "Exterior",
+        "type": "Text",
+        "options": [],
+        "followUpTrigger": [],
+        "followUpGroup": "",
+        "reminder": ""
+      },
+      {
+        "id": "exterior_notes",
+        "label": "Exterior Notes",
+        "urar": "Improvements",
+        "tab": "Exterior",
+        "type": "LongText",
+        "options": [],
+        "followUpTrigger": [],
+        "followUpGroup": "",
+        "reminder": "Extras/Adverse conditions?"
+      },
+      {
+        "id": "kitchen_updated",
+        "label": "Kitchen Updated",
+        "urar": "Improvements",
+        "tab": "Interior",
+        "type": "Button",
+        "options": [
+          "Yes",
+          "No",
+          "Partial"
+        ],
+        "followUpTrigger": [
+          "Yes",
+          "Partial"
+        ],
+        "followUpGroup": "kitchen_updated",
+        "reminder": ""
+      },
+      {
+        "id": "bathrooms_updated",
+        "label": "Bathrooms Updated",
+        "urar": "Improvements",
+        "tab": "Interior",
+        "type": "Button",
+        "options": [
+          "Yes",
+          "No",
+          "Partial"
+        ],
+        "followUpTrigger": [
+          "Yes",
+          "Partial"
+        ],
+        "followUpGroup": "bathrooms_updated",
+        "reminder": ""
+      },
+      {
+        "id": "smoke_detectors",
+        "label": "Smoke Detectors",
+        "urar": "Improvements",
+        "tab": "Interior",
+        "type": "Counter",
+        "options": [],
+        "followUpTrigger": [],
+        "followUpGroup": "",
+        "reminder": ""
+      },
+      {
+        "id": "floors",
+        "label": "Floors",
+        "urar": "Improvements",
+        "tab": "Interior",
+        "type": "MultiSelect",
+        "options": [
+          "Ceramic Tile",
+          "Porcelain Tile",
+          "Stone",
+          "Travertine",
+          "Wood",
+          "Laminate",
+          "Vinyl",
+          "Terrazzo",
+          "Concrete",
+          "Other"
+        ],
+        "followUpTrigger": [],
+        "followUpGroup": "",
+        "reminder": ""
+      },
+      {
+        "id": "floors_updated",
+        "label": "Floors Updated",
+        "urar": "Improvements",
+        "tab": "Interior",
+        "type": "Button",
+        "options": [
+          "Yes",
+          "No",
+          "Partial"
+        ],
+        "followUpTrigger": [
+          "Yes",
+          "Partial"
+        ],
+        "followUpGroup": "floors_updated",
+        "reminder": ""
+      },
+      {
+        "id": "walls",
+        "label": "Walls",
+        "urar": "Improvements",
+        "tab": "Interior",
+        "type": "MultiSelect",
+        "options": [
+          "Drywall",
+          "Plaster",
+          "Wood Panel",
+          "Tile",
+          "Wallpaper",
+          "Stone/Brick",
+          "Concrete",
+          "Other"
+        ],
+        "followUpTrigger": [],
+        "followUpGroup": "",
+        "reminder": ""
+      },
+      {
+        "id": "walls_updated",
+        "label": "Walls Updated",
+        "urar": "Improvements",
+        "tab": "Interior",
+        "type": "Button",
+        "options": [
+          "Yes",
+          "No",
+          "Partial"
+        ],
+        "followUpTrigger": [
+          "Yes",
+          "Partial"
+        ],
+        "followUpGroup": "walls_updated",
+        "reminder": ""
+      },
+      {
+        "id": "trim_finish",
+        "label": "Trim / Finish",
+        "urar": "Improvements",
+        "tab": "Interior",
+        "type": "MultiSelect",
+        "options": [
+          "Wood",
+          "Tile",
+          "PVC",
+          "Other"
+        ],
+        "followUpTrigger": [],
+        "followUpGroup": "",
+        "reminder": ""
+      },
+      {
+        "id": "trim_finish_updated",
+        "label": "Trim / Finish Updated",
+        "urar": "Improvements",
+        "tab": "Interior",
+        "type": "Button",
+        "options": [
+          "Yes",
+          "No",
+          "Partial"
+        ],
+        "followUpTrigger": [
+          "Yes",
+          "Partial"
+        ],
+        "followUpGroup": "trim_updated",
+        "reminder": ""
+      },
+      {
+        "id": "bath_floor",
+        "label": "Bath Floor",
+        "urar": "Improvements",
+        "tab": "Interior",
+        "type": "MultiSelect",
+        "options": [
+          "Ceramic Tile",
+          "Porcelain Tile",
+          "Stone",
+          "Travertine",
+          "Wood",
+          "Laminate",
+          "Vinyl",
+          "Terrazzo",
+          "Concrete",
+          "Other"
+        ],
+        "followUpTrigger": [],
+        "followUpGroup": "",
+        "reminder": ""
+      },
+      {
+        "id": "bath_floor_updated",
+        "label": "Bath Floor Updated",
+        "urar": "Improvements",
+        "tab": "Interior",
+        "type": "Button",
+        "options": [
+          "Yes",
+          "No",
+          "Partial"
+        ],
+        "followUpTrigger": [
+          "Yes",
+          "Partial"
+        ],
+        "followUpGroup": "bathrooms_updated",
+        "reminder": ""
+      },
+      {
+        "id": "bath_wainscot",
+        "label": "Bath Wainscot",
+        "urar": "Improvements",
+        "tab": "Interior",
+        "type": "MultiSelect",
+        "options": [
+          "Ceramic Tile",
+          "Porcelain Tile",
+          "Stone",
+          "Travertine",
+          "Wood",
+          "Laminate",
+          "Vinyl",
+          "Terrazzo",
+          "Concrete",
+          "Other"
+        ],
+        "followUpTrigger": [],
+        "followUpGroup": "",
+        "reminder": ""
+      },
+      {
+        "id": "bath_wainscot_updated",
+        "label": "Bath Wainscot Updated",
+        "urar": "Improvements",
+        "tab": "Interior",
+        "type": "Button",
+        "options": [
+          "Yes",
+          "No",
+          "Partial"
+        ],
+        "followUpTrigger": [
+          "Yes",
+          "Partial"
+        ],
+        "followUpGroup": "bathrooms_updated",
+        "reminder": ""
+      },
+      {
+        "id": "attic",
+        "label": "Attic",
+        "urar": "Improvements",
+        "tab": "Interior",
+        "type": "MultiSelect",
+        "options": [
+          "Scuttle",
+          "Dropdown",
+          "None",
+          "Other"
+        ],
+        "followUpTrigger": [],
+        "followUpGroup": "",
+        "reminder": "FHA: Take pictures in attic"
+      },
+      {
+        "id": "heating",
+        "label": "Heating",
+        "urar": "Improvements",
+        "tab": "Interior",
+        "type": "MultiSelect",
+        "options": [
+          "FWA",
+          "Radiant",
+          "None",
+          "Other"
+        ],
+        "followUpTrigger": [],
+        "followUpGroup": "",
+        "reminder": ""
+      },
+      {
+        "id": "cooling",
+        "label": "Cooling",
+        "urar": "Improvements",
+        "tab": "Interior",
+        "type": "MultiSelect",
+        "options": [
+          "Central",
+          "Individual",
+          "Ductless",
+          "Other"
+        ],
+        "followUpTrigger": [],
+        "followUpGroup": "",
+        "reminder": ""
+      },
+      {
+        "id": "cooling_updated",
+        "label": "Cooling Updated",
+        "urar": "Improvements",
+        "tab": "Interior",
+        "type": "Button",
+        "options": [
+          "Yes",
+          "No",
+          "Partial"
+        ],
+        "followUpTrigger": [
+          "Yes",
+          "Partial"
+        ],
+        "followUpGroup": "cooling_updated",
+        "reminder": ""
+      },
+      {
+        "id": "ceiling_height",
+        "label": "Ceiling Height",
+        "urar": "Improvements",
+        "tab": "Interior",
+        "type": "Text",
+        "options": [],
+        "followUpTrigger": [],
+        "followUpGroup": "",
+        "reminder": ""
+      },
+      {
+        "id": "refrigerator",
+        "label": "Refrigerator",
+        "urar": "Improvements",
+        "tab": "Interior",
+        "type": "Counter",
+        "options": [],
+        "followUpTrigger": [],
+        "followUpGroup": "",
+        "reminder": ""
+      },
+      {
+        "id": "range",
+        "label": "Range",
+        "urar": "Improvements",
+        "tab": "Interior",
+        "type": "Counter",
+        "options": [],
+        "followUpTrigger": [],
+        "followUpGroup": "",
+        "reminder": ""
+      },
+      {
+        "id": "oven",
+        "label": "Oven",
+        "urar": "Improvements",
+        "tab": "Interior",
+        "type": "Counter",
+        "options": [],
+        "followUpTrigger": [],
+        "followUpGroup": "",
+        "reminder": ""
+      },
+      {
+        "id": "dishwasher",
+        "label": "Dishwasher",
+        "urar": "Improvements",
+        "tab": "Interior",
+        "type": "Counter",
+        "options": [],
+        "followUpTrigger": [],
+        "followUpGroup": "",
+        "reminder": ""
+      },
+      {
+        "id": "disposal",
+        "label": "Disposal",
+        "urar": "Improvements",
+        "tab": "Interior",
+        "type": "Counter",
+        "options": [],
+        "followUpTrigger": [],
+        "followUpGroup": "",
+        "reminder": ""
+      },
+      {
+        "id": "microwave",
+        "label": "Microwave",
+        "urar": "Improvements",
+        "tab": "Interior",
+        "type": "Counter",
+        "options": [],
+        "followUpTrigger": [],
+        "followUpGroup": "",
+        "reminder": ""
+      },
+      {
+        "id": "clothes_washer",
+        "label": "Clothes Washer",
+        "urar": "Improvements",
+        "tab": "Interior",
+        "type": "Counter",
+        "options": [],
+        "followUpTrigger": [],
+        "followUpGroup": "",
+        "reminder": ""
+      },
+      {
+        "id": "clothes_dryer",
+        "label": "Clothes Dryer",
+        "urar": "Improvements",
+        "tab": "Interior",
+        "type": "Counter",
+        "options": [],
+        "followUpTrigger": [],
+        "followUpGroup": "",
+        "reminder": ""
+      },
+      {
+        "id": "range_hood",
+        "label": "Range Hood",
+        "urar": "Improvements",
+        "tab": "Interior",
+        "type": "Counter",
+        "options": [],
+        "followUpTrigger": [],
+        "followUpGroup": "",
+        "reminder": ""
+      },
+      {
+        "id": "beverage_cooler",
+        "label": "Beverage Cooler",
+        "urar": "Improvements",
+        "tab": "Interior",
+        "type": "Counter",
+        "options": [],
+        "followUpTrigger": [],
+        "followUpGroup": "",
+        "reminder": ""
+      },
+      {
+        "id": "appliances_other",
+        "label": "Appliances Other",
+        "urar": "Improvements",
+        "tab": "Interior",
+        "type": "Text",
+        "options": [],
+        "followUpTrigger": [],
+        "followUpGroup": "",
+        "reminder": ""
+      },
+      {
+        "id": "living_room",
+        "label": "Living Room",
+        "urar": "Improvements",
+        "tab": "Interior",
+        "type": "Counter",
+        "options": [],
+        "followUpTrigger": [],
+        "followUpGroup": "",
+        "reminder": ""
+      },
+      {
+        "id": "dining_room",
+        "label": "Dining Room",
+        "urar": "Improvements",
+        "tab": "Interior",
+        "type": "Counter",
+        "options": [],
+        "followUpTrigger": [],
+        "followUpGroup": "",
+        "reminder": ""
+      },
+      {
+        "id": "dining_area",
+        "label": "Dining Area",
+        "urar": "Improvements",
+        "tab": "Interior",
+        "type": "Counter",
+        "options": [],
+        "followUpTrigger": [],
+        "followUpGroup": "",
+        "reminder": ""
+      },
+      {
+        "id": "family_room",
+        "label": "Family Room",
+        "urar": "Improvements",
+        "tab": "Interior",
+        "type": "Counter",
+        "options": [],
+        "followUpTrigger": [],
+        "followUpGroup": "",
+        "reminder": ""
+      },
+      {
+        "id": "breakfast_area",
+        "label": "Breakfast Area",
+        "urar": "Improvements",
+        "tab": "Interior",
+        "type": "Counter",
+        "options": [],
+        "followUpTrigger": [],
+        "followUpGroup": "",
+        "reminder": ""
+      },
+      {
+        "id": "kitchen",
+        "label": "Kitchen",
+        "urar": "Improvements",
+        "tab": "Interior",
+        "type": "Counter",
+        "options": [],
+        "followUpTrigger": [],
+        "followUpGroup": "",
+        "reminder": ""
+      },
+      {
+        "id": "den",
+        "label": "Den",
+        "urar": "Improvements",
+        "tab": "Interior",
+        "type": "Counter",
+        "options": [],
+        "followUpTrigger": [],
+        "followUpGroup": "",
+        "reminder": ""
+      },
+      {
+        "id": "bedrooms",
+        "label": "Bedrooms",
+        "urar": "Improvements",
+        "tab": "Interior",
+        "type": "Counter",
+        "options": [],
+        "followUpTrigger": [],
+        "followUpGroup": "",
+        "reminder": ""
+      },
+      {
+        "id": "bathrooms",
+        "label": "Bathrooms",
+        "urar": "Improvements",
+        "tab": "Interior",
+        "type": "Counter",
+        "options": [],
+        "followUpTrigger": [],
+        "followUpGroup": "",
+        "reminder": ""
+      },
+      {
+        "id": "half_bath",
+        "label": "Half Bath",
+        "urar": "Improvements",
+        "tab": "Interior",
+        "type": "Counter",
+        "options": [],
+        "followUpTrigger": [],
+        "followUpGroup": "",
+        "reminder": ""
+      }
+    ],
+    "unsupportedTypes": [],
+    "triggerGroupMismatches": [],
+    "orphanedGroupReferences": []
+  },
+  "followUp": {
+    "sheet": "FOLLOW_UP",
+    "questionCount": 46,
+    "groups": [
+      {
+        "group": "pud_association",
+        "questions": [
+          {
+            "id": "pud_association__association_fee",
+            "group": "pud_association",
+            "label": "Association Fee",
+            "type": "Currency",
+            "options": [],
+            "destination": "Exit Interview",
+            "showWhenQuestion": "",
+            "showWhenValue": [],
+            "showWhenQuestionId": null,
+            "showWhenInvalid": false
+          },
+          {
+            "id": "pud_association__fee_frequency",
+            "group": "pud_association",
+            "label": "Fee Frequency",
+            "type": "Button",
+            "options": [
+              "Monthly",
+              "Quarterly",
+              "Yearly",
+              "Other"
+            ],
+            "destination": "Exit Interview",
+            "showWhenQuestion": "",
+            "showWhenValue": [],
+            "showWhenQuestionId": null,
+            "showWhenInvalid": false
+          },
+          {
+            "id": "pud_association__amenities_included",
+            "group": "pud_association",
+            "label": "Amenities Included",
+            "type": "MultiSelect",
+            "options": [
+              "Gated",
+              "Security",
+              "Pool",
+              "Cabana",
+              "Clubhouse",
+              "Tot Lots",
+              "Marina",
+              "Other"
+            ],
+            "destination": "Exit Interview",
+            "showWhenQuestion": "",
+            "showWhenValue": [],
+            "showWhenQuestionId": null,
+            "showWhenInvalid": false
+          },
+          {
+            "id": "pud_association__special_assessment",
+            "group": "pud_association",
+            "label": "Special Assessment",
+            "type": "Button",
+            "options": [
+              "Yes",
+              "No"
+            ],
+            "destination": "Exit Interview",
+            "showWhenQuestion": "",
+            "showWhenValue": [],
+            "showWhenQuestionId": null,
+            "showWhenInvalid": false
+          },
+          {
+            "id": "pud_association__special_assessment_fee",
+            "group": "pud_association",
+            "label": "Special Assessment Fee",
+            "type": "Currency",
+            "options": [],
+            "destination": "Exit Interview",
+            "showWhenQuestion": "Special Assessment",
+            "showWhenValue": [
+              "Yes"
+            ],
+            "showWhenQuestionId": "pud_association__special_assessment",
+            "showWhenInvalid": false
+          },
+          {
+            "id": "pud_association__special_assessment_fee_frequency",
+            "group": "pud_association",
+            "label": "Special Assessment Fee Frequency",
+            "type": "Button",
+            "options": [
+              "Monthly",
+              "Quarterly",
+              "Yearly",
+              "Other"
+            ],
+            "destination": "Exit Interview",
+            "showWhenQuestion": "Special Assessment",
+            "showWhenValue": [
+              "Yes"
+            ],
+            "showWhenQuestionId": "pud_association__special_assessment",
+            "showWhenInvalid": false
+          },
+          {
+            "id": "pud_association__special_assessment_reason_time",
+            "group": "pud_association",
+            "label": "Special Assessment Reason / Time",
+            "type": "Text",
+            "options": [],
+            "destination": "Exit Interview",
+            "showWhenQuestion": "Special Assessment",
+            "showWhenValue": [
+              "Yes"
+            ],
+            "showWhenQuestionId": "pud_association__special_assessment",
+            "showWhenInvalid": false
+          },
+          {
+            "id": "pud_association__pud_comments",
+            "group": "pud_association",
+            "label": "PUD Comments",
+            "type": "Text",
+            "options": [],
+            "destination": "Exit Interview",
+            "showWhenQuestion": "",
+            "showWhenValue": [],
+            "showWhenQuestionId": null,
+            "showWhenInvalid": false
+          }
+        ]
+      },
+      {
+        "group": "alley",
+        "questions": [
+          {
+            "id": "alley__alley_surface",
+            "group": "alley",
+            "label": "Alley Surface",
+            "type": "MultiSelect",
+            "options": [
+              "Asphalt",
+              "Pavers",
+              "Concrete",
+              "Grass",
+              "Packed Dirt",
+              "Other"
+            ],
+            "destination": "Dynamic",
+            "showWhenQuestion": "",
+            "showWhenValue": [],
+            "showWhenQuestionId": null,
+            "showWhenInvalid": false
+          },
+          {
+            "id": "alley__alley_access",
+            "group": "alley",
+            "label": "Alley Access",
+            "type": "Button",
+            "options": [
+              "Public",
+              "Private"
+            ],
+            "destination": "Dynamic",
+            "showWhenQuestion": "",
+            "showWhenValue": [],
+            "showWhenQuestionId": null,
+            "showWhenInvalid": false
+          }
+        ]
+      },
+      {
+        "group": "adu",
+        "questions": [
+          {
+            "id": "adu__rented",
+            "group": "adu",
+            "label": "Rented?",
+            "type": "Button",
+            "options": [
+              "Yes",
+              "No"
+            ],
+            "destination": "Dynamic",
+            "showWhenQuestion": "",
+            "showWhenValue": [],
+            "showWhenQuestionId": null,
+            "showWhenInvalid": false
+          },
+          {
+            "id": "adu__certified",
+            "group": "adu",
+            "label": "Certified?",
+            "type": "Button",
+            "options": [
+              "Yes",
+              "No"
+            ],
+            "destination": "Dynamic",
+            "showWhenQuestion": "",
+            "showWhenValue": [],
+            "showWhenQuestionId": null,
+            "showWhenInvalid": false
+          },
+          {
+            "id": "adu__permits",
+            "group": "adu",
+            "label": "Permits?",
+            "type": "Button",
+            "options": [
+              "Yes",
+              "No"
+            ],
+            "destination": "Dynamic",
+            "showWhenQuestion": "",
+            "showWhenValue": [],
+            "showWhenQuestionId": null,
+            "showWhenInvalid": false
+          },
+          {
+            "id": "adu__adu_notes",
+            "group": "adu",
+            "label": "ADU Notes",
+            "type": "Text",
+            "options": [],
+            "destination": "Dynamic",
+            "showWhenQuestion": "",
+            "showWhenValue": [],
+            "showWhenQuestionId": null,
+            "showWhenInvalid": false
+          }
+        ]
+      },
+      {
+        "group": "solar_panels",
+        "questions": [
+          {
+            "id": "solar_panels__ownership",
+            "group": "solar_panels",
+            "label": "Ownership",
+            "type": "MultiSelect",
+            "options": [
+              "Owned",
+              "Financed",
+              "Leased",
+              "Power Purchase Agreement",
+              "Other"
+            ],
+            "destination": "Exit Interview",
+            "showWhenQuestion": "",
+            "showWhenValue": [],
+            "showWhenQuestionId": null,
+            "showWhenInvalid": false
+          },
+          {
+            "id": "solar_panels__system",
+            "group": "solar_panels",
+            "label": "System",
+            "type": "MultiSelect",
+            "options": [
+              "Electric",
+              "Water Heater"
+            ],
+            "destination": "Exit Interview",
+            "showWhenQuestion": "",
+            "showWhenValue": [],
+            "showWhenQuestionId": null,
+            "showWhenInvalid": false
+          },
+          {
+            "id": "solar_panels__age",
+            "group": "solar_panels",
+            "label": "Age",
+            "type": "Text",
+            "options": [],
+            "destination": "Exit Interview",
+            "showWhenQuestion": "",
+            "showWhenValue": [],
+            "showWhenQuestionId": null,
+            "showWhenInvalid": false
+          },
+          {
+            "id": "solar_panels__capacity_kw",
+            "group": "solar_panels",
+            "label": "Capacity (KW)",
+            "type": "Text",
+            "options": [],
+            "destination": "Exit Interview",
+            "showWhenQuestion": "",
+            "showWhenValue": [],
+            "showWhenQuestionId": null,
+            "showWhenInvalid": false
+          }
+        ]
+      },
+      {
+        "group": "roof_updated",
+        "questions": [
+          {
+            "id": "roof_updated__timeframe",
+            "group": "roof_updated",
+            "label": "Timeframe",
+            "type": "Text",
+            "options": [],
+            "destination": "Exit Interview",
+            "showWhenQuestion": "",
+            "showWhenValue": [],
+            "showWhenQuestionId": null,
+            "showWhenInvalid": false
+          },
+          {
+            "id": "roof_updated__details",
+            "group": "roof_updated",
+            "label": "Details",
+            "type": "Text",
+            "options": [],
+            "destination": "Exit Interview",
+            "showWhenQuestion": "",
+            "showWhenValue": [],
+            "showWhenQuestionId": null,
+            "showWhenInvalid": false
+          }
+        ]
+      },
+      {
+        "group": "gutters_updated",
+        "questions": [
+          {
+            "id": "gutters_updated__timeframe",
+            "group": "gutters_updated",
+            "label": "Timeframe",
+            "type": "Text",
+            "options": [],
+            "destination": "Exit Interview",
+            "showWhenQuestion": "",
+            "showWhenValue": [],
+            "showWhenQuestionId": null,
+            "showWhenInvalid": false
+          },
+          {
+            "id": "gutters_updated__details",
+            "group": "gutters_updated",
+            "label": "Details",
+            "type": "Text",
+            "options": [],
+            "destination": "Exit Interview",
+            "showWhenQuestion": "",
+            "showWhenValue": [],
+            "showWhenQuestionId": null,
+            "showWhenInvalid": false
+          }
+        ]
+      },
+      {
+        "group": "windows_updated",
+        "questions": [
+          {
+            "id": "windows_updated__timeframe",
+            "group": "windows_updated",
+            "label": "Timeframe",
+            "type": "Text",
+            "options": [],
+            "destination": "Exit Interview",
+            "showWhenQuestion": "",
+            "showWhenValue": [],
+            "showWhenQuestionId": null,
+            "showWhenInvalid": false
+          },
+          {
+            "id": "windows_updated__details",
+            "group": "windows_updated",
+            "label": "Details",
+            "type": "Text",
+            "options": [],
+            "destination": "Exit Interview",
+            "showWhenQuestion": "",
+            "showWhenValue": [],
+            "showWhenQuestionId": null,
+            "showWhenInvalid": false
+          }
+        ]
+      },
+      {
+        "group": "shutters",
+        "questions": [
+          {
+            "id": "shutters__shutters_type",
+            "group": "shutters",
+            "label": "Shutters Type",
+            "type": "MultiSelect",
+            "options": [
+              "Accordion",
+              "Panels",
+              "Roll-Up",
+              "Other"
+            ],
+            "destination": "Dynamic",
+            "showWhenQuestion": "",
+            "showWhenValue": [],
+            "showWhenQuestionId": null,
+            "showWhenInvalid": false
+          }
+        ]
+      },
+      {
+        "group": "security_bars",
+        "questions": [
+          {
+            "id": "security_bars__safety_release",
+            "group": "security_bars",
+            "label": "Safety release",
+            "type": "Button",
+            "options": [
+              "Yes",
+              "No",
+              "Partial"
+            ],
+            "destination": "Dynamic",
+            "showWhenQuestion": "",
+            "showWhenValue": [],
+            "showWhenQuestionId": null,
+            "showWhenInvalid": false
+          },
+          {
+            "id": "security_bars__do_bedrooms_have_bars",
+            "group": "security_bars",
+            "label": "Do bedrooms have bars",
+            "type": "Button",
+            "options": [
+              "Yes",
+              "No",
+              "Partial"
+            ],
+            "destination": "Dynamic",
+            "showWhenQuestion": "",
+            "showWhenValue": [],
+            "showWhenQuestionId": null,
+            "showWhenInvalid": false
+          }
+        ]
+      },
+      {
+        "group": "balcony",
+        "questions": [
+          {
+            "id": "balcony__balcony_type",
+            "group": "balcony",
+            "label": "Balcony type",
+            "type": "MultiSelect",
+            "options": [
+              "Open",
+              "Screened",
+              "Enclosed",
+              "Other"
+            ],
+            "destination": "Dynamic",
+            "showWhenQuestion": "",
+            "showWhenValue": [],
+            "showWhenQuestionId": null,
+            "showWhenInvalid": false
+          }
+        ]
+      },
+      {
+        "group": "pool",
+        "questions": [
+          {
+            "id": "pool__pool_construction",
+            "group": "pool",
+            "label": "Pool Construction",
+            "type": "MultiSelect",
+            "options": [
+              "Concrete",
+              "Fiberglass",
+              "Other"
+            ],
+            "destination": "Dynamic",
+            "showWhenQuestion": "",
+            "showWhenValue": [],
+            "showWhenQuestionId": null,
+            "showWhenInvalid": false
+          },
+          {
+            "id": "pool__pool_updated",
+            "group": "pool",
+            "label": "Pool Updated",
+            "type": "Button",
+            "options": [
+              "Yes",
+              "No",
+              "Partial"
+            ],
+            "destination": "Dynamic",
+            "showWhenQuestion": "",
+            "showWhenValue": [],
+            "showWhenQuestionId": null,
+            "showWhenInvalid": false
+          },
+          {
+            "id": "pool__year_updated",
+            "group": "pool",
+            "label": "Year Updated",
+            "type": "Text",
+            "options": [],
+            "destination": "Dynamic",
+            "showWhenQuestion": "Pool Updated",
+            "showWhenValue": [
+              "Yes",
+              "Partial"
+            ],
+            "showWhenQuestionId": "pool__pool_updated",
+            "showWhenInvalid": false
+          },
+          {
+            "id": "pool__scope_of_updated",
+            "group": "pool",
+            "label": "Scope of Updated",
+            "type": "MultiSelect",
+            "options": [
+              "Resurface",
+              "Equipment",
+              "Deck",
+              "Other"
+            ],
+            "destination": "Dynamic",
+            "showWhenQuestion": "Pool Updated",
+            "showWhenValue": [
+              "Yes",
+              "Partial"
+            ],
+            "showWhenQuestionId": "pool__pool_updated",
+            "showWhenInvalid": false
+          },
+          {
+            "id": "pool__pool_amenities",
+            "group": "pool",
+            "label": "Pool Amenities",
+            "type": "MultiSelect",
+            "options": [
+              "Spa",
+              "Heater",
+              "Dome Screen",
+              "Flat Screen",
+              "Other"
+            ],
+            "destination": "Dynamic",
+            "showWhenQuestion": "",
+            "showWhenValue": [],
+            "showWhenQuestionId": null,
+            "showWhenInvalid": false
+          }
+        ]
+      },
+      {
+        "group": "kitchen_updated",
+        "questions": [
+          {
+            "id": "kitchen_updated__timeframe",
+            "group": "kitchen_updated",
+            "label": "Timeframe",
+            "type": "Text",
+            "options": [],
+            "destination": "Exit Interview",
+            "showWhenQuestion": "",
+            "showWhenValue": [],
+            "showWhenQuestionId": null,
+            "showWhenInvalid": false
+          },
+          {
+            "id": "kitchen_updated__details",
+            "group": "kitchen_updated",
+            "label": "Details",
+            "type": "Text",
+            "options": [],
+            "destination": "Exit Interview",
+            "showWhenQuestion": "",
+            "showWhenValue": [],
+            "showWhenQuestionId": null,
+            "showWhenInvalid": false
+          }
+        ]
+      },
+      {
+        "group": "bathrooms_updated",
+        "questions": [
+          {
+            "id": "bathrooms_updated__what_bathrooms_were_updated",
+            "group": "bathrooms_updated",
+            "label": "What bathrooms were updated",
+            "type": "MultiSelect",
+            "options": [
+              "M Bath",
+              "Bath 1",
+              "Bath 2",
+              "Bath 3",
+              "Bath 4",
+              "Half Bath",
+              "Other"
+            ],
+            "destination": "Exit Interview",
+            "showWhenQuestion": "",
+            "showWhenValue": [],
+            "showWhenQuestionId": null,
+            "showWhenInvalid": false
+          },
+          {
+            "id": "bathrooms_updated__timeframe",
+            "group": "bathrooms_updated",
+            "label": "Timeframe",
+            "type": "Text",
+            "options": [],
+            "destination": "Exit Interview",
+            "showWhenQuestion": "",
+            "showWhenValue": [],
+            "showWhenQuestionId": null,
+            "showWhenInvalid": false
+          },
+          {
+            "id": "bathrooms_updated__details",
+            "group": "bathrooms_updated",
+            "label": "Details",
+            "type": "Text",
+            "options": [],
+            "destination": "Exit Interview",
+            "showWhenQuestion": "",
+            "showWhenValue": [],
+            "showWhenQuestionId": null,
+            "showWhenInvalid": false
+          }
+        ]
+      },
+      {
+        "group": "floors_updated",
+        "questions": [
+          {
+            "id": "floors_updated__timeframe",
+            "group": "floors_updated",
+            "label": "Timeframe",
+            "type": "Text",
+            "options": [],
+            "destination": "Exit Interview",
+            "showWhenQuestion": "",
+            "showWhenValue": [],
+            "showWhenQuestionId": null,
+            "showWhenInvalid": false
+          },
+          {
+            "id": "floors_updated__details",
+            "group": "floors_updated",
+            "label": "Details",
+            "type": "Text",
+            "options": [],
+            "destination": "Exit Interview",
+            "showWhenQuestion": "",
+            "showWhenValue": [],
+            "showWhenQuestionId": null,
+            "showWhenInvalid": false
+          }
+        ]
+      },
+      {
+        "group": "walls_updated",
+        "questions": [
+          {
+            "id": "walls_updated__timeframe",
+            "group": "walls_updated",
+            "label": "Timeframe",
+            "type": "Text",
+            "options": [],
+            "destination": "Exit Interview",
+            "showWhenQuestion": "",
+            "showWhenValue": [],
+            "showWhenQuestionId": null,
+            "showWhenInvalid": false
+          },
+          {
+            "id": "walls_updated__details",
+            "group": "walls_updated",
+            "label": "Details",
+            "type": "Text",
+            "options": [],
+            "destination": "Exit Interview",
+            "showWhenQuestion": "",
+            "showWhenValue": [],
+            "showWhenQuestionId": null,
+            "showWhenInvalid": false
+          }
+        ]
+      },
+      {
+        "group": "trim_updated",
+        "questions": [
+          {
+            "id": "trim_updated__timeframe",
+            "group": "trim_updated",
+            "label": "Timeframe",
+            "type": "Text",
+            "options": [],
+            "destination": "Exit Interview",
+            "showWhenQuestion": "",
+            "showWhenValue": [],
+            "showWhenQuestionId": null,
+            "showWhenInvalid": false
+          },
+          {
+            "id": "trim_updated__details",
+            "group": "trim_updated",
+            "label": "Details",
+            "type": "Text",
+            "options": [],
+            "destination": "Exit Interview",
+            "showWhenQuestion": "",
+            "showWhenValue": [],
+            "showWhenQuestionId": null,
+            "showWhenInvalid": false
+          }
+        ]
+      },
+      {
+        "group": "cooling_updated",
+        "questions": [
+          {
+            "id": "cooling_updated__timeframe",
+            "group": "cooling_updated",
+            "label": "Timeframe",
+            "type": "Text",
+            "options": [],
+            "destination": "Exit Interview",
+            "showWhenQuestion": "",
+            "showWhenValue": [],
+            "showWhenQuestionId": null,
+            "showWhenInvalid": false
+          },
+          {
+            "id": "cooling_updated__details",
+            "group": "cooling_updated",
+            "label": "Details",
+            "type": "Text",
+            "options": [],
+            "destination": "Exit Interview",
+            "showWhenQuestion": "",
+            "showWhenValue": [],
+            "showWhenQuestionId": null,
+            "showWhenInvalid": false
+          }
+        ]
+      }
+    ],
+    "unsupportedTypes": [],
+    "invalidDestinations": [],
+    "showWhenWarnings": []
+  }
+}
