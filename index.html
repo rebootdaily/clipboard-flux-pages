@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
-<title>Clipboard-Flux 0.20</title>
+<title>Clipboard-Flux 0.21</title>
 <meta name="theme-color" content="#17324d">
 <style>
 :root{--navy:#17324d;--bg:#eef2f5;--line:#d9e0e6;--muted:#66727e;--paper:#fff}
@@ -87,6 +87,16 @@ main{padding:8px 16px 16px;max-width:640px;margin:auto}
 .insp-tab-group{display:flex;flex-direction:column;gap:10px}
 .insp-tab-btn{min-height:52px;border-radius:12px;border:1.5px solid var(--navy);background:#fff;color:var(--navy);font-size:16px;font-weight:700}
 .insp-tab-btn-danger{border-color:#a33;color:#a33}
+.photo-checklist{background:#fff;border:1px solid var(--line);border-radius:14px;padding:10px 16px 12px;margin:16px 0}
+.photo-checklist-category{font-size:11.5px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin:10px 0 4px}
+.photo-checklist-category:first-child{margin-top:0}
+.photo-checklist-row{display:flex;justify-content:space-between;align-items:center;padding:3px 0;font-size:14px;color:#9aa5ad}
+.photo-checklist-row.has-photos{color:var(--navy);font-weight:700}
+.photo-checklist-count{font-size:13px;min-width:18px;text-align:right}
+.general-photo-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(108px,1fr));gap:12px}
+.general-photo-item{position:relative;background:#fff;border:1px solid var(--line);border-radius:10px;padding:6px;display:flex;flex-direction:column;gap:6px}
+.general-photo-item img{width:100%;height:108px;object-fit:cover;border-radius:8px;display:block;cursor:pointer;background:var(--bg)}
+.general-photo-label-select{width:100%;border:1px solid var(--line);border-radius:8px;padding:6px;font-size:12.5px;font-family:inherit;background:#fff;color:var(--navy);min-height:34px}
 .bottom-nav{display:flex;gap:10px;margin-top:22px;padding:14px 0 calc(14px + env(safe-area-inset-bottom));border-top:1px solid var(--line)}
 .bottom-nav-btn{min-height:52px;padding:0 24px;border-radius:12px;border:1.5px solid var(--navy);background:#fff;color:var(--navy);font-size:16px;font-weight:700}
 .bottom-nav-btn-next{margin-left:auto;background:var(--navy);color:#fff}
@@ -105,7 +115,7 @@ main{padding:8px 16px 16px;max-width:640px;margin:auto}
 </style>
 </head>
 <body>
-<header><span class="brand">Clipboard-Flux</span><span class="version" id="version">0.20</span></header>
+<header><span class="brand">Clipboard-Flux</span><span class="version" id="version">0.21</span></header>
 <div id="inspection-bar"></div>
 <nav class="tabs" id="tabs"></nav>
 <main>
@@ -115,6 +125,6 @@ main{padding:8px 16px 16px;max-width:640px;margin:auto}
 </main>
 <div id="inspection-modal" hidden></div>
 <div id="photo-viewer" hidden></div>
-<script src="app.js?v=0.20"></script>
+<script src="app.js?v=0.21"></script>
 </body>
 </html>

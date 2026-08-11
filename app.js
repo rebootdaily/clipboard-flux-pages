@@ -1,4 +1,61 @@
-/* Clipboard-Flux -- Milestone 19: field usability hardening, driven by
+/* Clipboard-Flux -- Milestone 21: general inspection photos ("Front",
+   "Rear", "Kitchen", etc. -- photos that don't belong to any single
+   questionnaire field) plus the workbook PHOTO LABELS sheet that
+   configures them, and a new synthetic "Photos" app tab between Exit
+   Interview and Inspection.
+
+   Data model: reuses the existing Milestone 14/15 `photos` IndexedDB
+   store and record shape completely -- no new store, no version bump.
+   A field photo has fieldId set, category/label always null. A general
+   photo has fieldId null, and category/label that start null
+   ("Unassigned" is just that -- not a separate flag or error state, see
+   Milestone 21 #6) until assigned via the picker on its thumbnail.
+   Existing field-photo records simply don't have category/label
+   properties at all (IndexedDB is schemaless per-record), which
+   toCacheEntry() already treats identically to explicit null -- so nothing
+   about existing inspections needed migrating. loadAllPhotosIntoCache()
+   partitions one inspectionId-scoped read into photosByField (unchanged)
+   and the new flat `generalPhotos` array by checking fieldId, instead of
+   a second IndexedDB query. ingestPhoto()/ingestGeneralPhoto() share one
+   decode-thumbnail-write pipeline (decodeAndStorePhoto()); deletePhoto()/
+   deleteGeneralPhoto() and the two ingest functions are otherwise
+   deliberately parallel, one array each, same as photosByField's own
+   per-field pattern. assignGeneralPhotoLabel() is the one function that
+   changes an *existing* photo's category/label (re-reading the full
+   record from IndexedDB first, since the in-memory cache entry never
+   holds real Blobs -- see toCacheEntry()) -- reassignment and "return to
+   Unassigned" are the exact same call with different arguments, never a
+   delete-and-recreate.
+
+   The Photos tab (renderPhotosTabHtml()) puts Photo Library and Take
+   Photo first, exactly like every per-field photo panel already does,
+   then a compact checklist (Milestone 21 #7) built straight from
+   CFG.photoLabels -- the workbook is the only source of truth for the
+   label list, nothing is hard-coded here -- then a thumbnail grid where
+   each photo carries a native <select> label picker (deliberately not a
+   custom modal, see generalPhotoLabelSelectHtml()'s comment). Reassigning
+   a label never changes a photo's position in the grid, only its
+   caption/the checklist counts, so the grid stays calm to work through
+   one-handed.
+
+   PDF export gets a second, separate "GENERAL PHOTOS" section
+   (pdfBuildGeneralPhotosSectionHtml()) after the existing field-photo
+   "PHOTOS" section -- grouped by category then label in workbook order,
+   Unassigned always last and never silently dropped, reusing the exact
+   same .pdf-photo-group/.pdf-photo-grid CSS the field-photo section
+   already established. JSON export adds category/label to each photo's
+   metadata for round-trip fidelity only, same as every other photo
+   field there -- import still never fabricates a Blob from JSON
+   metadata (Milestone 16's own rule, unchanged).
+
+   Reset/New/Load need zero new code for general photos:
+   idbDeleteAllPhotosForInspection() already deletes by inspectionId
+   regardless of fieldId, and switchToInspection()'s existing
+   loadAllPhotosIntoCache() call already repopulates `generalPhotos`
+   fresh for whichever inspection is now active, the same way it always
+   has for photosByField.
+
+   ---- Milestone 19: field usability hardening, driven by
    physical field testing of 0.18 -- (1) a field can now be activated by
    tapping anywhere on its card (label, blank area, reminder text), not
    only by touching its answer control; (2) the whole active card is now
@@ -183,9 +240,11 @@
   var ACTIVE_INSPECTION_KEY = 'clipboard-flux-active-inspection';
   var OTHER_OPTION = 'Other';
   var EXIT_INTERVIEW_TAB = 'Exit Interview';
-  // Synthetic app-management tab (Milestone 18) -- not a workbook MAIN
-  // tab, appended after Exit Interview by navTabs(), same pattern
-  // Milestone 8 used to append Exit Interview itself onto CFG.main.tabs.
+  // Synthetic app-management tabs -- neither is a workbook MAIN tab,
+  // both appended onto CFG.main.tabs by navTabs(), same pattern
+  // Milestone 8 used to append Exit Interview itself. Photos (Milestone
+  // 21) sits between Exit Interview and Inspection -- see navTabs().
+  var PHOTOS_TAB = 'Photos';
   var INSPECTION_TAB = 'Inspection';
   // How long to wait after the last edit before actually writing to
   // IndexedDB -- long enough that rapid typing collapses into one write,
@@ -194,7 +253,7 @@
   var AUTOSAVE_DEBOUNCE_MS = 700;
   var MIGRATED_INSPECTION_ADDRESS = 'Unsaved / Migrated Inspection';
   // The exported-file schema is versioned independently of
-  // 0.20 -- app releases and the inspection-file format can
+  // 0.21 -- app releases and the inspection-file format can
   // and will drift out of step (a future app version might still need
   // to read a schemaVersion 1 file, or refuse a newer one it doesn't
   // understand yet), so import validation checks schema/schemaVersion
@@ -202,10 +261,10 @@
   var EXPORT_SCHEMA = 'clipboard-flux-inspection';
   var EXPORT_SCHEMA_VERSION = 1;
   var SUPPORTED_SCHEMA_VERSIONS = [1];
-  // Stamped at build time exactly like every other 0.20
+  // Stamped at build time exactly like every other 0.21
   // token in this file -- informational only in the export, never
   // itself validated on import.
-  var APP_VERSION = '0.20';
+  var APP_VERSION = '0.21';
   // Same database as Milestone 14's photos -- name kept for continuity
   // even though it now also holds inspection records; renaming it would
   // mean either abandoning existing photo data or writing a whole
@@ -245,6 +304,15 @@
   // would silently fail, since both depend on the same database.
   var photoOpenFieldId = null;
   var photosByField = {};
+  // Milestone 21: general inspection photos (fieldId null) -- report/
+  // documentation photos that don't belong to any single questionnaire
+  // field (Front, Rear, Kitchen, etc.). Same `photos` IndexedDB store,
+  // same record shape, same toCacheEntry()/loadAllPhotosIntoCache()
+  // pipeline as field photos -- just a flat array instead of a
+  // per-field map, since there's no field to key by. See
+  // decodeAndStorePhoto()/ingestGeneralPhoto() and the Photos tab
+  // section below for the rest of the design.
+  var generalPhotos = [];
   var dbUnavailable = false;
   var photoDbPromise = null;
   var fullViewerState = null;
@@ -730,6 +798,11 @@
     return {
       id: record.id,
       fieldId: record.fieldId,
+      // Milestone 21: null for both on a field photo (and on a general
+      // photo that hasn't been assigned yet -- "Unassigned" is just
+      // category/label both null, not a separate flag).
+      category: record.category || null,
+      label: record.label || null,
       thumbnailUrl: URL.createObjectURL(record.thumbnailBlob),
       mimeType: record.mimeType,
       originalFileName: record.originalFileName || '',
@@ -749,16 +822,20 @@
     Object.keys(photosByField).forEach(function (fid) {
       photosByField[fid].forEach(function (p) { URL.revokeObjectURL(p.thumbnailUrl); });
     });
+    generalPhotos.forEach(function (p) { URL.revokeObjectURL(p.thumbnailUrl); });
   }
 
-  // Populates photosByField from every photo belonging to
-  // activeInspection -- simplest approach for a single inspection's
-  // worth of photos (not paginated/lazy per field), matching every
-  // other piece of state in this app being loaded whole per inspection.
-  // Milestone 15: scoped by the `inspectionId` index instead of the
-  // whole store, so Inspection A's cache can never include Inspection
-  // B's photos even if they share a fieldId. Always revokes the
-  // previous cache's object URLs first -- called both at boot and on
+  // Populates photosByField and generalPhotos from every photo belonging
+  // to activeInspection -- simplest approach for a single inspection's
+  // worth of photos (not paginated/lazy), matching every other piece of
+  // state in this app being loaded whole per inspection. Milestone 15:
+  // scoped by the `inspectionId` index instead of the whole store, so
+  // Inspection A's cache can never include Inspection B's photos even if
+  // they share a fieldId. Milestone 21: a record with fieldId null is a
+  // general photo and goes into the flat generalPhotos array instead of
+  // a photosByField bucket -- the same single IndexedDB read/index just
+  // gets partitioned client-side, no second query needed. Always revokes
+  // the previous cache's object URLs first -- called both at boot and on
   // every inspection switch, so the outgoing inspection's thumbnail
   // URLs (which reference Blobs no longer being displayed) don't leak.
   function loadAllPhotosIntoCache() {
@@ -766,12 +843,19 @@
     return idbGetAllPhotosForInspection(activeInspection.inspectionId).then(function (records) {
       revokeAllPhotoThumbnailUrls();
       var byField = {};
+      var general = [];
       records.forEach(function (r) {
-        if (!byField[r.fieldId]) byField[r.fieldId] = [];
-        byField[r.fieldId].push(toCacheEntry(r));
+        if (r.fieldId == null) {
+          general.push(toCacheEntry(r));
+        } else {
+          if (!byField[r.fieldId]) byField[r.fieldId] = [];
+          byField[r.fieldId].push(toCacheEntry(r));
+        }
       });
       Object.keys(byField).forEach(function (fid) { sortByOrder(byField[fid]); });
+      sortByOrder(general);
       photosByField = byField;
+      generalPhotos = general;
     }).catch(function () {
       dbUnavailable = true;
     });
@@ -819,67 +903,118 @@
     return existing.reduce(function (max, p) { return Math.max(max, p.order); }, -1) + 1;
   }
 
-  // One photo's full ingestion pipeline: decode -> thumbnail -> write
-  // both Blobs to IndexedDB -> append a lightweight cache entry ->
-  // render(). `order` is passed in by the caller rather than computed
-  // here -- ingestPhoto() runs several files concurrently for a
-  // multi-select Photo Library batch, and each one only reaches this
-  // point after its own async decode/thumbnail work finishes in
-  // whatever order that happens to resolve; computing "next order" here
-  // would race every concurrent call against `photosByField`'s
-  // not-yet-updated state and could hand out the same order to more
-  // than one photo. addPhotosForField() reserves the whole batch's
-  // order values synchronously, up front, before any of that async work
-  // starts, so a multi-select's display order always matches its
-  // selection order regardless of how the decodes interleave.
-  // A failure on one file (bad/corrupt image, IDB write failure) is
-  // caught and logged, not thrown -- it never blocks ingesting the rest
-  // of a multi-file "Photo Library" selection.
-  function ingestPhoto(fieldId, file, order) {
+  // Milestone 21: same idea as nextOrderForField(), for the flat
+  // generalPhotos array -- there's no field to key by, so just one
+  // running order across every general photo in the inspection.
+  function nextOrderForGeneral() {
+    return generalPhotos.reduce(function (max, p) { return Math.max(max, p.order); }, -1) + 1;
+  }
+
+  // Shared decode -> thumbnail -> IndexedDB-write pipeline for both a
+  // field photo (fieldId set, category/label always null -- a field
+  // photo is never assigned a general-photo label) and a general photo
+  // (fieldId null; category/label null at capture time -- Milestone 21
+  // #6/#9: a new general photo starts Unassigned, never auto-guessed).
+  // Resolves with the written record (still holding its real Blobs) so
+  // each caller can build its own toCacheEntry() and decide which cache
+  // array it belongs in; rejects (never throws synchronously) on
+  // decode/thumbnail/write failure so one bad file can never take down
+  // a multi-file batch -- see ingestPhoto()/ingestGeneralPhoto()'s own
+  // .catch() handlers, which log and continue rather than propagate.
+  // `order` is always reserved by the caller before any async work
+  // starts (addPhotosForField()/addGeneralPhotos()), never computed in
+  // here, for the same reason: concurrent decodes for a multi-select
+  // batch resolve in whatever order they finish, and computing "next
+  // order" only once a file's own decode finishes would race every
+  // other concurrent file in that same batch against the cache's
+  // not-yet-updated state.
+  function decodeAndStorePhoto(fieldId, category, label, file, order) {
     var decodedUrl = null;
+    var decodedMeta = null;
     return readImageMeta(file).then(function (meta) {
       decodedUrl = meta.url;
-      return makeThumbnailBlob(meta.img, meta.width, meta.height).then(function (thumbBlob) {
-        var record = {
-          id: 'photo_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8),
-          fieldId: fieldId,
-          inspectionId: activeInspection ? activeInspection.inspectionId : null,
-          blob: file,
-          thumbnailBlob: thumbBlob,
-          mimeType: file.type || 'image/jpeg',
-          originalFileName: file.name || '',
-          addedAt: new Date().toISOString(),
-          width: meta.width,
-          height: meta.height,
-          order: order
-        };
-        return idbAdd(record).then(function () {
-          if (!photosByField[fieldId]) photosByField[fieldId] = [];
-          photosByField[fieldId].push(toCacheEntry(record));
-          sortByOrder(photosByField[fieldId]);
-          scheduleAutoSave();
-          render();
-        });
-      });
+      decodedMeta = meta;
+      return makeThumbnailBlob(meta.img, meta.width, meta.height);
+    }).then(function (thumbBlob) {
+      var record = {
+        id: 'photo_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8),
+        fieldId: fieldId,
+        category: category,
+        label: label,
+        inspectionId: activeInspection ? activeInspection.inspectionId : null,
+        blob: file,
+        thumbnailBlob: thumbBlob,
+        mimeType: file.type || 'image/jpeg',
+        originalFileName: file.name || '',
+        addedAt: new Date().toISOString(),
+        width: decodedMeta.width,
+        height: decodedMeta.height,
+        order: order
+      };
+      return idbAdd(record).then(function () { return record; });
+    }).then(function (record) {
+      if (decodedUrl) URL.revokeObjectURL(decodedUrl);
+      return record;
+    }, function (e) {
+      if (decodedUrl) URL.revokeObjectURL(decodedUrl);
+      throw e;
+    });
+  }
+
+  // One field photo's full ingestion: decodeAndStorePhoto() -> append a
+  // lightweight cache entry to photosByField[fieldId] -> render(). A
+  // failure on one file (bad/corrupt image, IDB write failure) is caught
+  // and logged, not thrown -- it never blocks ingesting the rest of a
+  // multi-file "Photo Library" selection.
+  function ingestPhoto(fieldId, file, order) {
+    return decodeAndStorePhoto(fieldId, null, null, file, order).then(function (record) {
+      if (!photosByField[fieldId]) photosByField[fieldId] = [];
+      photosByField[fieldId].push(toCacheEntry(record));
+      sortByOrder(photosByField[fieldId]);
+      scheduleAutoSave();
+      render();
     }).catch(function (e) {
       // A single bad/corrupt image (decode failure) shouldn't be
       // confused with the DB itself being unavailable -- that's already
       // reliably detected once, at startup, by loadAllPhotosIntoCache().
       window.console && console.error && console.error('Clipboard-Flux: photo ingestion failed', e);
       render();
-    }).then(function () {
-      if (decodedUrl) URL.revokeObjectURL(decodedUrl);
+    });
+  }
+
+  // Milestone 21: same pipeline, general (fieldId null) photo -- appends
+  // to the flat generalPhotos array instead of a photosByField bucket.
+  // Always Unassigned (category/label null) at ingestion; see
+  // assignGeneralPhotoLabel() for how a label gets attached afterward.
+  function ingestGeneralPhoto(file, order) {
+    return decodeAndStorePhoto(null, null, null, file, order).then(function (record) {
+      generalPhotos.push(toCacheEntry(record));
+      sortByOrder(generalPhotos);
+      scheduleAutoSave();
+      render();
+    }).catch(function (e) {
+      window.console && console.error && console.error('Clipboard-Flux: general photo ingestion failed', e);
+      render();
     });
   }
 
   // Reserves this whole batch's order values synchronously, before any
-  // file's async decode/thumbnail work starts -- see ingestPhoto()'s
-  // comment for why that matters for a multi-select Photo Library
-  // selection specifically.
+  // file's async decode/thumbnail work starts -- see
+  // decodeAndStorePhoto()'s comment for why that matters for a
+  // multi-select Photo Library selection specifically.
   function addPhotosForField(fieldId, files) {
     var order = nextOrderForField(fieldId);
     Array.prototype.forEach.call(files, function (file) {
       ingestPhoto(fieldId, file, order);
+      order++;
+    });
+  }
+
+  // Milestone 21: same reserve-then-ingest pattern, general photos.
+  function addGeneralPhotos(files) {
+    var order = nextOrderForGeneral();
+    Array.prototype.forEach.call(files, function (file) {
+      ingestGeneralPhoto(file, order);
       order++;
     });
   }
@@ -896,6 +1031,54 @@
       render();
     }).catch(function (e) {
       window.console && console.error && console.error('Clipboard-Flux: photo delete failed', e);
+    });
+  }
+
+  // Milestone 21: same idea, generalPhotos array instead of a
+  // photosByField bucket.
+  function deleteGeneralPhoto(id) {
+    idbDelete(id).then(function () {
+      var idx = generalPhotos.map(function (p) { return p.id; }).indexOf(id);
+      if (idx !== -1) {
+        URL.revokeObjectURL(generalPhotos[idx].thumbnailUrl);
+        generalPhotos.splice(idx, 1);
+      }
+      scheduleAutoSave();
+      render();
+    }).catch(function (e) {
+      window.console && console.error && console.error('Clipboard-Flux: general photo delete failed', e);
+    });
+  }
+
+  // Milestone 21: (re)assigns or clears a general photo's category/label
+  // -- category/label both null means "return to Unassigned" (#6/#8),
+  // never a separate delete-and-recreate. Reads the full record back
+  // from IndexedDB first (the in-memory cache entry only ever holds a
+  // thumbnail URL, never the real Blobs -- see toCacheEntry()), mutates
+  // just the two fields, and put()s it back under the same id, same
+  // idempotent upsert convention every other inspection write in this
+  // file already uses. scheduleAutoSave() afterward matches
+  // ingestPhoto()/deletePhoto()'s own pattern: the Blob/label write
+  // itself is already durable the moment this Promise resolves, so
+  // autosave here exists only to refresh the inspection's own
+  // updatedAt/save-status, exactly like every other photo mutation.
+  function assignGeneralPhotoLabel(id, category, label) {
+    idbGetById(id).then(function (record) {
+      if (!record) return;
+      record.category = category;
+      record.label = label;
+      return idbPutPhoto(record).then(function () {
+        var entry = generalPhotos.filter(function (p) { return p.id === id; })[0];
+        if (entry) {
+          entry.category = category;
+          entry.label = label;
+        }
+        scheduleAutoSave();
+        render();
+      });
+    }).catch(function (e) {
+      window.console && console.error && console.error('Clipboard-Flux: could not assign photo label', e);
+      render();
     });
   }
 
@@ -1497,6 +1680,13 @@
           return {
             id: p.id,
             fieldId: p.fieldId,
+            // Milestone 21: null/null on a field photo, and on a general
+            // photo that's still Unassigned -- included for round-trip
+            // fidelity only, same as every other photo metadata field
+            // here; import never fabricates a Blob from this (see
+            // commitImport()'s comment on externalPhotoManifest).
+            category: p.category || null,
+            label: p.label || null,
             originalFileName: p.originalFileName || '',
             mimeType: p.mimeType || '',
             addedAt: p.addedAt,
@@ -2020,7 +2210,11 @@
   // avoidable gap this milestone's layout rules call out.
   function pdfBuildPhotosSectionHtml(photoRecords, values, disregarded) {
     var excluded = pdfDisregardedFieldIds(values, disregarded);
-    var visible = photoRecords.filter(function (p) { return !excluded[p.fieldId]; });
+    // Milestone 21: defensively excludes general photos (fieldId null)
+    // even though buildPrintDocumentHtml() already only ever passes this
+    // function field photos -- see pdfBuildGeneralPhotosSectionHtml()
+    // for the separate general-photo section.
+    var visible = photoRecords.filter(function (p) { return p.fieldId != null && !excluded[p.fieldId]; });
     if (!visible.length) return '';
     var byField = {};
     visible.forEach(function (p) {
@@ -2044,6 +2238,78 @@
     return '<div class="pdf-section pdf-photos-section">' +
       '<div class="pdf-section-heading">PHOTOS</div>' +
       groupsHtml +
+      '</div>';
+  }
+
+  // Milestone 21: general (report/documentation, fieldId null) photos,
+  // as their own trailing section -- deliberately a separate heading
+  // ("GENERAL PHOTOS") from the field-photo PHOTOS section above rather
+  // than merged into it, since they're grouped by a completely different
+  // axis (workbook PHOTO LABELS category/label, not MAIN/FOLLOW_UP field
+  // order) and mixing the two under one heading would blur a real
+  // distinction (Milestone 21 #14) rather than just declutter the
+  // document. Reuses the exact same .pdf-subsection/.pdf-photo-group/
+  // .pdf-photo-grid CSS the field-photo section already established --
+  // no new PDF styling for this milestone. Categories render in
+  // CFG.photoLabels' own workbook order, labels within a category in
+  // their own workbook order, and Unassigned -- deliberately never
+  // silently dropped, per #6/#13 -- always last if any exist. A photo
+  // with no label displays its original filename as a caption so
+  // multiple Unassigned photos in the same PDF are still distinguishable
+  // from each other, without printing an internal photo id.
+  function pdfBuildGeneralPhotosSectionHtml(generalPhotoRecords) {
+    if (!generalPhotoRecords.length) return '';
+    var byKey = {};
+    generalPhotoRecords.forEach(function (p) {
+      var key = p.label ? (p.category + ' ' + p.label) : '';
+      if (!byKey[key]) byKey[key] = [];
+      byKey[key].push(p);
+    });
+    var subsectionsHtml = '';
+    (CFG.photoLabels.categories || []).forEach(function (cat) {
+      var groupsHtml = '';
+      CFG.photoLabels.labels.filter(function (l) { return l.category === cat; }).forEach(function (l) {
+        var photos = byKey[cat + ' ' + l.label];
+        if (!photos || !photos.length) return;
+        groupsHtml += pdfGeneralPhotoGroupHtml(l.label, photos, false);
+      });
+      if (groupsHtml) {
+        subsectionsHtml += '<div class="pdf-subsection">' +
+          '<div class="pdf-subsection-heading">' + esc(cat) + '</div>' +
+          groupsHtml +
+          '</div>';
+      }
+    });
+    var unassigned = byKey[''];
+    if (unassigned && unassigned.length) {
+      subsectionsHtml += '<div class="pdf-subsection">' +
+        '<div class="pdf-subsection-heading">Unassigned</div>' +
+        pdfGeneralPhotoGroupHtml(null, unassigned, true) +
+        '</div>';
+    }
+    if (!subsectionsHtml) return '';
+    return '<div class="pdf-section pdf-photos-section">' +
+      '<div class="pdf-section-heading">GENERAL PHOTOS</div>' +
+      subsectionsHtml +
+      '</div>';
+  }
+
+  // One label's (or, for Unassigned, one flat list's) photo grid, sorted
+  // by capture/import order. `captionByFilename` is only true for the
+  // Unassigned group -- a labeled group's own heading already says the
+  // label, so per-photo captions there would just repeat it.
+  function pdfGeneralPhotoGroupHtml(label, photos, captionByFilename) {
+    var sorted = photos.slice().sort(function (a, b) { return a.order - b.order; });
+    var itemsHtml = sorted.map(function (p) {
+      var caption = captionByFilename ? (p.originalFileName || 'Unassigned') : '';
+      return '<div class="pdf-photo-item">' +
+        '<img src="' + esc(p.objectUrl) + '" alt="">' +
+        (caption ? '<div class="pdf-photo-caption">' + esc(caption) + '</div>' : '') +
+        '</div>';
+    }).join('');
+    return '<div class="pdf-photo-group">' +
+      (label ? '<div class="pdf-photo-group-heading">' + esc(label) + '</div>' : '') +
+      '<div class="pdf-photo-grid">' + itemsHtml + '</div>' +
       '</div>';
   }
 
@@ -2109,8 +2375,15 @@
     var addr = meta.propertyAddress || '(no address)';
     var mainHtml = pdfBuildMainSectionsHtml(values, otherText, fieldNotes);
     var eiHtml = pdfBuildExitInterviewSectionHtml(values, disregarded, otherText, fieldNotes);
-    var photosHtml = pdfBuildPhotosSectionHtml(photosWithUrls, values, disregarded);
-    var bodyHtml = mainHtml + eiHtml + photosHtml;
+    // Milestone 21: photosWithUrls holds both field and general photos
+    // (generatePdfExport() fetches everything for the inspection in one
+    // read, same as it always has) -- split here, once, so each section
+    // builder only ever sees its own kind.
+    var fieldPhotos = photosWithUrls.filter(function (p) { return p.fieldId != null; });
+    var generalPhotosForPdf = photosWithUrls.filter(function (p) { return p.fieldId == null; });
+    var photosHtml = pdfBuildPhotosSectionHtml(fieldPhotos, values, disregarded);
+    var generalPhotosHtml = pdfBuildGeneralPhotosSectionHtml(generalPhotosForPdf);
+    var bodyHtml = mainHtml + eiHtml + photosHtml + generalPhotosHtml;
     if (!bodyHtml) {
       bodyHtml = '<div class="pdf-empty-note">No inspection content has been entered yet.</div>';
     }
@@ -2217,7 +2490,15 @@
       // explicit instruction -- the thumbnail exists only for the fast
       // in-app photo strip.
       var photosWithUrls = photoRecords.map(function (p) {
-        return { id: p.id, fieldId: p.fieldId, order: p.order, objectUrl: URL.createObjectURL(p.blob) };
+        return {
+          id: p.id,
+          fieldId: p.fieldId,
+          category: p.category || null,
+          label: p.label || null,
+          originalFileName: p.originalFileName || '',
+          order: p.order,
+          objectUrl: URL.createObjectURL(p.blob)
+        };
       });
       var html = buildPrintDocumentHtml(meta, data, photosWithUrls);
       printViaHiddenIframe(html, photosWithUrls);
@@ -2277,6 +2558,160 @@
         '<span class="inspection-address">' + esc(addr) + '</span>' +
         statusHtml +
       '</div>' + warningHtml;
+  }
+
+  // ---- Photos tab (Milestone 21) ----
+  //
+  // "Capture first. Organize later." -- Photo Library and Take Photo are
+  // the two most prominent controls on this tab (same two-button pattern
+  // every per-field photo panel already uses, see photoPanelHtml()), and
+  // neither auto-launches or forces a label. A freshly captured/imported
+  // general photo is Unassigned (category/label both null) until the
+  // appraiser deliberately assigns one from the picker on its thumbnail.
+  //
+  // Below the capture buttons: a compact checklist (one line per
+  // workbook PHOTO LABELS row, grouped by category, in workbook order,
+  // Unassigned always last) showing a live count per label -- and below
+  // that, the actual thumbnail grid. Reassigning a label never moves a
+  // photo's position in the grid (only its caption/count changes), so
+  // tapping a picker never makes the item you just touched jump
+  // somewhere else.
+
+  // A photo with no label counts toward Unassigned, never toward any
+  // category+label pair -- these two helpers are the single source of
+  // truth the checklist and the picker's own "current selection" both
+  // read from, so they can never drift out of sync with each other.
+  function generalPhotoCountFor(category, label) {
+    return generalPhotos.filter(function (p) { return p.category === category && p.label === label; }).length;
+  }
+
+  function unassignedGeneralPhotoCount() {
+    return generalPhotos.filter(function (p) { return !p.label; }).length;
+  }
+
+  // Compact checklist -- Milestone 21 #7's worked example. Zero-count
+  // rows get a muted class (`.photo-checklist-row` alone) so they stay
+  // legible but never visually compete with rows that actually have
+  // photos (`.has-photos`); this is deliberately the only thing that
+  // distinguishes them; there's no separate "hide empty rows" mode,
+  // since the whole point is a quick, complete visual checklist.
+  function renderPhotoChecklistHtml() {
+    var html = '<div class="photo-checklist">';
+    (CFG.photoLabels.categories || []).forEach(function (cat) {
+      html += '<div class="photo-checklist-category">' + esc(cat) + '</div>';
+      CFG.photoLabels.labels.filter(function (l) { return l.category === cat; }).forEach(function (l) {
+        var n = generalPhotoCountFor(cat, l.label);
+        html += '<div class="photo-checklist-row' + (n > 0 ? ' has-photos' : '') + '">' +
+          '<span>' + esc(l.label) + '</span><span class="photo-checklist-count">' + n + '</span>' +
+          '</div>';
+      });
+    });
+    var uCount = unassignedGeneralPhotoCount();
+    html += '<div class="photo-checklist-category">Unassigned</div>' +
+      '<div class="photo-checklist-row' + (uCount > 0 ? ' has-photos' : '') + '">' +
+        '<span>Unassigned</span><span class="photo-checklist-count">' + uCount + '</span>' +
+      '</div>';
+    return html + '</div>';
+  }
+
+  // Native <select> as the label picker -- deliberately not a custom
+  // modal (Milestone 21 #8's "avoid a large modal... if a compact mobile
+  // control is cleaner"): a native select opens the OS's own compact
+  // picker on iOS/Android, needs no extra markup or backdrop, and is
+  // exactly as fast to use one-handed as a picker gets. Options are
+  // indexed by position in CFG.photoLabels.labels (never by re-encoding
+  // category/label text into the option value), so there's no delimiter
+  // to ever collide with a label's own text -- see the onchange handler
+  // in wirePhotosTabControls().
+  function generalPhotoLabelSelectHtml(photo) {
+    var html = '<option value=""' + (!photo.label ? ' selected' : '') + '>Unassigned</option>';
+    var byCategory = {};
+    (CFG.photoLabels.labels || []).forEach(function (l, idx) {
+      if (!byCategory[l.category]) byCategory[l.category] = [];
+      byCategory[l.category].push({ label: l.label, idx: idx });
+    });
+    (CFG.photoLabels.categories || []).forEach(function (cat) {
+      html += '<optgroup label="' + esc(cat) + '">';
+      (byCategory[cat] || []).forEach(function (entry) {
+        var isSel = photo.category === cat && photo.label === entry.label;
+        html += '<option value="' + entry.idx + '"' + (isSel ? ' selected' : '') + '>' + esc(entry.label) + '</option>';
+      });
+      html += '</optgroup>';
+    });
+    return html;
+  }
+
+  function generalPhotoItemHtml(p) {
+    return '<div class="general-photo-item">' +
+      '<img src="' + esc(p.thumbnailUrl) + '" alt="" data-role="general-photo-view" data-photo-id="' + esc(p.id) + '">' +
+      '<button type="button" class="photo-delete-btn" data-role="general-photo-delete" ' +
+        'data-photo-id="' + esc(p.id) + '" aria-label="Delete photo">&times;</button>' +
+      '<select class="general-photo-label-select" data-role="general-photo-label-select" ' +
+        'data-photo-id="' + esc(p.id) + '">' +
+        generalPhotoLabelSelectHtml(p) +
+      '</select>' +
+      '</div>';
+  }
+
+  function renderPhotosTabHtml() {
+    var warningHtml = dbUnavailable
+      ? '<div class="shell-note error">Photos aren\'t available in this browser ' +
+        '(IndexedDB is blocked or unsupported).</div>'
+      : '';
+    var actionsHtml =
+      '<div class="insp-tab-group">' +
+        '<button type="button" class="insp-tab-btn" data-role="general-photo-library">Photo Library</button>' +
+        '<button type="button" class="insp-tab-btn" data-role="general-take-photo">Take Photo</button>' +
+      '</div>' +
+      '<input type="file" accept="image/*" multiple data-role="general-photo-library-input" hidden>' +
+      '<input type="file" accept="image/*" capture="environment" data-role="general-take-photo-input" hidden>';
+    var gridHtml = generalPhotos.length
+      ? '<div class="general-photo-grid">' + generalPhotos.map(generalPhotoItemHtml).join('') + '</div>'
+      : '<div class="shell-note">No general photos yet -- Front, Rear, Kitchen, Street Scene, etc.</div>';
+    return warningHtml + actionsHtml + renderPhotoChecklistHtml() + gridHtml;
+  }
+
+  function wirePhotosTabControls() {
+    var libBtn = $('[data-role="general-photo-library"]');
+    var libInput = $('[data-role="general-photo-library-input"]');
+    if (libBtn && libInput) {
+      libBtn.onclick = function () { libInput.click(); };
+      libInput.onchange = function () {
+        if (libInput.files && libInput.files.length) addGeneralPhotos(libInput.files);
+        libInput.value = '';
+      };
+    }
+    var takeBtn = $('[data-role="general-take-photo"]');
+    var takeInput = $('[data-role="general-take-photo-input"]');
+    if (takeBtn && takeInput) {
+      takeBtn.onclick = function () { takeInput.click(); };
+      takeInput.onchange = function () {
+        if (takeInput.files && takeInput.files.length) addGeneralPhotos(takeInput.files);
+        takeInput.value = '';
+      };
+    }
+    Array.prototype.forEach.call(document.querySelectorAll('[data-role="general-photo-view"]'), function (img) {
+      img.onclick = function () { openFullPhotoViewer(null, img.dataset.photoId); };
+    });
+    Array.prototype.forEach.call(document.querySelectorAll('[data-role="general-photo-delete"]'), function (btn) {
+      btn.onclick = function () {
+        // Same lightweight native-confirm guard as a field photo's own
+        // delete button -- see wireFields()'s [data-role="photo-delete"]
+        // handler.
+        if (window.confirm('Delete this photo?')) deleteGeneralPhoto(btn.dataset.photoId);
+      };
+    });
+    Array.prototype.forEach.call(document.querySelectorAll('[data-role="general-photo-label-select"]'), function (sel) {
+      sel.onchange = function () {
+        var id = sel.dataset.photoId;
+        if (sel.value === '') {
+          assignGeneralPhotoLabel(id, null, null);
+          return;
+        }
+        var entry = CFG.photoLabels.labels[Number(sel.value)];
+        if (entry) assignGeneralPhotoLabel(id, entry.category, entry.label);
+      };
+    });
   }
 
   // The synthetic Inspection tab's content -- every inspection-
@@ -2830,7 +3265,7 @@
   }
 
   function navTabs() {
-    return CFG.main.tabs.concat([EXIT_INTERVIEW_TAB, INSPECTION_TAB]);
+    return CFG.main.tabs.concat([EXIT_INTERVIEW_TAB, PHOTOS_TAB, INSPECTION_TAB]);
   }
 
   function renderTabs() {
@@ -2901,6 +3336,13 @@
       $('#screen').innerHTML = renderExitInterviewHtml() + renderBottomNavHtml();
       wireFields();
       wireExitInterviewControls();
+      wireBottomNav();
+      return;
+    }
+
+    if (activeTab === PHOTOS_TAB) {
+      $('#screen').innerHTML = renderPhotosTabHtml() + renderBottomNavHtml();
+      wirePhotosTabControls();
       wireBottomNav();
       return;
     }
@@ -3188,7 +3630,7 @@
     flushPendingSave().catch(function () {});
   });
 
-  fetch('config.json?v=0.20', { cache: 'no-store' })
+  fetch('config.json?v=0.21', { cache: 'no-store' })
     .then(function (r) {
       if (!r.ok) throw new Error('HTTP ' + r.status);
       return r.json();

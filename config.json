@@ -1,5 +1,5 @@
 {
-  "version": "0.20",
+  "version": "0.21",
   "inputRules": {
     "sheet": "INPUT RULES",
     "validTypes": [
@@ -1543,7 +1543,7 @@
         "options": [],
         "followUpTrigger": [],
         "followUpGroup": "",
-        "reminder": "MDC rental: \u226570 sf \u00b7 \u22658 ft min width. FNMA sets no size minimum."
+        "reminder": "FBC: Habitable room \u226570 sf \u00b7 \u22657 ft min horizontal dimension. MDC rental sleeping room: \u22658 ft width."
       },
       {
         "id": "bathrooms",
@@ -2345,5 +2345,75 @@
     "unsupportedTypes": [],
     "invalidDestinations": [],
     "showWhenWarnings": []
+  },
+  "photoLabels": {
+    "sheet": "PHOTO LABELS",
+    "categories": [
+      "Exterior",
+      "Interior",
+      "Other"
+    ],
+    "labels": [
+      {
+        "category": "Exterior",
+        "label": "Front"
+      },
+      {
+        "category": "Exterior",
+        "label": "Rear"
+      },
+      {
+        "category": "Exterior",
+        "label": "Street Scene"
+      },
+      {
+        "category": "Exterior",
+        "label": "Left Side"
+      },
+      {
+        "category": "Exterior",
+        "label": "Right Side"
+      },
+      {
+        "category": "Exterior",
+        "label": "Pool"
+      },
+      {
+        "category": "Exterior",
+        "label": "Additional Exterior"
+      },
+      {
+        "category": "Interior",
+        "label": "Kitchen"
+      },
+      {
+        "category": "Interior",
+        "label": "Living Area"
+      },
+      {
+        "category": "Interior",
+        "label": "Bedroom"
+      },
+      {
+        "category": "Interior",
+        "label": "Bathroom"
+      },
+      {
+        "category": "Interior",
+        "label": "Laundry"
+      },
+      {
+        "category": "Interior",
+        "label": "Garage"
+      },
+      {
+        "category": "Interior",
+        "label": "Additional Interior"
+      },
+      {
+        "category": "Other",
+        "label": "Additional Photo"
+      }
+    ]
   }
 }
