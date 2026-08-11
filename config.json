@@ -1,5 +1,5 @@
 {
-  "version": "0.19",
+  "version": "0.20",
   "inputRules": {
     "sheet": "INPUT RULES",
     "validTypes": [
@@ -374,7 +374,7 @@
         ],
         "followUpTrigger": [],
         "followUpGroup": "",
-        "reminder": "FHA: Take photo of utility/locate if well"
+        "reminder": "FHA: Take photo of utility/locate if well. Well \u226550 ft from septic tank, \u2265100 ft from drain field."
       },
       {
         "id": "water_on",
@@ -432,7 +432,7 @@
         "options": [],
         "followUpTrigger": [],
         "followUpGroup": "",
-        "reminder": "Extras/Adverse conditions?"
+        "reminder": "Extras/Adverse conditions? FHA: note standing water/improper grading (positive drainage required)."
       },
       {
         "id": "driveway_surface",
@@ -532,7 +532,7 @@
         "options": [],
         "followUpTrigger": [],
         "followUpGroup": "",
-        "reminder": ""
+        "reminder": "ANSI: a level is below-grade if any part of it is below grade."
       },
       {
         "id": "number_of_units",
@@ -618,7 +618,7 @@
         ],
         "followUpTrigger": [],
         "followUpGroup": "",
-        "reminder": ""
+        "reminder": "MDC rental: no basement/cellar space may be used as a habitable room."
       },
       {
         "id": "foundation_walls",
@@ -635,7 +635,7 @@
         ],
         "followUpTrigger": [],
         "followUpGroup": "",
-        "reminder": ""
+        "reminder": "FNMA/FHA: settlement, water seepage, or cracking \u2192 document & photograph."
       },
       {
         "id": "exterior_walls",
@@ -689,7 +689,7 @@
         ],
         "followUpTrigger": [],
         "followUpGroup": "",
-        "reminder": ""
+        "reminder": "FHA: roof life under 2 yrs \u2192 subject to inspection."
       },
       {
         "id": "roof_updated",
@@ -1273,7 +1273,7 @@
         ],
         "followUpTrigger": [],
         "followUpGroup": "",
-        "reminder": "FHA: Take pictures in attic"
+        "reminder": "FHA: Take pictures in attic. Note water stains, mold smell, or poor ventilation."
       },
       {
         "id": "heating",
@@ -1334,7 +1334,7 @@
         "options": [],
         "followUpTrigger": [],
         "followUpGroup": "",
-        "reminder": ""
+        "reminder": "ANSI: \u22657 ft ceiling (finished area). Sloped: \u226550% of room \u22657 ft; under 5 ft excluded."
       },
       {
         "id": "refrigerator",
@@ -1543,7 +1543,7 @@
         "options": [],
         "followUpTrigger": [],
         "followUpGroup": "",
-        "reminder": ""
+        "reminder": "MDC rental: \u226570 sf \u00b7 \u22658 ft min width. FNMA sets no size minimum."
       },
       {
         "id": "bathrooms",

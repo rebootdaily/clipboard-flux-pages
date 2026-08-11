@@ -194,7 +194,7 @@
   var AUTOSAVE_DEBOUNCE_MS = 700;
   var MIGRATED_INSPECTION_ADDRESS = 'Unsaved / Migrated Inspection';
   // The exported-file schema is versioned independently of
-  // 0.19 -- app releases and the inspection-file format can
+  // 0.20 -- app releases and the inspection-file format can
   // and will drift out of step (a future app version might still need
   // to read a schemaVersion 1 file, or refuse a newer one it doesn't
   // understand yet), so import validation checks schema/schemaVersion
@@ -202,10 +202,10 @@
   var EXPORT_SCHEMA = 'clipboard-flux-inspection';
   var EXPORT_SCHEMA_VERSION = 1;
   var SUPPORTED_SCHEMA_VERSIONS = [1];
-  // Stamped at build time exactly like every other 0.19
+  // Stamped at build time exactly like every other 0.20
   // token in this file -- informational only in the export, never
   // itself validated on import.
-  var APP_VERSION = '0.19';
+  var APP_VERSION = '0.20';
   // Same database as Milestone 14's photos -- name kept for continuity
   // even though it now also holds inspection records; renaming it would
   // mean either abandoning existing photo data or writing a whole
@@ -3188,7 +3188,7 @@
     flushPendingSave().catch(function () {});
   });
 
-  fetch('config.json?v=0.19', { cache: 'no-store' })
+  fetch('config.json?v=0.20', { cache: 'no-store' })
     .then(function (r) {
       if (!r.ok) throw new Error('HTTP ' + r.status);
       return r.json();
