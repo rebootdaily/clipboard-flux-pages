@@ -79,7 +79,7 @@
   },
   "main": {
     "sheet": "MAIN",
-    "fieldCount": 97,
+    "fieldCount": 99,
     "tabs": [
       "Property",
       "Off Site",
@@ -91,6 +91,28 @@
       {
         "id": "address",
         "label": "Address",
+        "urar": "Subject",
+        "tab": "Property",
+        "type": "Text",
+        "options": [],
+        "followUpTrigger": [],
+        "followUpGroup": "",
+        "reminder": ""
+      },
+      {
+        "id": "city",
+        "label": "City",
+        "urar": "Subject",
+        "tab": "Property",
+        "type": "Text",
+        "options": [],
+        "followUpTrigger": [],
+        "followUpGroup": "",
+        "reminder": ""
+      },
+      {
+        "id": "zip_code",
+        "label": "Zip Code",
         "urar": "Subject",
         "tab": "Property",
         "type": "Text",
