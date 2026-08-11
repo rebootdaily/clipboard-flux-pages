@@ -20,12 +20,14 @@
    decode-thumbnail-write pipeline (decodeAndStorePhoto()); deletePhoto()/
    deleteGeneralPhoto() and the two ingest functions are otherwise
    deliberately parallel, one array each, same as photosByField's own
-   per-field pattern. assignGeneralPhotoLabel() is the one function that
-   changes an *existing* photo's category/label (re-reading the full
-   record from IndexedDB first, since the in-memory cache entry never
-   holds real Blobs -- see toCacheEntry()) -- reassignment and "return to
-   Unassigned" are the exact same call with different arguments, never a
-   delete-and-recreate.
+   per-field pattern. assignPhotoLabel() (Milestone 21.1: renamed and
+   generalized from assignGeneralPhotoLabel(), see that milestone's own
+   header section below) is the one function that changes an *existing*
+   photo's category/label (re-reading the full record from IndexedDB
+   first, since the in-memory cache entry never holds real Blobs -- see
+   toCacheEntry()) -- reassignment and "return to Unassigned"/"remove
+   report label" are the exact same call with different arguments, never
+   a delete-and-recreate.
 
    The Photos tab (renderPhotosTabHtml()) puts Photo Library and Take
    Photo first, exactly like every per-field photo panel already does,
@@ -54,6 +56,67 @@
    loadAllPhotosIntoCache() call already repopulates `generalPhotos`
    fresh for whichever inspection is now active, the same way it always
    has for photosByField.
+
+   ---- Milestone 21.1: unified inspection photo library -- corrective
+   fix for a field-use report that a photo captured from a field (e.g.
+   Property Address) stayed attached to that field but never showed up
+   in the Photos tab. Root cause: renderPhotosTabHtml() and its helpers
+   only ever read the flat `generalPhotos` array (fieldId null); a field
+   photo lives in photosByField and was never merged in anywhere. Fixed
+   in the query/render layer only -- no IndexedDB schema change, no new
+   store, no photo record ever duplicated or copied between the two
+   caches, and photoPanelHtml()/wireFields()'s per-field photo panel is
+   byte-for-byte unchanged (still shows exactly the photos it always
+   did, exactly the same way).
+
+   allPhotoCacheEntries() (new) is the Photos tab's one merge point --
+   computed fresh from photosByField + generalPhotos on every call, never
+   itself stored, so there is nothing new that could drift out of sync
+   with the two caches that remain each mutation's actual source of
+   truth. A field-linked photo may now also carry a report label
+   (category/label) without losing its fieldId -- assignPhotoLabel(id,
+   fieldId, category, label), renamed and generalized from Milestone 21's
+   assignGeneralPhotoLabel(id, category, label), only ever writes
+   category/label; fieldId is never read from or written by it at all,
+   so field linkage cannot be lost by relabeling, reassigning, or
+   clearing a label back to Unassigned.
+
+   The checklist (renderPhotoChecklistHtml()) now counts a photo toward
+   its category+label pair regardless of fieldId (#6), plus a new "Field
+   Photos" row for field-linked photos with no report label yet; the
+   review list below it (renderPhotoReviewListHtml(), replacing the old
+   flat `generalPhotos`-only grid) shows every photo in the inspection
+   exactly once, bucketed the same three mutually-exclusive ways
+   (labeled -- regardless of field linkage -- then field-linked-with-no-
+   label, then Unassigned) so the checklist and the grid can never
+   disagree about where a photo belongs. photoItemHtml() (renamed/
+   extended from generalPhotoItemHtml()) adds a compact secondary-text
+   source note ("From: <field>") via the shared fieldLabelById() resolver
+   (renamed from the PDF-only pdfFieldLabelById(), now used by both the
+   PDF and the Photos tab so they can never disagree on a field's display
+   name, with the same safe-fallback-to-'Field Photo' behavior for an
+   orphaned/legacy fieldId).
+
+   wirePhotosTabControls()'s view/delete/label-picker handlers now read
+   which field (if any) an item belongs to off that item's own
+   data-field-id and dispatch to the *same* functions the per-field photo
+   panel already uses (openFullPhotoViewer(), deletePhoto()) for a
+   field-linked photo, or the Milestone 21 general-photo functions
+   (deleteGeneralPhoto()) otherwise -- so "delete from Photos" for a
+   field-linked photo *is* "delete from the field" (same idbDelete() +
+   same photosByField-cache splice), never a second, parallel deletion
+   path that could disagree with the field panel about what still
+   exists.
+
+   PDF export (buildPrintDocumentHtml()): a labeled photo -- field-linked
+   or not -- now prints once, under GENERAL PHOTOS grouped by its report
+   label (the more specific, deliberately-chosen fact winning over field
+   association); an unlabeled field photo still prints once, under
+   PHOTOS, field-grouped, exactly as before. The two filters partitioning
+   photosWithUrls are simply each other's negation, so a photo can never
+   land in both sections or neither. JSON export needed no changes at
+   all: exportInspectionJson() already included fieldId and category/
+   label on every photo, field-linked or not.
 
    ---- Milestone 19: field usability hardening, driven by
    physical field testing of 0.18 -- (1) a field can now be activated by
@@ -253,7 +316,7 @@
   var AUTOSAVE_DEBOUNCE_MS = 700;
   var MIGRATED_INSPECTION_ADDRESS = 'Unsaved / Migrated Inspection';
   // The exported-file schema is versioned independently of
-  // 0.21 -- app releases and the inspection-file format can
+  // 0.21.1 -- app releases and the inspection-file format can
   // and will drift out of step (a future app version might still need
   // to read a schemaVersion 1 file, or refuse a newer one it doesn't
   // understand yet), so import validation checks schema/schemaVersion
@@ -261,10 +324,10 @@
   var EXPORT_SCHEMA = 'clipboard-flux-inspection';
   var EXPORT_SCHEMA_VERSION = 1;
   var SUPPORTED_SCHEMA_VERSIONS = [1];
-  // Stamped at build time exactly like every other 0.21
+  // Stamped at build time exactly like every other 0.21.1
   // token in this file -- informational only in the export, never
   // itself validated on import.
-  var APP_VERSION = '0.21';
+  var APP_VERSION = '0.21.1';
   // Same database as Milestone 14's photos -- name kept for continuity
   // even though it now also holds inspection records; renaming it would
   // mean either abandoning existing photo data or writing a whole
@@ -861,6 +924,34 @@
     });
   }
 
+  // Milestone 21.1: the Photos tab's single unified view over every photo
+  // in the current inspection, field-linked and general alike -- computed
+  // fresh from photosByField/generalPhotos on every call rather than
+  // stored as its own third array, so it can never drift out of sync
+  // with the two caches that are still each mutation's own source of
+  // truth (ingestPhoto/deletePhoto touch photosByField, ingestGeneral
+  // Photo/deleteGeneralPhoto touch generalPhotos, exactly as before --
+  // this milestone changes how the Photos tab *reads* that state, never
+  // how it's written). Cheap enough to recompute on every render: a
+  // field inspection's photo count is small, and this only runs while
+  // the Photos tab itself is active.
+  function allPhotoCacheEntries() {
+    var all = [];
+    Object.keys(photosByField).forEach(function (fid) {
+      all = all.concat(photosByField[fid]);
+    });
+    return all.concat(generalPhotos);
+  }
+
+  // Chronological order across a mixed field/general list -- `order` is
+  // only ever comparable *within* one field's own bucket or the flat
+  // generalPhotos array (see nextOrderForField()/nextOrderForGeneral()'s
+  // comments), so it can't be used to sort a merged list; addedAt can.
+  function sortByAddedAt(list) {
+    list.sort(function (a, b) { return (a.addedAt || '').localeCompare(b.addedAt || ''); });
+    return list;
+  }
+
   // Decodes a File/Blob just far enough to know its natural pixel size
   // and to have a drawable <img> for thumbnail generation -- uses a
   // plain <img>+object-URL rather than createImageBitmap() so this
@@ -985,7 +1076,7 @@
   // Milestone 21: same pipeline, general (fieldId null) photo -- appends
   // to the flat generalPhotos array instead of a photosByField bucket.
   // Always Unassigned (category/label null) at ingestion; see
-  // assignGeneralPhotoLabel() for how a label gets attached afterward.
+  // assignPhotoLabel() for how a label gets attached afterward.
   function ingestGeneralPhoto(file, order) {
     return decodeAndStorePhoto(null, null, null, file, order).then(function (record) {
       generalPhotos.push(toCacheEntry(record));
@@ -1050,25 +1141,37 @@
     });
   }
 
-  // Milestone 21: (re)assigns or clears a general photo's category/label
-  // -- category/label both null means "return to Unassigned" (#6/#8),
-  // never a separate delete-and-recreate. Reads the full record back
-  // from IndexedDB first (the in-memory cache entry only ever holds a
-  // thumbnail URL, never the real Blobs -- see toCacheEntry()), mutates
-  // just the two fields, and put()s it back under the same id, same
-  // idempotent upsert convention every other inspection write in this
-  // file already uses. scheduleAutoSave() afterward matches
-  // ingestPhoto()/deletePhoto()'s own pattern: the Blob/label write
-  // itself is already durable the moment this Promise resolves, so
-  // autosave here exists only to refresh the inspection's own
-  // updatedAt/save-status, exactly like every other photo mutation.
-  function assignGeneralPhotoLabel(id, category, label) {
+  // Milestone 21: (re)assigns or clears a photo's category/label --
+  // category/label both null means "return to Unassigned"/"remove report
+  // label" (#6/#8), never a separate delete-and-recreate. Reads the full
+  // record back from IndexedDB first (the in-memory cache entry only
+  // ever holds a thumbnail URL, never the real Blobs -- see
+  // toCacheEntry()), mutates just the two fields, and put()s it back
+  // under the same id, same idempotent upsert convention every other
+  // inspection write in this file already uses. scheduleAutoSave()
+  // afterward matches ingestPhoto()/deletePhoto()'s own pattern: the
+  // Blob/label write itself is already durable the moment this Promise
+  // resolves, so autosave here exists only to refresh the inspection's
+  // own updatedAt/save-status, exactly like every other photo mutation.
+  //
+  // Milestone 21.1 #4: fieldId is never touched here -- a field-linked
+  // photo keeps its fieldId (and stays visible under its original field)
+  // no matter what happens to category/label; assigning, reassigning, or
+  // removing a report label is purely an edit to those two properties.
+  // `fieldId` (the caller's own field, if any -- the Photos tab already
+  // knows this from the entry it's editing) says which cache array
+  // actually holds this photo's live entry (photosByField[fieldId] vs.
+  // the flat generalPhotos), so the in-memory patch lands in the same
+  // place ingestPhoto()/ingestGeneralPhoto() originally put it, without
+  // a full-cache rescan.
+  function assignPhotoLabel(id, fieldId, category, label) {
     idbGetById(id).then(function (record) {
       if (!record) return;
       record.category = category;
       record.label = label;
       return idbPutPhoto(record).then(function () {
-        var entry = generalPhotos.filter(function (p) { return p.id === id; })[0];
+        var arr = fieldId ? (photosByField[fieldId] || []) : generalPhotos;
+        var entry = arr.filter(function (p) { return p.id === id; })[0];
         if (entry) {
           entry.category = category;
           entry.label = label;
@@ -2124,9 +2227,13 @@
   }
 
   // Looks a field/question id up by id across both MAIN fields and every
-  // FOLLOW_UP question, for photo captions -- a photo's fieldId is
-  // always one or the other.
-  function pdfFieldLabelById(fieldId) {
+  // FOLLOW_UP question -- a photo's fieldId is always one or the other.
+  // Shared by the PDF's field-photo captions (Milestone 17) and the
+  // Photos tab's "From: <field>" source note (Milestone 21.1) -- one
+  // resolver, so both surfaces always agree on a field's display name
+  // and an orphaned/legacy fieldId degrades the same safe way (null,
+  // never a thrown error) in either place.
+  function fieldLabelById(fieldId) {
     var f = CFG.main.fields.filter(function (x) { return x.id === fieldId; })[0];
     if (f) return f.label;
     var groups = (CFG.followUp && CFG.followUp.groups) || [];
@@ -2147,7 +2254,7 @@
   // (an orphaned/corrupted record) -- never a raw photo id or field id.
   function pdfPhotoCaption(p) {
     if (p.label && String(p.label).trim()) return p.label;
-    return pdfFieldLabelById(p.fieldId) || 'Unassigned Photo';
+    return fieldLabelById(p.fieldId) || 'Unassigned Photo';
   }
 
   // fieldIds belonging to an active-but-Disregarded Exit Interview
@@ -2223,7 +2330,7 @@
     });
     var groupsHtml = pdfOrderedFieldIdsWithPhotos(visible).map(function (fieldId) {
       var photos = byField[fieldId].slice().sort(function (a, b) { return a.order - b.order; });
-      var label = pdfFieldLabelById(fieldId) || 'Unassigned Photo';
+      var label = fieldLabelById(fieldId) || 'Unassigned Photo';
       var itemsHtml = photos.map(function (p) {
         return '<div class="pdf-photo-item">' +
           '<img src="' + esc(p.objectUrl) + '" alt="">' +
@@ -2379,8 +2486,19 @@
     // (generatePdfExport() fetches everything for the inspection in one
     // read, same as it always has) -- split here, once, so each section
     // builder only ever sees its own kind.
-    var fieldPhotos = photosWithUrls.filter(function (p) { return p.fieldId != null; });
-    var generalPhotosForPdf = photosWithUrls.filter(function (p) { return p.fieldId == null; });
+    //
+    // Milestone 21.1: a field-linked photo can now also carry a report
+    // label (Photos-tab #4), so the split is no longer purely by
+    // fieldId -- it's "has a report label" that decides where a photo
+    // prints, never both. A labeled photo (field-linked or not) goes to
+    // GENERAL PHOTOS, grouped by that label -- the more specific,
+    // user-chosen fact wins over field-association, per #12's "prefer
+    // report label grouping when one exists." An unlabeled field photo
+    // still prints under PHOTOS, field-grouped, exactly as before. Every
+    // photo lands in exactly one of these two filters (the label check
+    // is identical, just negated), so no photo can ever print twice.
+    var fieldPhotos = photosWithUrls.filter(function (p) { return p.fieldId != null && !(p.category && p.label); });
+    var generalPhotosForPdf = photosWithUrls.filter(function (p) { return p.fieldId == null || (p.category && p.label); });
     var photosHtml = pdfBuildPhotosSectionHtml(fieldPhotos, values, disregarded);
     var generalPhotosHtml = pdfBuildGeneralPhotosSectionHtml(generalPhotosForPdf);
     var bodyHtml = mainHtml + eiHtml + photosHtml + generalPhotosHtml;
@@ -2560,7 +2678,7 @@
       '</div>' + warningHtml;
   }
 
-  // ---- Photos tab (Milestone 21) ----
+  // ---- Photos tab (Milestone 21, unified Milestone 21.1) ----
   //
   // "Capture first. Organize later." -- Photo Library and Take Photo are
   // the two most prominent controls on this tab (same two-button pattern
@@ -2571,26 +2689,42 @@
   //
   // Below the capture buttons: a compact checklist (one line per
   // workbook PHOTO LABELS row, grouped by category, in workbook order,
-  // Unassigned always last) showing a live count per label -- and below
-  // that, the actual thumbnail grid. Reassigning a label never moves a
-  // photo's position in the grid (only its caption/count changes), so
-  // tapping a picker never makes the item you just touched jump
-  // somewhere else.
+  // Field Photos and Unassigned always last) showing a live count per
+  // label -- and below that, the review list (Milestone 21.1: every
+  // photo in the inspection, field-linked and general alike -- see
+  // renderPhotoReviewListHtml()). Reassigning a label never moves a
+  // photo within its own grid row order (only its caption/count/section
+  // changes), so tapping a picker never makes the item you just touched
+  // jump somewhere unexpected.
 
-  // A photo with no label counts toward Unassigned, never toward any
-  // category+label pair -- these two helpers are the single source of
-  // truth the checklist and the picker's own "current selection" both
-  // read from, so they can never drift out of sync with each other.
-  function generalPhotoCountFor(category, label) {
-    return generalPhotos.filter(function (p) { return p.category === category && p.label === label; }).length;
+  // Milestone 21.1: a photo counts toward a category+label pair the
+  // moment both are set, regardless of whether it's also field-linked
+  // (#6 -- "count photos assigned that label regardless of whether they
+  // are also linked to a field"); toward Field Photos if it's
+  // field-linked and still has no report label; toward Unassigned only
+  // if it's neither. Every photo in allPhotoCacheEntries() matches
+  // exactly one of these three checks, so the three counts (plus the
+  // per-label counts, which are mutually exclusive with each other by
+  // definition) can never double-count or drop a photo. These, plus
+  // generalPhotoLabelSelectHtml()'s own "current selection" check, are
+  // the single source of truth the checklist and the picker both read
+  // from, so they can never drift out of sync with each other.
+  function photoCountForLabel(category, label) {
+    return allPhotoCacheEntries().filter(function (p) { return p.category === category && p.label === label; }).length;
   }
 
-  function unassignedGeneralPhotoCount() {
-    return generalPhotos.filter(function (p) { return !p.label; }).length;
+  function fieldPhotoNoLabelCount() {
+    return allPhotoCacheEntries().filter(function (p) { return p.fieldId != null && !(p.category && p.label); }).length;
   }
 
-  // Compact checklist -- Milestone 21 #7's worked example. Zero-count
-  // rows get a muted class (`.photo-checklist-row` alone) so they stay
+  function unassignedPhotoCount() {
+    return allPhotoCacheEntries().filter(function (p) { return p.fieldId == null && !(p.category && p.label); }).length;
+  }
+
+  // Compact checklist -- Milestone 21 #7's worked example, extended by
+  // Milestone 21.1 #6 with a Field Photos row (field-linked photos that
+  // don't yet have a report label) ahead of Unassigned. Zero-count rows
+  // get a muted class (`.photo-checklist-row` alone) so they stay
   // legible but never visually compete with rows that actually have
   // photos (`.has-photos`); this is deliberately the only thing that
   // distinguishes them; there's no separate "hide empty rows" mode,
@@ -2600,13 +2734,18 @@
     (CFG.photoLabels.categories || []).forEach(function (cat) {
       html += '<div class="photo-checklist-category">' + esc(cat) + '</div>';
       CFG.photoLabels.labels.filter(function (l) { return l.category === cat; }).forEach(function (l) {
-        var n = generalPhotoCountFor(cat, l.label);
+        var n = photoCountForLabel(cat, l.label);
         html += '<div class="photo-checklist-row' + (n > 0 ? ' has-photos' : '') + '">' +
           '<span>' + esc(l.label) + '</span><span class="photo-checklist-count">' + n + '</span>' +
           '</div>';
       });
     });
-    var uCount = unassignedGeneralPhotoCount();
+    var fCount = fieldPhotoNoLabelCount();
+    html += '<div class="photo-checklist-category">Field Photos</div>' +
+      '<div class="photo-checklist-row' + (fCount > 0 ? ' has-photos' : '') + '">' +
+        '<span>Field Photos</span><span class="photo-checklist-count">' + fCount + '</span>' +
+      '</div>';
+    var uCount = unassignedPhotoCount();
     html += '<div class="photo-checklist-category">Unassigned</div>' +
       '<div class="photo-checklist-row' + (uCount > 0 ? ' has-photos' : '') + '">' +
         '<span>Unassigned</span><span class="photo-checklist-count">' + uCount + '</span>' +
@@ -2641,16 +2780,74 @@
     return html;
   }
 
-  function generalPhotoItemHtml(p) {
-    return '<div class="general-photo-item">' +
+  // Milestone 21.1: one grid item, used for both field-linked and
+  // general photos in the unified review list -- carries data-field-id
+  // (empty string for a general photo, never absent) so
+  // wirePhotosTabControls() can tell which cache array/delete path a
+  // given item belongs to without a second lookup. A labeled photo shows
+  // its report label as the primary caption plus a secondary "From:
+  // <field>" note when it's also field-linked (#5); an unlabeled
+  // field-linked photo shows just the source field as a compact
+  // secondary line (#3) -- both via fieldLabelById()'s own safe
+  // 'Field Photo' fallback for an orphaned/legacy fieldId, so a bad id
+  // can never break rendering here any more than it already couldn't in
+  // the PDF.
+  function photoItemHtml(p) {
+    var sourceLabel = p.fieldId != null ? (fieldLabelById(p.fieldId) || 'Field Photo') : null;
+    var captionHtml = '';
+    if (p.category && p.label) {
+      captionHtml = '<div class="general-photo-caption">' + esc(p.category) + ' &rarr; ' + esc(p.label) + '</div>';
+      if (sourceLabel) captionHtml += '<div class="general-photo-source">From: ' + esc(sourceLabel) + '</div>';
+    } else if (sourceLabel) {
+      captionHtml = '<div class="general-photo-source">' + esc(sourceLabel) + '</div>';
+    }
+    return '<div class="general-photo-item" data-field-id="' + esc(p.fieldId == null ? '' : p.fieldId) + '">' +
       '<img src="' + esc(p.thumbnailUrl) + '" alt="" data-role="general-photo-view" data-photo-id="' + esc(p.id) + '">' +
       '<button type="button" class="photo-delete-btn" data-role="general-photo-delete" ' +
         'data-photo-id="' + esc(p.id) + '" aria-label="Delete photo">&times;</button>' +
+      captionHtml +
       '<select class="general-photo-label-select" data-role="general-photo-label-select" ' +
         'data-photo-id="' + esc(p.id) + '">' +
         generalPhotoLabelSelectHtml(p) +
       '</select>' +
       '</div>';
+  }
+
+  // Milestone 21.1 #5/#11: the Photos tab's single review list, covering
+  // every photo in the inspection exactly once -- field-linked and
+  // general alike. Bucketed the same three ways as
+  // renderPhotoChecklistHtml()'s own counts, in the same order (labeled
+  // first -- a report label is the more specific, deliberately-chosen
+  // fact, so it wins over field-association per the PDF's identical
+  // #12 rule; then field-linked-no-label; then Unassigned), so the
+  // checklist above and the grid below can never disagree about which
+  // section a given photo belongs to. Each of the three filters is
+  // mutually exclusive with the other two, so no photo can ever appear
+  // twice or be silently dropped. Sorted within each section by
+  // capture/import time (see sortByAddedAt()'s comment for why `order`
+  // itself can't be used across a merged list).
+  function renderPhotoReviewListHtml() {
+    var all = allPhotoCacheEntries();
+    if (!all.length) {
+      return '<div class="shell-note">No photos yet -- field photos and general photos (Front, Rear, Kitchen, Street Scene, etc.) will appear here.</div>';
+    }
+    var labeled = sortByAddedAt(all.filter(function (p) { return p.category && p.label; }));
+    var fieldOnly = sortByAddedAt(all.filter(function (p) { return p.fieldId != null && !(p.category && p.label); }));
+    var unassigned = sortByAddedAt(all.filter(function (p) { return p.fieldId == null && !(p.category && p.label); }));
+    var html = '';
+    if (labeled.length) {
+      html += '<div class="photo-checklist-category">Report Photos</div>' +
+        '<div class="general-photo-grid">' + labeled.map(photoItemHtml).join('') + '</div>';
+    }
+    if (fieldOnly.length) {
+      html += '<div class="photo-checklist-category">Field Photos</div>' +
+        '<div class="general-photo-grid">' + fieldOnly.map(photoItemHtml).join('') + '</div>';
+    }
+    if (unassigned.length) {
+      html += '<div class="photo-checklist-category">Unassigned</div>' +
+        '<div class="general-photo-grid">' + unassigned.map(photoItemHtml).join('') + '</div>';
+    }
+    return html;
   }
 
   function renderPhotosTabHtml() {
@@ -2665,10 +2862,7 @@
       '</div>' +
       '<input type="file" accept="image/*" multiple data-role="general-photo-library-input" hidden>' +
       '<input type="file" accept="image/*" capture="environment" data-role="general-take-photo-input" hidden>';
-    var gridHtml = generalPhotos.length
-      ? '<div class="general-photo-grid">' + generalPhotos.map(generalPhotoItemHtml).join('') + '</div>'
-      : '<div class="shell-note">No general photos yet -- Front, Rear, Kitchen, Street Scene, etc.</div>';
-    return warningHtml + actionsHtml + renderPhotoChecklistHtml() + gridHtml;
+    return warningHtml + actionsHtml + renderPhotoChecklistHtml() + renderPhotoReviewListHtml();
   }
 
   function wirePhotosTabControls() {
@@ -2690,26 +2884,55 @@
         takeInput.value = '';
       };
     }
+    // Milestone 21.1: the review list now mixes field-linked and general
+    // photos in one grid (see photoItemHtml()), so every handler below
+    // first reads which field (if any) this particular item belongs to
+    // off its own wrapper's data-field-id -- set once per item at render
+    // time, never re-derived -- and dispatches to whichever existing,
+    // already-tested function actually owns that photo's storage: a
+    // field-linked photo's view/delete reuse the exact same
+    // openFullPhotoViewer()/deletePhoto() the per-field panel itself
+    // calls (so "delete from Photos" *is* "delete from the field," not a
+    // parallel path that could disagree with it), a general photo's
+    // reuse openFullPhotoViewer()/deleteGeneralPhoto() unchanged from
+    // Milestone 21.
     Array.prototype.forEach.call(document.querySelectorAll('[data-role="general-photo-view"]'), function (img) {
-      img.onclick = function () { openFullPhotoViewer(null, img.dataset.photoId); };
+      img.onclick = function () {
+        var itemEl = img.closest('.general-photo-item');
+        var fieldId = (itemEl && itemEl.dataset.fieldId) || null;
+        openFullPhotoViewer(fieldId, img.dataset.photoId);
+      };
     });
     Array.prototype.forEach.call(document.querySelectorAll('[data-role="general-photo-delete"]'), function (btn) {
       btn.onclick = function () {
         // Same lightweight native-confirm guard as a field photo's own
         // delete button -- see wireFields()'s [data-role="photo-delete"]
-        // handler.
-        if (window.confirm('Delete this photo?')) deleteGeneralPhoto(btn.dataset.photoId);
+        // handler. Deleting a field-linked photo from here goes through
+        // the same idbDelete()+photosByField-cache-removal deletePhoto()
+        // always has -- there is no separate "Photos tab copy" of the
+        // record to fall out of sync, so this always also removes it
+        // from its original field (Milestone 21.1 #7).
+        if (!window.confirm('Delete this photo?')) return;
+        var itemEl = btn.closest('.general-photo-item');
+        var fieldId = (itemEl && itemEl.dataset.fieldId) || null;
+        if (fieldId) {
+          deletePhoto(fieldId, btn.dataset.photoId);
+        } else {
+          deleteGeneralPhoto(btn.dataset.photoId);
+        }
       };
     });
     Array.prototype.forEach.call(document.querySelectorAll('[data-role="general-photo-label-select"]'), function (sel) {
       sel.onchange = function () {
         var id = sel.dataset.photoId;
+        var itemEl = sel.closest('.general-photo-item');
+        var fieldId = (itemEl && itemEl.dataset.fieldId) || null;
         if (sel.value === '') {
-          assignGeneralPhotoLabel(id, null, null);
+          assignPhotoLabel(id, fieldId, null, null);
           return;
         }
         var entry = CFG.photoLabels.labels[Number(sel.value)];
-        if (entry) assignGeneralPhotoLabel(id, entry.category, entry.label);
+        if (entry) assignPhotoLabel(id, fieldId, entry.category, entry.label);
       };
     });
   }
@@ -3630,7 +3853,7 @@
     flushPendingSave().catch(function () {});
   });
 
-  fetch('config.json?v=0.21', { cache: 'no-store' })
+  fetch('config.json?v=0.21.1', { cache: 'no-store' })
     .then(function (r) {
       if (!r.ok) throw new Error('HTTP ' + r.status);
       return r.json();
