@@ -79,9 +79,10 @@
   },
   "main": {
     "sheet": "MAIN",
-    "fieldCount": 96,
+    "fieldCount": 97,
     "tabs": [
       "Property",
+      "Off Site",
       "Site",
       "Exterior",
       "Interior"
@@ -101,7 +102,7 @@
       {
         "id": "inspection_type",
         "label": "Inspection Type",
-        "urar": "",
+        "urar": "Subject",
         "tab": "Property",
         "type": "MultiSelect",
         "options": [
@@ -200,6 +201,22 @@
         "reminder": ""
       },
       {
+        "id": "construction_method",
+        "label": "Construction Method",
+        "urar": "Subject",
+        "tab": "Property",
+        "type": "MultiSelect",
+        "options": [
+          "Site Built",
+          "Manufactured",
+          "Modular",
+          "Other"
+        ],
+        "followUpTrigger": [],
+        "followUpGroup": "",
+        "reminder": ""
+      },
+      {
         "id": "location",
         "label": "Location",
         "urar": "Site",
@@ -231,7 +248,7 @@
         "id": "street_surface",
         "label": "Street Surface",
         "urar": "Site",
-        "tab": "Site",
+        "tab": "Off Site",
         "type": "MultiSelect",
         "options": [
           "Asphalt",
@@ -249,7 +266,7 @@
         "id": "street_access",
         "label": "Street Access",
         "urar": "Site",
-        "tab": "Site",
+        "tab": "Off Site",
         "type": "Button",
         "options": [
           "Public",
@@ -263,7 +280,7 @@
         "id": "alley",
         "label": "Alley",
         "urar": "Site",
-        "tab": "Site",
+        "tab": "Off Site",
         "type": "Button",
         "options": [
           "Yes",
@@ -555,8 +572,7 @@
           "Mediterranean",
           "Villa",
           "Contemporary",
-          "Bungalow",
-          "Cottage",
+          "ColonialBungalow/Cottage",
           "Townhouse",
           "Condo",
           "Twinhome",
@@ -567,12 +583,18 @@
         "reminder": ""
       },
       {
-        "id": "elevation",
-        "label": "Elevation",
+        "id": "front_door_elevation",
+        "label": "Front Door Elevation",
         "urar": "Improvements",
         "tab": "Exterior",
-        "type": "Text",
-        "options": [],
+        "type": "Button",
+        "options": [
+          "At grade",
+          "Up to 1 foot",
+          "1-3 feet",
+          "3+ feet",
+          "Other"
+        ],
         "followUpTrigger": [],
         "followUpGroup": "",
         "reminder": ""
@@ -862,6 +884,7 @@
         "options": [
           "None",
           "Wood",
+          "PVC",
           "Aluminum",
           "CBS",
           "Iron",
@@ -2085,9 +2108,9 @@
             "showWhenInvalid": false
           },
           {
-            "id": "pool__scope_of_updated",
+            "id": "pool__scope_of_update",
             "group": "pool",
-            "label": "Scope of Updated",
+            "label": "Scope of Update",
             "type": "MultiSelect",
             "options": [
               "Resurface",
