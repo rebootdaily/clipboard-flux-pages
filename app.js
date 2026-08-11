@@ -1,4 +1,15 @@
-/* Clipboard-Flux -- Milestone 21: general inspection photos ("Front",
+/* Clipboard-Flux -- Milestone 22: Footprint, a freehand sketching tab
+   ("digital graph paper," per that milestone's own framing) with
+   intelligent straight-line assist -- a rough hand-drawn stroke becomes
+   a clean straight segment on pointer-lift when it looks line-like,
+   using the stroke's own actual start/end points, never a length prompt
+   or CAD-style snapping. Full design/rationale lives as a block comment
+   directly above the Footprint tab's own code (search "Footprint tab
+   (Milestone 22)") rather than repeated here -- see that section for
+   the drawing-engine architecture, the classifyStroke() line-intent
+   algorithm, persistence, and PDF full-bounds export.
+
+   Milestone 21: general inspection photos ("Front",
    "Rear", "Kitchen", etc. -- photos that don't belong to any single
    questionnaire field) plus the workbook PHOTO LABELS sheet that
    configures them, and a new synthetic "Photos" app tab between Exit
@@ -303,11 +314,16 @@
   var ACTIVE_INSPECTION_KEY = 'clipboard-flux-active-inspection';
   var OTHER_OPTION = 'Other';
   var EXIT_INTERVIEW_TAB = 'Exit Interview';
-  // Synthetic app-management tabs -- neither is a workbook MAIN tab,
-  // both appended onto CFG.main.tabs by navTabs(), same pattern
-  // Milestone 8 used to append Exit Interview itself. Photos (Milestone
-  // 21) sits between Exit Interview and Inspection -- see navTabs().
+  // Synthetic app-management tabs -- none is a workbook MAIN tab, all
+  // appended onto CFG.main.tabs by navTabs(), same pattern Milestone 8
+  // used to append Exit Interview itself. Photos (Milestone 21) sits
+  // between Exit Interview and Footprint; Footprint (Milestone 22) sits
+  // between Photos and Inspection -- see navTabs(). There is no workbook
+  // Sketch-type field anywhere in this build (confirmed by inventory
+  // before starting Milestone 22) for Footprint to attach to instead, so
+  // it's a synthetic tab like its two neighbors, not a field-driven one.
   var PHOTOS_TAB = 'Photos';
+  var FOOTPRINT_TAB = 'Footprint';
   var INSPECTION_TAB = 'Inspection';
   // How long to wait after the last edit before actually writing to
   // IndexedDB -- long enough that rapid typing collapses into one write,
@@ -316,7 +332,7 @@
   var AUTOSAVE_DEBOUNCE_MS = 700;
   var MIGRATED_INSPECTION_ADDRESS = 'Unsaved / Migrated Inspection';
   // The exported-file schema is versioned independently of
-  // 0.21.1 -- app releases and the inspection-file format can
+  // 0.22 -- app releases and the inspection-file format can
   // and will drift out of step (a future app version might still need
   // to read a schemaVersion 1 file, or refuse a newer one it doesn't
   // understand yet), so import validation checks schema/schemaVersion
@@ -324,10 +340,10 @@
   var EXPORT_SCHEMA = 'clipboard-flux-inspection';
   var EXPORT_SCHEMA_VERSION = 1;
   var SUPPORTED_SCHEMA_VERSIONS = [1];
-  // Stamped at build time exactly like every other 0.21.1
+  // Stamped at build time exactly like every other 0.22
   // token in this file -- informational only in the export, never
   // itself validated on import.
-  var APP_VERSION = '0.21.1';
+  var APP_VERSION = '0.22';
   // Same database as Milestone 14's photos -- name kept for continuity
   // even though it now also holds inspection records; renaming it would
   // mean either abandoning existing photo data or writing a whole
@@ -345,6 +361,11 @@
   var otherText = loadOtherText();
   var fieldNotes = loadFieldNotes();
   var disregardedListOpen = false;
+  // Milestone 22: whether the Footprint Drawing Settings popover is open
+  // -- same transient-UI-toggle category as disregardedListOpen, never
+  // persisted, survives the tab's own full re-renders (see
+  // wireFootprintTabControls()'s straighten-toggle/width-button handlers).
+  var footprintSettingsOpen = false;
   // Which field currently shows its action icon, and which field's note
   // textarea (if any) is currently expanded -- both purely in-memory UI
   // state, never persisted, same as activeTab/disregardedListOpen: which
@@ -415,6 +436,75 @@
   // through Save/Reset/New like any other inspection field so a later
   // Save doesn't silently drop it.
   var externalPhotoManifest = [];
+
+  // Milestone 22: the current inspection's Footprint sketch -- a plain
+  // {version, strokes:[...]} document, folded straight into the same
+  // inspectionData record values/disregarded/otherText/fieldNotes/
+  // externalPhotoManifest already live on (see
+  // applyInspectionDataToMemory()/saveCurrentInspection()). This is a
+  // deliberate choice over a new IndexedDB store: it costs zero schema
+  // change (inspectionData's keyPath is inspectionId either way, and one
+  // more property on a plain object needs no version bump), and it means
+  // Footprint gets New/Load/Reset/Save/autosave/JSON export-import
+  // entirely for free from code that already exists and is already
+  // tested, the same way Milestone 21's category/label fields did for
+  // photosByField. See defaultFootprint()/FOOTPRINT_SCHEMA_VERSION below.
+  // Defense in depth: initialized to a safe empty document (inlined
+  // rather than a defaultFootprint() call, since that function is
+  // declared later in the file and reads FOOTPRINT_SCHEMA_VERSION, which
+  // wouldn't be assigned yet this early in module-init var evaluation
+  // order) rather than null, so a code path that somehow reads
+  // `footprint` before any boot/load function has run yet (there
+  // shouldn't be one -- see resolveActiveInspectionAndBoot()'s own fix
+  // for the one real gap found here during testing) fails safe instead
+  // of throwing on `footprint.strokes`.
+  var footprint = { version: 1, strokes: [] };
+  // Undo history for the *current* Footprint session only -- whole
+  // snapshots of `footprint.strokes` (not the full footprint object,
+  // and never the view transform -- panning/zooming is not an undoable
+  // drawing action, see #33/render loop comments below), capped so a
+  // long session can't grow this unboundedly. Reset on every
+  // switchToInspection() the same way activeFieldId/noteOpenFieldId are
+  // -- undo history from a *different* inspection (or a stale session)
+  // must never bleed into this one.
+  var footprintUndoStack = [];
+  var FOOTPRINT_UNDO_LIMIT = 50;
+  // 'pencil' | 'eraser' | 'hand' -- transient UI state, never persisted
+  // (a fresh visit to the Footprint tab always starts in Pencil, the
+  // most common action), same category as activeTab/activeFieldId.
+  var footprintTool = 'pencil';
+  // Live view transform (world-space -> screen-space): screen = world *
+  // scale + {x,y}. Purely transient/session UI state, deliberately never
+  // persisted or part of undo history -- see #33's "view transformation
+  // may change... but underlying drawing coordinates must remain
+  // stable." Reset to a sensible default every time the canvas is (re)
+  // initialized (enterFootprintTab()), never restored from a prior
+  // session's pan/zoom position.
+  var footprintView = { scale: 1, x: 0, y: 0 };
+  // Device/user drawing preferences -- deliberately their OWN localStorage
+  // keys, never part of `footprint`/inspectionData, for the same reason
+  // clipboard-test's own Footprint prototype keeps its grid/line-width
+  // settings separate from sketch data (confirmed by reading it read-only
+  // before starting this milestone): a drawing preference is a property
+  // of the device/user, not of any one inspection, so it must survive
+  // New/Reset/Load untouched and must never bloat JSON export size.
+  var FOOTPRINT_STRAIGHTEN_KEY = 'clipboard-flux-footprint-straighten';
+  var FOOTPRINT_LINEWIDTH_KEY = 'clipboard-flux-footprint-linewidth';
+  var footprintStraightenEnabled = loadFootprintStraightenPref();
+  var footprintLineWidth = loadFootprintLineWidthPref();
+  // Internal canvas/rendering handles -- set once per Footprint tab
+  // visit by wireFootprintTabControls(), cleared (not strictly required,
+  // but keeps intent obvious) when leaving the tab. Never touched by the
+  // global render() path directly; see the Footprint section's own
+  // header comment for why canvas interaction is deliberately kept
+  // outside the innerHTML-replace-and-rewire model everywhere else in
+  // this file uses for state changes.
+  var footprintCanvasEl = null;
+  var footprintCtx = null;
+  var footprintPointers = {};
+  var footprintDraft = null;
+  var footprintPinchState = null;
+  var footprintResizeHandler = null;
 
   // A flat {fieldId: value} map is all that's persisted -- MAIN fields
   // and FOLLOW_UP questions already share one `values` object and the
@@ -526,6 +616,47 @@
       localStorage.setItem(FIELD_NOTES_STORAGE_KEY, JSON.stringify(fieldNotes));
     } catch (e) {
       // Same graceful degradation as saveValues().
+    }
+  }
+
+  // Milestone 22: device-level drawing preferences, own localStorage
+  // keys (see footprintStraightenEnabled/footprintLineWidth's own
+  // comment for why these are never part of inspectionData). Same
+  // graceful-degradation posture as every other localStorage read/write
+  // in this file -- a blocked/unavailable localStorage just falls back
+  // to the default rather than breaking the tab.
+  function loadFootprintStraightenPref() {
+    try {
+      var raw = localStorage.getItem(FOOTPRINT_STRAIGHTEN_KEY);
+      return raw === null ? true : raw === '1';
+    } catch (e) {
+      return true;
+    }
+  }
+
+  function saveFootprintStraightenPref(enabled) {
+    try {
+      localStorage.setItem(FOOTPRINT_STRAIGHTEN_KEY, enabled ? '1' : '0');
+    } catch (e) {
+      // Session-only fallback -- the toggle still works, it just won't
+      // survive a reload on this device.
+    }
+  }
+
+  function loadFootprintLineWidthPref() {
+    try {
+      var raw = localStorage.getItem(FOOTPRINT_LINEWIDTH_KEY);
+      return (raw === 'thin' || raw === 'medium' || raw === 'thick') ? raw : 'medium';
+    } catch (e) {
+      return 'medium';
+    }
+  }
+
+  function saveFootprintLineWidthPref(width) {
+    try {
+      localStorage.setItem(FOOTPRINT_LINEWIDTH_KEY, width);
+    } catch (e) {
+      // Same graceful degradation as saveFootprintStraightenPref().
     }
   }
 
@@ -1239,21 +1370,79 @@
 
   // ---- Inspection identity + Save/Load/Reset (Milestone 15) ----
 
-  // Replaces values/disregarded/otherText/fieldNotes wholesale (an
-  // inspection switch, not a merge) and immediately syncs the result to
-  // localStorage via the existing save*() functions, so the new
+  var FOOTPRINT_SCHEMA_VERSION = 1;
+
+  function defaultFootprint() {
+    return { version: FOOTPRINT_SCHEMA_VERSION, strokes: [] };
+  }
+
+  // Milestone 22: accepts whatever's sitting in a loaded/imported
+  // inspectionData record's `footprint` property and returns a document
+  // guaranteed safe to draw from -- {version, strokes:[...]} with every
+  // entry a well-formed line or freehand stroke. Used both for a normal
+  // IndexedDB load (where a pre-Milestone-22 inspection's record simply
+  // has no `footprint` property at all -- schemaless-per-record, exactly
+  // like Milestone 21's category/label fields needed no migration) and
+  // for JSON import (where the file could be hand-edited or from an
+  // older/newer app version) -- same "validate structurally, drop what's
+  // malformed rather than reject or crash the whole load" posture
+  // validateImportedInspection() already uses for the rest of the file.
+  // A stroke missing required fields, or with a `type` this build
+  // doesn't understand, is silently skipped -- not fatal, since Footprint
+  // is additive inspection content, same tolerance photos/externalPhoto
+  // Manifest already get.
+  function sanitizeFootprint(raw) {
+    if (!raw || typeof raw !== 'object' || !Array.isArray(raw.strokes)) return defaultFootprint();
+    var strokes = raw.strokes.filter(function (s) {
+      if (!s || typeof s !== 'object') return false;
+      if (s.type === 'line') {
+        return isFinitePoint(s.a) && isFinitePoint(s.b);
+      }
+      if (s.type === 'freehand') {
+        return Array.isArray(s.points) && s.points.length >= 2 && s.points.every(isFinitePoint);
+      }
+      return false;
+    }).map(function (s) {
+      var width = (s.width === 'thin' || s.width === 'thick') ? s.width : 'medium';
+      var id = (typeof s.id === 'string' && s.id) ? s.id : generateFootprintStrokeId();
+      if (s.type === 'line') {
+        return { id: id, type: 'line', a: { x: s.a.x, y: s.a.y }, b: { x: s.b.x, y: s.b.y }, width: width };
+      }
+      return { id: id, type: 'freehand', points: s.points.map(function (p) { return { x: p.x, y: p.y }; }), width: width };
+    });
+    return { version: FOOTPRINT_SCHEMA_VERSION, strokes: strokes };
+  }
+
+  function isFinitePoint(p) {
+    return !!p && typeof p === 'object' && typeof p.x === 'number' && typeof p.y === 'number' &&
+      isFinite(p.x) && isFinite(p.y);
+  }
+
+  function generateFootprintStrokeId() {
+    return 'fp_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8);
+  }
+
+  // Replaces values/disregarded/otherText/fieldNotes/footprint wholesale
+  // (an inspection switch, not a merge) and immediately syncs the result
+  // to localStorage via the existing save*() functions, so the new
   // inspection's data becomes the live working draft. Every save*() call
   // arms a fresh autosave timer as a side effect (see scheduleAutoSave())
   // -- callers of applyInspectionDataToMemory() always correct that with
   // an explicit clearTimeout()+setSaveStatus('saved') right after (see
   // switchToInspection()), since freshly applied data by definition
-  // matches its own IndexedDB snapshot.
+  // matches its own IndexedDB snapshot. footprint itself has no separate
+  // save*()/localStorage mirror the way values/etc. do -- it's written
+  // straight to IndexedDB by saveCurrentInspection() like everything
+  // else in this function, and scheduleAutoSave() is called directly by
+  // whatever Footprint mutation just happened (see wireFootprintTabControls()),
+  // not from here.
   function applyInspectionDataToMemory(data) {
     values = (data && data.values) || {};
     disregarded = (data && data.disregarded) || {};
     otherText = (data && data.otherText) || {};
     fieldNotes = (data && data.fieldNotes) || {};
     externalPhotoManifest = (data && Array.isArray(data.externalPhotoManifest)) ? data.externalPhotoManifest : [];
+    footprint = sanitizeFootprint(data && data.footprint);
     saveValues();
     saveDisregarded();
     saveOtherText();
@@ -1289,6 +1478,19 @@
         noteOpenFieldId = null;
         photoOpenFieldId = null;
         closeFullPhotoViewer();
+        // Milestone 22: Footprint's undo history and in-progress draft
+        // stroke are this *session's* state, not this inspection's saved
+        // state -- undoing past a Load/New/Reset boundary into a
+        // different inspection's drawing history would be nonsensical
+        // and unsafe, exactly like activeFieldId/noteOpenFieldId above.
+        // The view transform is reset too (see footprintView's own
+        // comment) so a new inspection's Footprint always opens at the
+        // same predictable default framing rather than wherever the
+        // previous inspection's canvas happened to be panned/zoomed to.
+        footprintUndoStack = [];
+        footprintDraft = null;
+        footprintTool = 'pencil';
+        footprintView = { scale: 1, x: 0, y: 0 };
         activeTab = (CFG && CFG.main.tabs[0]) || null;
         return loadAllPhotosIntoCache();
       });
@@ -1307,7 +1509,7 @@
     var id = generateInspectionId();
     var now = new Date().toISOString();
     var meta = { inspectionId: id, propertyAddress: propertyAddress || '', createdAt: now, updatedAt: now };
-    var data = { inspectionId: id, values: {}, disregarded: {}, otherText: {}, fieldNotes: {}, externalPhotoManifest: [] };
+    var data = { inspectionId: id, values: {}, disregarded: {}, otherText: {}, fieldNotes: {}, externalPhotoManifest: [], footprint: defaultFootprint() };
     return idbPutInspection(meta)
       .then(function () { return idbPutInspectionData(data); })
       .then(function () { return switchToInspection(id); });
@@ -1329,7 +1531,7 @@
     var now = new Date().toISOString();
     return idbDeleteAllPhotosForInspection(id)
       .then(function () {
-        var data = { inspectionId: id, values: {}, disregarded: {}, otherText: {}, fieldNotes: {}, externalPhotoManifest: [] };
+        var data = { inspectionId: id, values: {}, disregarded: {}, otherText: {}, fieldNotes: {}, externalPhotoManifest: [], footprint: defaultFootprint() };
         return idbPutInspectionData(data);
       })
       .then(function () {
@@ -1361,7 +1563,8 @@
       disregarded: disregarded,
       otherText: otherText,
       fieldNotes: fieldNotes,
-      externalPhotoManifest: externalPhotoManifest
+      externalPhotoManifest: externalPhotoManifest,
+      footprint: footprint || defaultFootprint()
     };
     return idbPutInspectionData(data)
       .then(function () {
@@ -1470,7 +1673,22 @@
       boot = idbGetInspection(pointedId).then(function (meta) {
         if (!meta) return bootstrapFresh();
         activeInspection = meta;
-        return loadAllPhotosIntoCache().then(function () {
+        // Milestone 22: footprint has no localStorage mirror the way
+        // values/disregarded/otherText/fieldNotes do (deliberately --
+        // see footprint's own module-level comment, and #21's "avoid
+        // localStorage if the sketch structure can grow materially"),
+        // so unlike those four fields, it can NOT be trusted as already
+        // correct from module-init on this fast path -- it must be read
+        // from IndexedDB here explicitly, every time, before the
+        // reconciliation save below runs. Skipping this would leave
+        // `footprint` at its safe-but-empty default for the rest of the
+        // session and, worse, let that reconciliation save immediately
+        // overwrite this inspection's real saved strokes with an empty
+        // document the moment any autosave next fired.
+        return idbGetInspectionData(pointedId).then(function (data) {
+          footprint = sanitizeFootprint(data && data.footprint);
+          return loadAllPhotosIntoCache();
+        }).then(function () {
           return performSave().catch(function (e) {
             window.console && console.error && console.error('Clipboard-Flux: boot reconciliation save failed', e);
           });
@@ -1779,6 +1997,14 @@
         fieldNotes: data.fieldNotes || {},
         otherText: data.otherText || {},
         disregarded: data.disregarded || {},
+        // Milestone 22 #26: structured vector drawing data, not a photo
+        // -- no Blobs/base64 involved (a line/freehand stroke is just
+        // numbers), so it's included directly, unlike photo binaries.
+        // Always sanitized before writing (never trusts the IndexedDB
+        // record blindly), so a malformed record already couldn't have
+        // gotten this far in the first place, and a hand-edited export
+        // is guaranteed well-formed too.
+        footprint: sanitizeFootprint(data.footprint),
         photos: photos.map(function (p) {
           return {
             id: p.id,
@@ -1876,6 +2102,17 @@
     if (!isPlainObject(obj.disregarded)) return { ok: false, reason: 'disregarded must be an object.' };
     if (obj.photos !== undefined && !Array.isArray(obj.photos)) {
       return { ok: false, reason: 'photos must be an array.' };
+    }
+    // Milestone 22 #26: footprint is optional (older exports won't have
+    // it) but if present must at least be the right shape at the top
+    // level -- per-stroke validation happens in sanitizeFootprint()
+    // (called from commitImport()), which drops any individual malformed
+    // stroke rather than rejecting the whole file over one bad entry, the
+    // same tolerance photos/externalPhotoManifest already get. This check
+    // only guards against something wildly wrong (a string, a number, an
+    // array) at the top level.
+    if (obj.footprint !== undefined && (!isPlainObject(obj.footprint) || !Array.isArray(obj.footprint.strokes))) {
+      return { ok: false, reason: 'footprint must be an object with a strokes array.' };
     }
     return { ok: true };
   }
@@ -1975,7 +2212,12 @@
       disregarded: parsed.disregarded || {},
       otherText: parsed.otherText || {},
       fieldNotes: parsed.fieldNotes || {},
-      externalPhotoManifest: Array.isArray(parsed.photos) ? parsed.photos : []
+      externalPhotoManifest: Array.isArray(parsed.photos) ? parsed.photos : [],
+      // Milestone 22: sanitizeFootprint() drops any individual malformed
+      // stroke and falls back to an empty document if `footprint` itself
+      // is missing/malformed -- an imported file's drawing is never
+      // trusted blindly, same posture as every other imported field.
+      footprint: sanitizeFootprint(parsed.footprint)
     };
     idbPutInspection(meta)
       .then(function () { return idbPutInspectionData(data); })
@@ -2464,8 +2706,86 @@
       'border-radius:4px;padding:4px;text-align:center}' +
     '.pdf-photo-item img{width:100%;max-height:2.6in;object-fit:contain;display:block}' +
     '.pdf-photo-caption{font-size:8pt;color:#4a5660;margin-top:3px}' +
+    '.pdf-footprint-image{width:100%;max-height:8.5in;object-fit:contain;display:block;' +
+      'border:1px solid #d9e0e6;border-radius:4px}' +
     '.pdf-empty-note{font-size:10pt;color:#66727e;font-style:italic}' +
     '.pdf-footer-note{margin-top:16px;padding-top:6px;border-top:1px solid #d9e0e6;font-size:7pt;color:#9aa5ad}';
+
+  // Milestone 22 #24: full-bounds Footprint PDF export -- computed from
+  // the drawing's own stroke geometry, never the live on-screen viewport
+  // (footprintView is never read anywhere in this section), so a sketch
+  // panned/zoomed to show only one corner on screen still exports
+  // completely. Rendered onto a fresh offscreen canvas the same way
+  // clipboard-test's own Footprint prototype does (confirmed read-only
+  // before this milestone): rasterized to a PNG and embedded as a plain
+  // `<img>`, exactly like every field/general photo in this same PDF
+  // already is -- this print pipeline is HTML+CSS-based
+  // (window.print()), not a vector PDF generator, so a raster image is
+  // the correct, already-established mechanism here, not a compromise.
+  // The grid is never part of this render (drawFootprintGrid() is simply
+  // never called in this path) -- excluded from export by default, #17.
+  var FOOTPRINT_EXPORT_TARGET_LONG_EDGE = 1600;
+  var FOOTPRINT_EXPORT_PADDING_RATIO = 0.08;
+
+  function footprintComputeBounds(strokes) {
+    if (!strokes.length) return null;
+    var minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+    strokes.forEach(function (s) {
+      var pts = s.type === 'line' ? [s.a, s.b] : s.points;
+      pts.forEach(function (p) {
+        if (p.x < minX) minX = p.x;
+        if (p.x > maxX) maxX = p.x;
+        if (p.y < minY) minY = p.y;
+        if (p.y > maxY) maxY = p.y;
+      });
+    });
+    return { minX: minX, minY: minY, maxX: maxX, maxY: maxY };
+  }
+
+  // Returns null when there's nothing to draw (#25 -- no empty Footprint
+  // page/whitespace in the PDF). Reuses footprintDrawOneStroke() exactly
+  // as the live canvas does, so a stroke's appearance in the PDF is
+  // guaranteed consistent with how it looks on screen, not a
+  // reimplementation that could quietly drift out of sync.
+  function footprintRenderExportCanvas(footprintDoc) {
+    var bounds = footprintComputeBounds(footprintDoc.strokes);
+    if (!bounds) return null;
+    var w = bounds.maxX - bounds.minX;
+    var h = bounds.maxY - bounds.minY;
+    var longEdge = Math.max(w, h, 1);
+    var pad = Math.max(longEdge * FOOTPRINT_EXPORT_PADDING_RATIO, 10);
+    var totalW = w + pad * 2, totalH = h + pad * 2;
+    var scale = FOOTPRINT_EXPORT_TARGET_LONG_EDGE / Math.max(totalW, totalH);
+    var canvas = document.createElement('canvas');
+    canvas.width = Math.max(1, Math.round(totalW * scale));
+    canvas.height = Math.max(1, Math.round(totalH * scale));
+    var ctx = canvas.getContext('2d');
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.translate((pad - bounds.minX) * scale, (pad - bounds.minY) * scale);
+    ctx.scale(scale, scale);
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+    ctx.strokeStyle = '#1c3a52';
+    footprintDoc.strokes.forEach(function (s) { footprintDrawOneStroke(ctx, s); });
+    return canvas;
+  }
+
+  function footprintExportImageBlob(footprintDoc) {
+    var canvas = footprintRenderExportCanvas(footprintDoc);
+    if (!canvas) return Promise.resolve(null);
+    return new Promise(function (resolve) {
+      canvas.toBlob(function (blob) { resolve(blob); }, 'image/png');
+    });
+  }
+
+  function pdfBuildFootprintSectionHtml(footprintImageUrl) {
+    if (!footprintImageUrl) return '';
+    return '<div class="pdf-section pdf-footprint-section">' +
+      '<div class="pdf-section-heading">FOOTPRINT</div>' +
+      '<img class="pdf-footprint-image" src="' + esc(footprintImageUrl) + '" alt="">' +
+      '</div>';
+  }
 
   function buildPdfFilenameBase(meta) {
     var base = sanitizeForFilename(meta.propertyAddress) || sanitizeForFilename(meta.inspectionId) || 'inspection';
@@ -2474,7 +2794,7 @@
     return base + '_' + stamp + '_Inspection';
   }
 
-  function buildPrintDocumentHtml(meta, data, photosWithUrls) {
+  function buildPrintDocumentHtml(meta, data, photosWithUrls, footprintImageUrl) {
     var values = data.values || {};
     var disregarded = data.disregarded || {};
     var otherText = data.otherText || {};
@@ -2501,7 +2821,8 @@
     var generalPhotosForPdf = photosWithUrls.filter(function (p) { return p.fieldId == null || (p.category && p.label); });
     var photosHtml = pdfBuildPhotosSectionHtml(fieldPhotos, values, disregarded);
     var generalPhotosHtml = pdfBuildGeneralPhotosSectionHtml(generalPhotosForPdf);
-    var bodyHtml = mainHtml + eiHtml + photosHtml + generalPhotosHtml;
+    var footprintHtml = pdfBuildFootprintSectionHtml(footprintImageUrl);
+    var bodyHtml = mainHtml + eiHtml + photosHtml + generalPhotosHtml + footprintHtml;
     if (!bodyHtml) {
       bodyHtml = '<div class="pdf-empty-note">No inspection content has been entered yet.</div>';
     }
@@ -2552,7 +2873,7 @@
   // like the print-content-load safety net below it -- not the primary
   // mechanism either way, so this isn't "blindly adding a delay" as the
   // fix itself.
-  function printViaHiddenIframe(html, photosWithUrls) {
+  function printViaHiddenIframe(html, photosWithUrls, footprintImageUrl) {
     cleanupPdfPrintIframe();
     var iframe = document.createElement('iframe');
     iframe.style.position = 'fixed';
@@ -2562,7 +2883,12 @@
     iframe.style.height = '0';
     iframe.style.border = '0';
     iframe.setAttribute('aria-hidden', 'true');
+    // Milestone 22: the Footprint export image's object URL (if any)
+    // rides along in the exact same cleanup array as every photo's --
+    // one list, one revoke pass, so a Footprint export can never leak an
+    // object URL any more than a photo-heavy export already couldn't.
     iframe.__objectUrls = photosWithUrls.map(function (p) { return p.objectUrl; });
+    if (footprintImageUrl) iframe.__objectUrls.push(footprintImageUrl);
     document.body.appendChild(iframe);
     pdfPrintIframe = iframe;
 
@@ -2618,8 +2944,15 @@
           objectUrl: URL.createObjectURL(p.blob)
         };
       });
-      var html = buildPrintDocumentHtml(meta, data, photosWithUrls);
-      printViaHiddenIframe(html, photosWithUrls);
+      // Milestone 22: rasterizing the full-bounds Footprint image is
+      // itself async (canvas.toBlob()), so it's resolved here before
+      // building the printable document -- buildPrintDocumentHtml()
+      // stays synchronous otherwise, same as every other section.
+      return footprintExportImageBlob(sanitizeFootprint(data.footprint)).then(function (blob) {
+        var footprintImageUrl = blob ? URL.createObjectURL(blob) : null;
+        var html = buildPrintDocumentHtml(meta, data, photosWithUrls, footprintImageUrl);
+        printViaHiddenIframe(html, photosWithUrls, footprintImageUrl);
+      });
     }).catch(function (e) {
       window.console && console.error && console.error('Clipboard-Flux: PDF export failed', e);
       window.alert('Could not generate the PDF: ' + e.message);
@@ -2933,6 +3266,673 @@
         }
         var entry = CFG.photoLabels.labels[Number(sel.value)];
         if (entry) assignPhotoLabel(id, fieldId, entry.category, entry.label);
+      };
+    });
+  }
+
+  // ---- Footprint tab (Milestone 22) ----
+  //
+  // "Digital graph paper, not CAD." Draw first, organize later: the
+  // appraiser never enters a dimension, never confirms a line, never
+  // sees a dialog while sketching. A completed freehand stroke is
+  // analyzed once, at pointer-lift, and either kept as drawn (curves,
+  // arcs, circles, handwriting) or replaced with a clean straight
+  // segment between its own actual start/end points (see
+  // classifyStroke()) -- never a best-fit-line endpoint, never snapped
+  // to horizontal/vertical/45 degrees. Inventory before this milestone
+  // (read-only look at clipboard-test's own "Footprint" prototype, plus
+  // this project's own workbook/config) found no straight-line assist
+  // anywhere to build on, and no existing Sketch-type field in either
+  // MAIN or FOLLOW_UP for this to attach to -- see FOOTPRINT_TAB's own
+  // comment for why this is a synthetic tab rather than a workbook-driven
+  // one. clipboard-test's world-space coordinate pipeline, pinch-zoom
+  // math, whole-snapshot undo, and world-space grid were sound patterns
+  // worth adapting (documented per-function below); its two other,
+  // CAD-like sketch systems (a wall tracer with angle-snapping/closure
+  // assist, an object-based annotator with select/resize) were
+  // deliberately NOT ported -- overbuilt for a footprint sketch, and
+  // explicitly out of scope (#28).
+  //
+  // Rendering model: every other tab in this file follows one rule --
+  // mutate state, call the global render(), which replaces #screen's
+  // entire innerHTML and rewires every control fresh. That rule still
+  // holds here at the *boundaries* of a drawing action (a completed
+  // stroke, an undo, a tool change) -- but the interior of a drag
+  // (dozens of pointermove events while a finger is still down) never
+  // calls render() or touches innerHTML at all, since recreating the
+  // <canvas> element mid-stroke would either freeze/flicker the draft
+  // line or lose it outright. Instead, wireFootprintTabControls() wires
+  // raw pointer* handlers directly onto the canvas once per tab-visit,
+  // and everything during a drag talks straight to the canvas's own 2D
+  // context (drawFootprintCanvas()) -- render() only runs again once the
+  // pointer lifts and the new stroke has already been committed to
+  // `footprint.strokes`, at which point recreating the canvas and
+  // redrawing from that state is correct and (per #34) cheap even at
+  // 100+ strokes, since every redraw is one straight pass over the
+  // strokes array with no per-stroke work heavier than a handful of
+  // ctx.lineTo() calls.
+  //
+  // Coordinate system: `footprint.strokes` are stored in one fixed
+  // world-space (never screen pixels, never affected by pan/zoom/canvas
+  // resize/orientation change -- see #33). footprintView ({scale,x,y})
+  // is the *only* thing that changes when the user pans or pinches;
+  // footprintScreenToWorld()/footprintWorldToScreen() are the sole
+  // conversion points, and drawFootprintCanvas() applies the exact same
+  // transform via ctx.translate/ctx.scale that clipboard-test's own
+  // Footprint prototype used (confirmed by reading it read-only) --
+  // proven to keep strokes, grid, and pointer math all agreeing with
+  // each other with no separate bookkeeping. The canvas's backing-store
+  // resolution (devicePixelRatio) is a completely separate, permanent
+  // transform applied once in setupFootprintCanvasBackingStore() --
+  // never confused with the world-view transform, which is reset and
+  // reapplied every single redraw via ctx.setTransform() (absolute, not
+  // relative) so the two can never compound into a corrupted transform
+  // after repeated resizes.
+
+  var FOOTPRINT_LINE_WIDTHS = { thin: 2.5, medium: 4.5, thick: 7.5 };
+  // A stroke whose total on-screen travel never exceeded this many CSS
+  // pixels is an accidental tap, not a drawing action -- discarded
+  // entirely (#5's one explicit exception to "no length threshold").
+  // Deliberately measured in screen pixels (a physical gesture-size
+  // concept), unlike the line-intent ratios below, which are unitless
+  // and therefore scale-invariant by construction.
+  var FOOTPRINT_NOISE_SCREEN_PX = 6;
+  // Only append a new sampled point once the pointer has moved at least
+  // this many CSS-pixel-equivalents in world space -- keeps a slow,
+  // careful stroke's point array from ballooning with near-duplicate
+  // samples, without any visible loss of fidelity.
+  var FOOTPRINT_MIN_SAMPLE_SCREEN_PX = 2.5;
+  // Line-intent tolerances (#7): a stroke is treated as an intended
+  // straight line when its worst perpendicular wobble away from the
+  // straight line between its own first/last point is no more than this
+  // fraction of that line's own length (relative, not a fixed pixel
+  // value -- #5's explicit requirement, so a 2-foot-looking wobble and a
+  // 40-foot-looking wobble are judged by the same standard), AND its
+  // actual sampled path isn't much longer than that straight-line
+  // distance (catches gentle S-wobbles/near-closed loops a pure
+  // max-deviation check alone could miss -- see classifyStroke()).
+  // Starting values based on reasoning about typical touchscreen
+  // freehand wobble vs. a deliberate curve/arc; flagged in the
+  // completion report as needing physical stylus/finger validation per
+  // #36 -- kept as the two named constants here specifically so they're
+  // easy to retune later without touching the algorithm itself.
+  var FOOTPRINT_STRAIGHT_DEVIATION_RATIO = 0.07;
+  var FOOTPRINT_STRAIGHT_LENGTH_RATIO = 1.12;
+  var FOOTPRINT_MIN_SCALE = 0.15;
+  var FOOTPRINT_MAX_SCALE = 10;
+  var FOOTPRINT_GRID_MINOR_WORLD = 24;
+  var FOOTPRINT_GRID_MAJOR_EVERY = 5;
+
+  function footprintLineWidthValue(width) {
+    return FOOTPRINT_LINE_WIDTHS[width] || FOOTPRINT_LINE_WIDTHS.medium;
+  }
+
+  // Perpendicular distance from p to the *infinite* line through a/b --
+  // used only for the straight-line deviation test, where "how far did
+  // the stroke wander from the chord" is the question, not "how close
+  // is p to the nearest point of the bounded segment" (that's
+  // footprintDistToSegment(), used for erasing).
+  function footprintPerpDist(p, a, b) {
+    var dx = b.x - a.x, dy = b.y - a.y;
+    var lenSq = dx * dx + dy * dy;
+    if (lenSq === 0) return Math.hypot(p.x - a.x, p.y - a.y);
+    return Math.abs((p.x - a.x) * dy - (p.y - a.y) * dx) / Math.sqrt(lenSq);
+  }
+
+  // Distance from p to the closest point on the bounded segment a-b --
+  // the eraser's own hit test, deliberately different from
+  // footprintPerpDist() above (a point "past the end" of a short
+  // segment shouldn't register as a hit just because it's near the
+  // segment's infinite extension).
+  function footprintDistToSegment(p, a, b) {
+    var dx = b.x - a.x, dy = b.y - a.y;
+    var lenSq = dx * dx + dy * dy;
+    if (lenSq === 0) return Math.hypot(p.x - a.x, p.y - a.y);
+    var t = ((p.x - a.x) * dx + (p.y - a.y) * dy) / lenSq;
+    t = Math.max(0, Math.min(1, t));
+    return Math.hypot(p.x - (a.x + t * dx), p.y - (a.y + t * dy));
+  }
+
+  // The core line-intent test (#4/#7). `points` is the raw sampled
+  // world-space stroke, already past the noise threshold (length >= 2).
+  // devRatio catches a stroke that wanders far from its own chord at any
+  // single point (an arc, a bulge); lenRatio catches one that stays
+  // deceptively close to the chord along the way but travels a much
+  // longer path getting there (a shallow S, a near-closed loop -- a true
+  // circle has start≈end, so straightDist≈0 and is rejected outright
+  // below, exactly the "circles must survive" case in #8 with no special
+  // casing needed). Both are unitless ratios, so a short "2-foot" stroke
+  // and a long "40-foot" one are held to the identical standard --
+  // there is no absolute length involved anywhere in this function,
+  // satisfying #5 by construction, not by a length cutoff. Returns the
+  // stroke's own actual first/last sampled points as a/b when it *is*
+  // line-like -- never a computed best-fit endpoint (#30).
+  function classifyStroke(points) {
+    var a = points[0], b = points[points.length - 1];
+    var straightDist = Math.hypot(b.x - a.x, b.y - a.y);
+    if (straightDist <= 0) return { isLine: false };
+    var pathLen = 0;
+    var maxDev = 0;
+    for (var i = 0; i < points.length; i++) {
+      var d = footprintPerpDist(points[i], a, b);
+      if (d > maxDev) maxDev = d;
+      if (i > 0) pathLen += Math.hypot(points[i].x - points[i - 1].x, points[i].y - points[i - 1].y);
+    }
+    var devRatio = maxDev / straightDist;
+    var lenRatio = pathLen / straightDist;
+    var isLine = devRatio <= FOOTPRINT_STRAIGHT_DEVIATION_RATIO && lenRatio <= FOOTPRINT_STRAIGHT_LENGTH_RATIO;
+    return { isLine: isLine, a: a, b: b };
+  }
+
+  // Restrained one-pass weighted-average smoothing (#9) for a freehand
+  // stroke that isn't line-like but is visibly jittery -- reduces
+  // sample-to-sample hand tremor without materially reshaping deliberate
+  // curvature or corners (a single 0.25/0.5/0.25 pass moves each interior
+  // point only partway toward its neighbors' average, never iterated).
+  // First and last points are always left exactly as sampled, the same
+  // endpoint-fidelity discipline classifyStroke() uses for lines --
+  // smoothing a freehand stroke's endpoints would be exactly the kind of
+  // "alter the stopping point to make it nicer" #4 forbids for lines, and
+  // there's no reason to treat freehand differently. Skipped entirely
+  // for a very short stroke (< 5 points) -- too little data to smooth
+  // safely without risking exactly the kind of over-smoothing #9 warns
+  // against for a small deliberate mark/symbol.
+  function smoothFreehandPoints(points) {
+    if (points.length < 5) return points;
+    var out = [points[0]];
+    for (var i = 1; i < points.length - 1; i++) {
+      var p0 = points[i - 1], p1 = points[i], p2 = points[i + 1];
+      out.push({ x: p0.x * 0.25 + p1.x * 0.5 + p2.x * 0.25, y: p0.y * 0.25 + p1.y * 0.5 + p2.y * 0.25 });
+    }
+    out.push(points[points.length - 1]);
+    return out;
+  }
+
+  function footprintScreenToWorld(clientX, clientY) {
+    var rect = footprintCanvasEl.getBoundingClientRect();
+    return {
+      x: (clientX - rect.left - footprintView.x) / footprintView.scale,
+      y: (clientY - rect.top - footprintView.y) / footprintView.scale
+    };
+  }
+
+  // Sets (never incrementally adjusts) the canvas's backing-store
+  // resolution from its current CSS size * devicePixelRatio, and resets
+  // the context's base transform to match -- called on first wiring and
+  // on every resize/orientation change. Uses ctx.setTransform() (an
+  // absolute reset), not ctx.scale() (relative/compounding), specifically
+  // so calling this repeatedly across resizes can never stack DPR scale
+  // factors on top of each other -- the one failure mode that would
+  // silently corrupt every subsequent draw.
+  function setupFootprintCanvasBackingStore() {
+    var dpr = window.devicePixelRatio || 1;
+    var rect = footprintCanvasEl.getBoundingClientRect();
+    var w = Math.max(1, Math.round(rect.width * dpr));
+    var h = Math.max(1, Math.round(rect.height * dpr));
+    if (footprintCanvasEl.width !== w) footprintCanvasEl.width = w;
+    if (footprintCanvasEl.height !== h) footprintCanvasEl.height = h;
+    footprintCtx = footprintCanvasEl.getContext('2d');
+    footprintCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  }
+
+  // World-space grid (#17): drawn through the exact same
+  // translate/scale the strokes themselves use, so it pans and zooms
+  // with the drawing rather than drifting as a fixed screen overlay.
+  // Only the visible world-space extent is iterated (derived from the
+  // current viewport, not the whole infinite canvas), so cost stays
+  // bounded regardless of how far the user has panned. Skipped entirely
+  // once zoomed out far enough that minor lines would render closer than
+  // 6 backing px apart -- avoids both a visually noisy mush and
+  // unbounded line counts at extreme zoom-out, rather than special-casing
+  // a zoom-level cutoff separately.
+  function drawFootprintGrid(ctx, cssW, cssH) {
+    var scale = footprintView.scale;
+    if (FOOTPRINT_GRID_MINOR_WORLD * scale < 6) return;
+    var left = -footprintView.x / scale;
+    var top = -footprintView.y / scale;
+    var right = (cssW - footprintView.x) / scale;
+    var bottom = (cssH - footprintView.y) / scale;
+    var startCol = Math.floor(left / FOOTPRINT_GRID_MINOR_WORLD);
+    var endCol = Math.ceil(right / FOOTPRINT_GRID_MINOR_WORLD);
+    var startRow = Math.floor(top / FOOTPRINT_GRID_MINOR_WORLD);
+    var endRow = Math.ceil(bottom / FOOTPRINT_GRID_MINOR_WORLD);
+    var top_ = startRow * FOOTPRINT_GRID_MINOR_WORLD, bottom_ = endRow * FOOTPRINT_GRID_MINOR_WORLD;
+    var left_ = startCol * FOOTPRINT_GRID_MINOR_WORLD, right_ = endCol * FOOTPRINT_GRID_MINOR_WORLD;
+    ctx.save();
+    ctx.translate(footprintView.x, footprintView.y);
+    ctx.scale(scale, scale);
+    ctx.lineWidth = 1 / scale;
+    [{ mod: false, color: 'rgba(28,58,82,0.07)' }, { mod: true, color: 'rgba(28,58,82,0.15)' }].forEach(function (pass) {
+      ctx.strokeStyle = pass.color;
+      ctx.beginPath();
+      for (var c = startCol; c <= endCol; c++) {
+        if ((c % FOOTPRINT_GRID_MAJOR_EVERY === 0) !== pass.mod) continue;
+        var x = c * FOOTPRINT_GRID_MINOR_WORLD;
+        ctx.moveTo(x, top_);
+        ctx.lineTo(x, bottom_);
+      }
+      for (var r = startRow; r <= endRow; r++) {
+        if ((r % FOOTPRINT_GRID_MAJOR_EVERY === 0) !== pass.mod) continue;
+        var y = r * FOOTPRINT_GRID_MINOR_WORLD;
+        ctx.moveTo(left_, y);
+        ctx.lineTo(right_, y);
+      }
+      ctx.stroke();
+    });
+    ctx.restore();
+  }
+
+  function footprintDrawOneStroke(ctx, s) {
+    ctx.lineWidth = footprintLineWidthValue(s.width);
+    ctx.beginPath();
+    if (s.type === 'line') {
+      ctx.moveTo(s.a.x, s.a.y);
+      ctx.lineTo(s.b.x, s.b.y);
+    } else {
+      ctx.moveTo(s.points[0].x, s.points[0].y);
+      for (var i = 1; i < s.points.length; i++) ctx.lineTo(s.points[i].x, s.points[i].y);
+    }
+    ctx.stroke();
+  }
+
+  // Full redraw from state -- committed strokes plus, mid-drag, the
+  // live in-progress draft -- never partial/incremental. Called
+  // continuously during a drag (cheap: a canvas clear + one pass over
+  // however many strokes currently exist, no heavier per-stroke work
+  // than a handful of ctx.lineTo() calls, comfortably within #34's
+  // "100+ strokes stay responsive" even at 60fps) and once after any
+  // discrete state change (undo, tool change, completed stroke via the
+  // global render() recreating the canvas fresh).
+  function drawFootprintCanvas() {
+    if (!footprintCtx || !footprintCanvasEl) return;
+    var dpr = window.devicePixelRatio || 1;
+    var cssW = footprintCanvasEl.width / dpr;
+    var cssH = footprintCanvasEl.height / dpr;
+    var ctx = footprintCtx;
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.clearRect(0, 0, cssW, cssH);
+    drawFootprintGrid(ctx, cssW, cssH);
+    ctx.save();
+    ctx.translate(footprintView.x, footprintView.y);
+    ctx.scale(footprintView.scale, footprintView.scale);
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+    ctx.strokeStyle = '#1c3a52';
+    footprint.strokes.forEach(function (s) { footprintDrawOneStroke(ctx, s); });
+    if (footprintDraft && footprintDraft.mode === 'draw' && footprintDraft.points.length > 1) {
+      footprintDrawOneStroke(ctx, { type: 'freehand', points: footprintDraft.points, width: footprintLineWidth });
+    }
+    ctx.restore();
+  }
+
+  // Shallow copy of the strokes array only -- individual stroke objects
+  // are treated as immutable once created (drawing pushes a new object,
+  // erasing filters the array down, neither ever mutates an existing
+  // stroke's own fields in place), so a shallow `.slice()` is a complete,
+  // correct point-in-time snapshot without the cost of deep-cloning every
+  // stroke's point list on every single action.
+  function footprintPushUndoSnapshot() {
+    footprintUndoStack.push(footprint.strokes.slice());
+    if (footprintUndoStack.length > FOOTPRINT_UNDO_LIMIT) footprintUndoStack.shift();
+  }
+
+  // Reverses exactly one prior committed action -- a completed line, a
+  // completed freehand stroke, or one whole erase gesture (#14) -- never
+  // a partial step, since footprintPushUndoSnapshot() is only ever called
+  // once per completed user action (see footprintCommitDrawDraft()/the
+  // eraser's lazy-snapshot-on-first-hit below), not once per point or
+  // per stroke removed. Straightening specifically never creates a
+  // second undo step: classification happens *before* the stroke is
+  // ever pushed to `footprint.strokes`, so there is exactly one array
+  // mutation, and therefore exactly one snapshot, per rough-stroke-
+  // becomes-straight-line action.
+  function footprintUndo() {
+    if (!footprintUndoStack.length) return;
+    footprint.strokes = footprintUndoStack.pop();
+    scheduleAutoSave();
+    render();
+  }
+
+  // Finalizes a completed Pencil drag into either a straight `line`
+  // (endpoints = the actual first/last sampled points, never a
+  // recomputed best-fit endpoint -- #30) or a `freehand` stroke
+  // (optionally lightly smoothed -- #9), and pushes it onto
+  // `footprint.strokes`. The noise threshold is measured in screen
+  // pixels (multiplying world-space deltas back out by the scale the
+  // stroke was drawn at -- pan/zoom can't happen mid-single-pointer-drag,
+  // so this scale is stable for the whole gesture) since "was this an
+  // accidental tap" is inherently a physical-gesture-size question, not
+  // a world-space one.
+  function footprintCommitDrawDraft(draft) {
+    var pts = draft.points;
+    if (pts.length < 2) return;
+    var scale = draft.startScale;
+    var pathLenPx = 0;
+    for (var i = 1; i < pts.length; i++) {
+      pathLenPx += Math.hypot(pts[i].x - pts[i - 1].x, pts[i].y - pts[i - 1].y) * scale;
+    }
+    if (pathLenPx < FOOTPRINT_NOISE_SCREEN_PX) return;
+
+    footprintPushUndoSnapshot();
+    var classification = footprintStraightenEnabled ? classifyStroke(pts) : { isLine: false };
+    var stroke;
+    if (classification.isLine) {
+      stroke = { id: generateFootprintStrokeId(), type: 'line', a: classification.a, b: classification.b, width: footprintLineWidth };
+    } else {
+      stroke = { id: generateFootprintStrokeId(), type: 'freehand', points: smoothFreehandPoints(pts), width: footprintLineWidth };
+    }
+    footprint.strokes.push(stroke);
+    scheduleAutoSave();
+  }
+
+  function footprintStrokeHit(s, p, radius) {
+    if (s.type === 'line') return footprintDistToSegment(p, s.a, s.b) <= radius;
+    var pts = s.points;
+    if (pts.length === 1) return Math.hypot(p.x - pts[0].x, p.y - pts[0].y) <= radius;
+    for (var i = 1; i < pts.length; i++) {
+      if (footprintDistToSegment(p, pts[i - 1], pts[i]) <= radius) return true;
+    }
+    return false;
+  }
+
+  // Removes every stroke under the pointer at (clientX, clientY) --
+  // usually zero or one per call, but a drag can sweep over several in
+  // one motion, which is fine: the *undo* snapshot for this whole erase
+  // gesture is taken lazily, once, the first time this call actually
+  // removes anything (draft.snapshotTaken), so one drag that erases five
+  // overlapping strokes is still exactly one undo step (#14), and an
+  // eraser tap that hits nothing never pollutes undo history with a
+  // no-op snapshot. Hit radius is generous relative to each stroke's own
+  // width (easier to hit-and-remove than to draw precisely on a
+  // touchscreen) and converted through the current view scale so it
+  // feels consistent regardless of zoom level.
+  function footprintEraseAt(clientX, clientY) {
+    var wp = footprintScreenToWorld(clientX, clientY);
+    var scale = footprintView.scale;
+    var changedAny = false;
+    var kept = [];
+    footprint.strokes.forEach(function (s) {
+      var r = Math.max(14, footprintLineWidthValue(s.width) * 3) / scale;
+      if (footprintStrokeHit(s, wp, r)) {
+        if (!footprintDraft.snapshotTaken) {
+          footprintPushUndoSnapshot();
+          footprintDraft.snapshotTaken = true;
+        }
+        changedAny = true;
+      } else {
+        kept.push(s);
+      }
+    });
+    if (changedAny) {
+      footprint.strokes = kept;
+      drawFootprintCanvas();
+    }
+  }
+
+  // Two-pointer pinch-zoom-and-pan, unified into one gesture (#15): the
+  // world point that was under the pinch's starting midpoint stays
+  // anchored under its current midpoint as scale changes, which is what
+  // makes a pure two-finger drag (near-constant distance) read as a pan
+  // and a genuine pinch read as a zoom, from the exact same math -- the
+  // same technique confirmed in clipboard-test's own Footprint prototype
+  // (read read-only before this milestone), extended here to also cover
+  // plain panning, not just zoom.
+  function footprintComputePinchState() {
+    var ids = Object.keys(footprintPointers);
+    var p0 = footprintPointers[ids[0]], p1 = footprintPointers[ids[1]];
+    var rect = footprintCanvasEl.getBoundingClientRect();
+    return {
+      startDist: Math.hypot(p1.x - p0.x, p1.y - p0.y) || 1,
+      startScale: footprintView.scale,
+      startMidClientX: (p0.x + p1.x) / 2,
+      startMidClientY: (p0.y + p1.y) / 2,
+      startViewX: footprintView.x,
+      startViewY: footprintView.y,
+      rectLeft: rect.left,
+      rectTop: rect.top
+    };
+  }
+
+  function footprintApplyPinchPan() {
+    var ids = Object.keys(footprintPointers);
+    if (ids.length < 2 || !footprintPinchState) return;
+    var p0 = footprintPointers[ids[0]], p1 = footprintPointers[ids[1]];
+    var midX = (p0.x + p1.x) / 2, midY = (p0.y + p1.y) / 2;
+    var dist = Math.hypot(p1.x - p0.x, p1.y - p0.y) || 1;
+    var ps = footprintPinchState;
+    var newScale = Math.max(FOOTPRINT_MIN_SCALE, Math.min(FOOTPRINT_MAX_SCALE, ps.startScale * (dist / ps.startDist)));
+    var anchorWorldX = (ps.startMidClientX - ps.rectLeft - ps.startViewX) / ps.startScale;
+    var anchorWorldY = (ps.startMidClientY - ps.rectTop - ps.startViewY) / ps.startScale;
+    footprintView.scale = newScale;
+    footprintView.x = (midX - ps.rectLeft) - anchorWorldX * newScale;
+    footprintView.y = (midY - ps.rectTop) - anchorWorldY * newScale;
+  }
+
+  // pointerdown: a second concurrent pointer always wins over drawing
+  // (#15 -- "avoid accidental drawing during two-finger navigation") --
+  // any in-progress single-pointer draft is simply abandoned (never
+  // partially committed) the instant a second pointer arrives, and the
+  // gesture becomes pinch/pan for its remainder. setPointerCapture keeps
+  // move/up events targeted at the canvas even if a finger drifts outside
+  // its bounds mid-drag, which is what lets a single pointerup/
+  // pointercancel handler be the one reliable end-of-gesture signal
+  // regardless of exactly where the finger lifted (#31). Wrapped in
+  // try/catch: capture is a reliability enhancement, not a strict
+  // prerequisite for drawing to work at all, and an uncaught exception
+  // here (observed in testing with a platform that rejected the
+  // pointerId) would otherwise abort this whole handler before
+  // footprintPointers[ev.pointerId] is ever set -- silently swallowing
+  // the entire gesture and leaving exactly the "stuck drawing state"
+  // #31 warns against, for no benefit.
+  function footprintPointerDown(ev) {
+    try { footprintCanvasEl.setPointerCapture(ev.pointerId); } catch (e) { /* proceed uncaptured */ }
+    footprintPointers[ev.pointerId] = { x: ev.clientX, y: ev.clientY };
+    var count = Object.keys(footprintPointers).length;
+
+    if (count >= 2) {
+      footprintDraft = null;
+      footprintPinchState = footprintComputePinchState();
+      return;
+    }
+
+    if (footprintTool === 'hand') {
+      footprintDraft = { mode: 'pan', lastX: ev.clientX, lastY: ev.clientY };
+      return;
+    }
+    if (footprintTool === 'eraser') {
+      footprintDraft = { mode: 'erase', snapshotTaken: false };
+      footprintEraseAt(ev.clientX, ev.clientY);
+      return;
+    }
+    var wp = footprintScreenToWorld(ev.clientX, ev.clientY);
+    footprintDraft = { mode: 'draw', points: [wp], startScale: footprintView.scale };
+    drawFootprintCanvas();
+  }
+
+  function footprintPointerMove(ev) {
+    if (!(ev.pointerId in footprintPointers)) return;
+    footprintPointers[ev.pointerId] = { x: ev.clientX, y: ev.clientY };
+
+    if (Object.keys(footprintPointers).length >= 2) {
+      footprintApplyPinchPan();
+      drawFootprintCanvas();
+      return;
+    }
+    if (!footprintDraft) return;
+
+    if (footprintDraft.mode === 'pan') {
+      footprintView.x += ev.clientX - footprintDraft.lastX;
+      footprintView.y += ev.clientY - footprintDraft.lastY;
+      footprintDraft.lastX = ev.clientX;
+      footprintDraft.lastY = ev.clientY;
+      drawFootprintCanvas();
+      return;
+    }
+    if (footprintDraft.mode === 'erase') {
+      footprintEraseAt(ev.clientX, ev.clientY);
+      return;
+    }
+    if (footprintDraft.mode === 'draw') {
+      var wp = footprintScreenToWorld(ev.clientX, ev.clientY);
+      var last = footprintDraft.points[footprintDraft.points.length - 1];
+      var minDist = FOOTPRINT_MIN_SAMPLE_SCREEN_PX / footprintView.scale;
+      if (Math.hypot(wp.x - last.x, wp.y - last.y) >= minDist) {
+        footprintDraft.points.push(wp);
+        drawFootprintCanvas();
+      }
+    }
+  }
+
+  // The one function both pointerup and pointercancel/lostpointercapture
+  // funnel into (#31 -- "handle pointercancel safely... prevent stuck
+  // drawing state"). `commit` distinguishes a normal lift (finalize
+  // whatever was in progress) from a cancellation (discard it outright --
+  // never try to guess a sensible endpoint for a gesture the platform
+  // itself interrupted, e.g. an incoming call or a palm-rejection event).
+  // If a second pointer lifts first during a pinch, the *other* pointer
+  // remaining down does not resume drawing from wherever it happens to
+  // be -- it takes a fresh pointerdown to start a new stroke, avoiding a
+  // surprise stroke continuing mid-gesture from an unrelated finger.
+  function footprintEndPointer(pointerId, commit) {
+    if (!(pointerId in footprintPointers)) return;
+    delete footprintPointers[pointerId];
+    if (Object.keys(footprintPointers).length >= 1) {
+      footprintPinchState = null;
+      footprintDraft = null;
+      return;
+    }
+
+    footprintPinchState = null;
+    var draft = footprintDraft;
+    footprintDraft = null;
+    if (!draft) { drawFootprintCanvas(); return; }
+
+    if (draft.mode === 'draw' && commit) {
+      footprintCommitDrawDraft(draft);
+    } else if (draft.mode === 'erase' && commit && draft.snapshotTaken) {
+      scheduleAutoSave();
+    }
+    render();
+  }
+
+  function footprintPointerUp(ev) { footprintEndPointer(ev.pointerId, true); }
+  function footprintPointerCancel(ev) { footprintEndPointer(ev.pointerId, false); }
+
+  function renderFootprintTabHtml() {
+    var warningHtml = dbUnavailable
+      ? '<div class="shell-note error">Footprint save/load isn\'t available in this browser ' +
+        '(IndexedDB is blocked or unsupported).</div>'
+      : '';
+    var widthLabels = { thin: 'Thin', medium: 'Medium', thick: 'Thick' };
+    var widthButtonsHtml = ['thin', 'medium', 'thick'].map(function (w) {
+      return '<button type="button" class="footprint-width-btn' + (footprintLineWidth === w ? ' active' : '') +
+        '" data-role="footprint-width" data-width="' + w + '">' + widthLabels[w] + '</button>';
+    }).join('');
+    return warningHtml +
+      '<div class="footprint-toolbar">' +
+        '<div class="footprint-tool-group">' +
+          '<button type="button" class="footprint-tool-btn' + (footprintTool === 'pencil' ? ' active' : '') +
+            '" data-role="footprint-tool-pencil" aria-pressed="' + (footprintTool === 'pencil') + '">Pencil</button>' +
+          '<button type="button" class="footprint-tool-btn' + (footprintTool === 'eraser' ? ' active' : '') +
+            '" data-role="footprint-tool-eraser" aria-pressed="' + (footprintTool === 'eraser') + '">Eraser</button>' +
+          '<button type="button" class="footprint-tool-btn' + (footprintTool === 'hand' ? ' active' : '') +
+            '" data-role="footprint-tool-hand" aria-pressed="' + (footprintTool === 'hand') + '">Pan</button>' +
+        '</div>' +
+        '<div class="footprint-tool-group">' +
+          '<button type="button" class="footprint-tool-btn" data-role="footprint-undo"' +
+            (footprintUndoStack.length ? '' : ' disabled') + '>Undo</button>' +
+          '<button type="button" class="footprint-tool-btn" data-role="footprint-settings">Settings</button>' +
+        '</div>' +
+      '</div>' +
+      '<div class="footprint-settings-popover" data-role="footprint-settings-popover"' +
+        (footprintSettingsOpen ? '' : ' hidden') + '>' +
+        '<div class="footprint-settings-row">' +
+          '<span>Straighten</span>' +
+          '<button type="button" class="footprint-toggle-btn' + (footprintStraightenEnabled ? ' on' : '') +
+            '" data-role="footprint-straighten-toggle" aria-pressed="' + footprintStraightenEnabled + '">' +
+            (footprintStraightenEnabled ? 'On' : 'Off') + '</button>' +
+        '</div>' +
+        '<div class="footprint-settings-row">' +
+          '<span>Line Thickness</span>' +
+          '<div class="footprint-width-group">' + widthButtonsHtml + '</div>' +
+        '</div>' +
+      '</div>' +
+      '<div class="footprint-canvas-wrap">' +
+        '<canvas id="footprint-canvas" class="footprint-canvas"></canvas>' +
+      '</div>';
+  }
+
+  var footprintResizeListenerAdded = false;
+
+  // Re-wired fresh every time the Footprint tab (re)renders -- same
+  // convention as wireFields()/wirePhotosTabControls() -- since render()
+  // recreates the <canvas> element itself each time. The window resize
+  // listener is the one exception: added at most once, ever, and
+  // self-guarding (it looks up the canvas fresh by id and no-ops if the
+  // Footprint tab isn't currently showing one), so leaving the tab can
+  // never leave a stale listener doing anything harmful, and repeated
+  // visits can never stack duplicate listeners.
+  function wireFootprintTabControls() {
+    footprintCanvasEl = document.getElementById('footprint-canvas');
+    if (footprintCanvasEl) {
+      setupFootprintCanvasBackingStore();
+      footprintPointers = {};
+      footprintPinchState = null;
+      drawFootprintCanvas();
+      footprintCanvasEl.onpointerdown = footprintPointerDown;
+      footprintCanvasEl.onpointermove = footprintPointerMove;
+      footprintCanvasEl.onpointerup = footprintPointerUp;
+      footprintCanvasEl.onpointercancel = footprintPointerCancel;
+      footprintCanvasEl.onlostpointercapture = footprintPointerCancel;
+    }
+
+    if (!footprintResizeListenerAdded) {
+      footprintResizeListenerAdded = true;
+      window.addEventListener('resize', function () {
+        var el = document.getElementById('footprint-canvas');
+        if (!el) return;
+        footprintCanvasEl = el;
+        setupFootprintCanvasBackingStore();
+        drawFootprintCanvas();
+      });
+    }
+
+    Array.prototype.forEach.call(document.querySelectorAll('[data-role^="footprint-tool-"]'), function (btn) {
+      btn.onclick = function () {
+        var role = btn.dataset.role;
+        footprintTool = role === 'footprint-tool-eraser' ? 'eraser' : role === 'footprint-tool-hand' ? 'hand' : 'pencil';
+        render();
+      };
+    });
+
+    var undoBtn = document.querySelector('[data-role="footprint-undo"]');
+    if (undoBtn) undoBtn.onclick = footprintUndo;
+
+    var settingsBtn = document.querySelector('[data-role="footprint-settings"]');
+    var popover = document.querySelector('[data-role="footprint-settings-popover"]');
+    if (settingsBtn && popover) {
+      settingsBtn.onclick = function () {
+        footprintSettingsOpen = !footprintSettingsOpen;
+        popover.hidden = !footprintSettingsOpen;
+      };
+    }
+
+    var straightenToggle = document.querySelector('[data-role="footprint-straighten-toggle"]');
+    if (straightenToggle) {
+      straightenToggle.onclick = function () {
+        footprintStraightenEnabled = !footprintStraightenEnabled;
+        saveFootprintStraightenPref(footprintStraightenEnabled);
+        footprintSettingsOpen = true;
+        render();
+      };
+    }
+
+    Array.prototype.forEach.call(document.querySelectorAll('[data-role="footprint-width"]'), function (btn) {
+      btn.onclick = function () {
+        footprintLineWidth = btn.dataset.width;
+        saveFootprintLineWidthPref(footprintLineWidth);
+        footprintSettingsOpen = true;
+        render();
       };
     });
   }
@@ -3488,7 +4488,7 @@
   }
 
   function navTabs() {
-    return CFG.main.tabs.concat([EXIT_INTERVIEW_TAB, PHOTOS_TAB, INSPECTION_TAB]);
+    return CFG.main.tabs.concat([EXIT_INTERVIEW_TAB, PHOTOS_TAB, FOOTPRINT_TAB, INSPECTION_TAB]);
   }
 
   function renderTabs() {
@@ -3566,6 +4566,13 @@
     if (activeTab === PHOTOS_TAB) {
       $('#screen').innerHTML = renderPhotosTabHtml() + renderBottomNavHtml();
       wirePhotosTabControls();
+      wireBottomNav();
+      return;
+    }
+
+    if (activeTab === FOOTPRINT_TAB) {
+      $('#screen').innerHTML = renderFootprintTabHtml() + renderBottomNavHtml();
+      wireFootprintTabControls();
       wireBottomNav();
       return;
     }
@@ -3853,7 +4860,7 @@
     flushPendingSave().catch(function () {});
   });
 
-  fetch('config.json?v=0.21.1', { cache: 'no-store' })
+  fetch('config.json?v=0.22', { cache: 'no-store' })
     .then(function (r) {
       if (!r.ok) throw new Error('HTTP ' + r.status);
       return r.json();
