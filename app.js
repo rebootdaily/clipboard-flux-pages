@@ -1,4 +1,95 @@
-/* Clipboard-Flux -- Milestone 18: field-workflow cleanup -- auto-save,
+/* Clipboard-Flux -- Milestone 19: field usability hardening, driven by
+   physical field testing of 0.18 -- (1) a field can now be activated by
+   tapping anywhere on its card (label, blank area, reminder text), not
+   only by touching its answer control; (2) the whole active card is now
+   visually highlighted, not just the selected answer button; (3) every
+   primary screen gets a bottom Previous/Next nav bar, derived from the
+   same navTabs() list the top nav already uses; (4) PDF export no longer
+   opens a separate popup window at all -- see the PDF section's own
+   header comment for the mobile hang this eliminates.
+
+   Card-tap activation (1+2): wireFields() now also assigns each `.field`
+   element's own `.onclick` to call activateFieldNoRender(id). Every
+   existing control inside a field (option/counter buttons, Note/Photo
+   toggles, text focus) already calls setActiveField()/
+   activateFieldNoRender() itself as part of its own handler, and DOM
+   click events bubble from whatever was actually tapped up through its
+   ancestors to this new card-level handler regardless -- so a tap on an
+   answer control fires its own handler first (selecting the answer,
+   activating the field, and for most controls calling render()) and
+   *then* bubbles to the card handler, which finds activeFieldId already
+   equal to id and no-ops via activateFieldNoRender()'s own existing
+   guard. A tap on the label, blank card background, or reminder text has
+   no inner handler to fire first, so only the card-level handler runs --
+   activating the field without touching `values` or calling
+   saveValues()/scheduleAutoSave() at all (Milestone 19 #6: activation
+   alone must never mark the inspection dirty). No stopPropagation
+   anywhere is needed for this to be safe, and none was added -- every
+   control's own click handler already runs to completion (including any
+   render() it triggers) before the same event's bubble phase can ever
+   reach the card, so there is no path to a control action firing twice.
+   This is wired inside the *existing* per-field loop in wireFields(),
+   which already iterates every `.field` element -- MAIN and FOLLOW_UP
+   (Dynamic and Exit Interview) alike, both destinations, including
+   nested SHOW WHEN questions -- so activation/highlight behavior is
+   identical everywhere by construction, never a MAIN-only feature.
+   The active-card highlight itself is pure CSS (`.field.active`) keyed
+   off the exact same class the shell already applied for
+   `.field-actions` visibility -- see index.html.
+
+   Bottom Previous/Next (3): renderBottomNavHtml() reads navTabs() (the
+   one list the top nav already renders from, itself built from
+   CFG.main.tabs + EXIT_INTERVIEW_TAB + INSPECTION_TAB) to find the
+   current tab's neighbors -- there is no second, hardcoded tab order
+   anywhere. switchToTab() is the one function that changes activeTab,
+   re-renders, and scrolls the window back to the top, used by both the
+   new bottom buttons and the existing top nav.tabs buttons (which
+   previously left the scroll position wherever it was, exactly the
+   "stuck at the bottom of a long screen" complaint this milestone is
+   fixing). It never touches values/autosave -- activeTab is transient
+   UI state, same category as activeFieldId, never persisted -- so this
+   is always safe regardless of any pending debounced write.
+
+   PDF export mobile hang (4/5): diagnosed as the popup-window mechanism
+   itself. generatePdfExport() used to call window.open('', '_blank'),
+   document.write() the printable HTML into that separate window, and
+   window.print() it there. On iPhone/iPad Safari a script-opened window
+   is not a reliably dismissable, easy-to-return-from browser surface the
+   way it is on desktop -- there is no window-manager chrome to close it
+   from, no afterprint support to rely on for auto-cleanup, and in a
+   Home-Screen standalone PWA a window.open() popup can end up kicking
+   the user out to full Safari entirely. Either way the user is left
+   looking at a dead print-preview document with no link back to
+   Clipboard-Flux, matching exactly what was reported. The fix removes
+   the separate window/tab from the mechanism altogether: the same
+   unchanged buildPrintDocumentHtml() output is now written into a
+   hidden same-page <iframe> (0x0, position:fixed, never display:none so
+   print rendering still works) and printed via
+   iframe.contentWindow.print() -- a long-established cross-browser
+   technique specifically because the browser's native print/share sheet
+   then simply overlays the current page and Clipboard-Flux's own
+   document is never navigated away from or replaced at all. There is
+   nothing to "return to" because nothing was ever left -- app state,
+   activeTab, and DOM are untouched throughout. The iframe is torn down
+   on `afterprint` (fires reliably on desktop; a generous fallback timer
+   -- not the primary mechanism -- covers engines where it doesn't) and
+   defensively before building a new one, so repeated exports can't stack
+   iframes or leak the object URLs used for full-resolution photos.
+   Because there's no popup to keep synchronous with the click anymore,
+   handleExportPdfClick() now flushes any pending autosave first via the
+   same flushPendingSave() pattern Export JSON already uses, instead of
+   forcing its own internal save -- the two export handlers are now
+   symmetric.
+
+   Auto-save (Milestone 18), the compact header/Inspection tab, JSON
+   export/import (Milestone 16), inspection identity (Milestone 15), and
+   every earlier milestone are otherwise unchanged -- this milestone only
+   changes how a field becomes "active," how the active card looks, how
+   the user moves between screens, and how the PDF print dialog is
+   invoked, never what any of those things actually do to persisted
+   state.
+
+   ---- Milestone 18: field-workflow cleanup -- auto-save,
    a compact global header, and a synthetic "Inspection" app tab that
    absorbs the New/Save/Load/Reset/Export controls that used to sit in a
    permanent top-of-screen bar on every MAIN/Exit Interview tab.
@@ -103,7 +194,7 @@
   var AUTOSAVE_DEBOUNCE_MS = 700;
   var MIGRATED_INSPECTION_ADDRESS = 'Unsaved / Migrated Inspection';
   // The exported-file schema is versioned independently of
-  // 0.18 -- app releases and the inspection-file format can
+  // 0.19 -- app releases and the inspection-file format can
   // and will drift out of step (a future app version might still need
   // to read a schemaVersion 1 file, or refuse a newer one it doesn't
   // understand yet), so import validation checks schema/schemaVersion
@@ -111,10 +202,10 @@
   var EXPORT_SCHEMA = 'clipboard-flux-inspection';
   var EXPORT_SCHEMA_VERSION = 1;
   var SUPPORTED_SCHEMA_VERSIONS = [1];
-  // Stamped at build time exactly like every other 0.18
+  // Stamped at build time exactly like every other 0.19
   // token in this file -- informational only in the export, never
   // itself validated on import.
-  var APP_VERSION = '0.18';
+  var APP_VERSION = '0.19';
   // Same database as Milestone 14's photos -- name kept for continuity
   // even though it now also holds inspection records; renaming it would
   // mean either abandoning existing photo data or writing a whole
@@ -157,6 +248,11 @@
   var dbUnavailable = false;
   var photoDbPromise = null;
   var fullViewerState = null;
+  // The hidden <iframe> currently printing a PDF export, if any -- see
+  // generatePdfExport()/printViaHiddenIframe() (Milestone 19 #4/#5).
+  // Only one at a time; a fresh export always tears down a stale one
+  // first via cleanupPdfPrintIframe().
+  var pdfPrintIframe = null;
   // The currently open inspection's metadata record ({inspectionId,
   // propertyAddress, createdAt, updatedAt}) -- what the inspection bar
   // displays and what Save/Reset write back to.
@@ -1996,9 +2092,7 @@
     '.pdf-photo-item img{width:100%;max-height:2.6in;object-fit:contain;display:block}' +
     '.pdf-photo-caption{font-size:8pt;color:#4a5660;margin-top:3px}' +
     '.pdf-empty-note{font-size:10pt;color:#66727e;font-style:italic}' +
-    '.pdf-footer-note{margin-top:16px;padding-top:6px;border-top:1px solid #d9e0e6;font-size:7pt;color:#9aa5ad}' +
-    '@media screen{body{max-width:8.5in;margin:20px auto;padding:0.5in 0.6in;' +
-      'box-shadow:0 0 12px rgba(0,0,0,.15)}}';
+    '.pdf-footer-note{margin-top:16px;padding-top:6px;border-top:1px solid #d9e0e6;font-size:7pt;color:#9aa5ad}';
 
   function buildPdfFilenameBase(meta) {
     var base = sanitizeForFilename(meta.propertyAddress) || sanitizeForFilename(meta.inspectionId) || 'inspection';
@@ -2039,96 +2133,106 @@
       '</body></html>';
   }
 
-  // Opens the preview window synchronously, in direct response to the
-  // user's click, *before* any async work starts -- opening it later
-  // (e.g. from inside a .then()) risks Safari/iOS treating it as an
-  // unrequested popup rather than part of the user gesture, exactly the
-  // risk this project already avoided once before for the photo full-
-  // size viewer (Milestone 14). The window is filled in with a
-  // placeholder immediately, then with the real document once the
-  // IndexedDB reads (and, for Save and Export, the save itself)
-  // complete. print() is guarded to fire at most once, from whichever
-  // of onload or the fallback timer happens first -- onload should
-  // always fire once document.write()'d content (including every
-  // <img>) finishes loading, but the timer is a safety net since that
-  // isn't formally guaranteed across engines.
-  function generatePdfExport(inspectionId, saveFirst) {
-    var printWin = window.open('', '_blank');
-    if (!printWin) {
-      window.alert('Could not open the PDF preview -- please allow pop-ups for this site and try again.');
-      return;
-    }
-    printWin.document.open();
-    printWin.document.write(
-      '<!doctype html><html><head><meta charset="utf-8"><title>Preparing PDF…</title></head>' +
-      '<body style="font-family:sans-serif;padding:40px;color:#556">Preparing your PDF…</body></html>'
-    );
-    printWin.document.close();
+  // Tears down the current print iframe (if any) and revokes the
+  // full-resolution photo object URLs it was holding -- called both
+  // defensively before starting a new export (so repeat exports, matrix
+  // test #26, can never stack iframes) and after a print completes.
+  // Safe to call when there's nothing to clean up.
+  function cleanupPdfPrintIframe() {
+    if (!pdfPrintIframe) return;
+    (pdfPrintIframe.__objectUrls || []).forEach(function (u) { URL.revokeObjectURL(u); });
+    if (pdfPrintIframe.parentNode) pdfPrintIframe.parentNode.removeChild(pdfPrintIframe);
+    pdfPrintIframe = null;
+  }
 
-    var savePromise = saveFirst
-      ? saveCurrentInspection().then(function () { setSaveStatus('saved'); }, function (e) {
-          setSaveStatus('failed');
-          throw e;
-        })
-      : Promise.resolve();
-    savePromise.then(function () {
-      return Promise.all([
-        idbGetInspection(inspectionId),
-        idbGetInspectionData(inspectionId),
-        idbGetAllPhotosForInspection(inspectionId)
-      ]);
-    }).then(function (results) {
+  // Milestone 19 #4/#5: prints the already-built document via a hidden
+  // same-page <iframe> instead of a separate popup window -- see this
+  // file's top comment for the mobile-hang diagnosis this replaces.
+  // 0x0 and position:fixed, never display:none (some engines skip
+  // rendering/printing display:none content entirely), so it's visually
+  // imperceptible but still a real part of the page the print pipeline
+  // can render from. Printed via iframe.contentWindow.print(), the
+  // standard cross-browser technique for exactly this -- the native
+  // print/share sheet then simply overlays the current page, and
+  // Clipboard-Flux's own document/tab is never navigated away from, so
+  // there is nothing for the user to need to "return" from. Cleanup
+  // fires on `afterprint` (reliable on desktop) with a generous fallback
+  // timer as a safety net for engines where it doesn't fire, exactly
+  // like the print-content-load safety net below it -- not the primary
+  // mechanism either way, so this isn't "blindly adding a delay" as the
+  // fix itself.
+  function printViaHiddenIframe(html, photosWithUrls) {
+    cleanupPdfPrintIframe();
+    var iframe = document.createElement('iframe');
+    iframe.style.position = 'fixed';
+    iframe.style.right = '0';
+    iframe.style.bottom = '0';
+    iframe.style.width = '0';
+    iframe.style.height = '0';
+    iframe.style.border = '0';
+    iframe.setAttribute('aria-hidden', 'true');
+    iframe.__objectUrls = photosWithUrls.map(function (p) { return p.objectUrl; });
+    document.body.appendChild(iframe);
+    pdfPrintIframe = iframe;
+
+    var win = iframe.contentWindow;
+    win.document.open();
+    win.document.write(html);
+    win.document.close();
+
+    var printed = false;
+    var doPrint = function () {
+      if (printed) return;
+      printed = true;
+      win.focus();
+      win.print();
+      win.addEventListener('afterprint', function () { cleanupPdfPrintIframe(); });
+      setTimeout(function () {
+        // Fallback only -- if afterprint already ran, pdfPrintIframe is
+        // already null and cleanupPdfPrintIframe() is a no-op.
+        cleanupPdfPrintIframe();
+      }, 60000);
+    };
+    iframe.onload = doPrint;
+    setTimeout(doPrint, 2000);
+  }
+
+  // Builds and prints the PDF for `inspectionId` -- always reads fresh
+  // from IndexedDB, same convention as exportInspectionJson(). Callers
+  // are expected to have already flushed any pending autosave (see
+  // handleExportPdfClick()) since there's no popup-timing constraint
+  // left to work around -- printViaHiddenIframe() never needs to be
+  // reached synchronously from the click the way window.open() once did.
+  function generatePdfExport(inspectionId) {
+    Promise.all([
+      idbGetInspection(inspectionId),
+      idbGetInspectionData(inspectionId),
+      idbGetAllPhotosForInspection(inspectionId)
+    ]).then(function (results) {
       var meta = results[0];
       var data = results[1];
       var photoRecords = results[2];
       if (!meta || !data) throw new Error('Inspection not found in storage.');
-      // Full-resolution blob, never the thumbnail, per this milestone's
+      // Full-resolution blob, never the thumbnail, per Milestone 17's
       // explicit instruction -- the thumbnail exists only for the fast
       // in-app photo strip.
       var photosWithUrls = photoRecords.map(function (p) {
         return { id: p.id, fieldId: p.fieldId, order: p.order, objectUrl: URL.createObjectURL(p.blob) };
       });
       var html = buildPrintDocumentHtml(meta, data, photosWithUrls);
-      printWin.document.open();
-      printWin.document.write(html);
-      printWin.document.close();
-      var printed = false;
-      var doPrint = function () {
-        if (printed) return;
-        printed = true;
-        printWin.focus();
-        printWin.print();
-      };
-      printWin.onload = doPrint;
-      setTimeout(doPrint, 2000);
+      printViaHiddenIframe(html, photosWithUrls);
     }).catch(function (e) {
       window.console && console.error && console.error('Clipboard-Flux: PDF export failed', e);
-      try {
-        printWin.document.open();
-        printWin.document.write(
-          '<!doctype html><html><head><meta charset="utf-8"></head>' +
-          '<body style="font-family:sans-serif;padding:40px;color:#a33">Could not generate the PDF: ' +
-          esc(e.message) + '</body></html>'
-        );
-        printWin.document.close();
-      } catch (e2) {
-        // The user may have already closed the preview window themselves.
-      }
+      window.alert('Could not generate the PDF: ' + e.message);
     });
   }
 
-  // PDF export must open its preview window synchronously in the same
-  // click that triggered it (see generatePdfExport()'s own comment) --
-  // so unlike Export JSON, this can't await flushPendingSave() first
-  // without breaking that guarantee. Instead it clears any pending
-  // debounce timer synchronously (cheap, no async wait) and always
-  // passes saveFirst=true, which makes generatePdfExport() do the actual
-  // save itself as the first step of its own promise chain, after the
-  // window has already opened. Always-save-first is a deliberate
-  // simplification over Milestone 17's saved-vs-unsaved choice modal --
-  // under auto-save that distinction is no longer meaningful, and a
-  // forced save here is always safe (idempotent put(), and it's exactly
-  // what would have happened within AUTOSAVE_DEBOUNCE_MS anyway).
+  // Symmetric with handleExportInspectionClick() now that PDF export no
+  // longer needs to open anything synchronously with the click (see
+  // printViaHiddenIframe()) -- flush any pending autosave first, then
+  // generate. If the flush itself fails, still export -- the last
+  // successfully saved snapshot is better than no export at all, and the
+  // failure is already visible via the 'Save failed' status.
   function handleExportPdfClick() {
     if (dbUnavailable) {
       window.alert('PDF export isn\'t available in this browser (IndexedDB is blocked or unsupported).');
@@ -2138,8 +2242,14 @@
       window.alert('No active inspection to export.');
       return;
     }
-    if (autosaveTimer) { clearTimeout(autosaveTimer); autosaveTimer = null; }
-    generatePdfExport(activeInspection.inspectionId, true);
+    var id = activeInspection.inspectionId;
+    flushPendingSave().then(function () {
+      generatePdfExport(id);
+    }, function (e) {
+      window.console && console.error && console.error('Clipboard-Flux: could not save latest changes before PDF export', e);
+      window.alert('Could not save your latest changes (' + e.message + '). Exporting the last successfully saved version instead.');
+      generatePdfExport(id);
+    });
   }
 
   // Compact, always-visible strip showing which inspection is active
@@ -2733,10 +2843,53 @@
         '" data-tab="' + esc(t) + '">' + esc(t) + badge + '</button>';
     }).join('');
     Array.prototype.forEach.call(document.querySelectorAll('#tabs button'), function (b) {
-      b.onclick = function () {
-        activeTab = b.dataset.tab;
-        render();
-      };
+      b.onclick = function () { switchToTab(b.dataset.tab); };
+    });
+  }
+
+  // The one place that changes activeTab (Milestone 19 #3) -- used by
+  // both the top nav.tabs buttons and the new bottom Previous/Next
+  // buttons, so there is exactly one "switch screens" implementation to
+  // keep correct. Scrolls back to the top of the page after re-rendering
+  // so the new screen's first field is what the user actually sees,
+  // rather than whatever vertical position they'd scrolled the previous
+  // screen to -- the exact complaint that motivated adding bottom
+  // navigation in the first place. activeTab is transient UI state, same
+  // as activeFieldId -- never persisted, never touches values/autosave --
+  // so this is always safe regardless of any pending debounced write.
+  function switchToTab(tab) {
+    activeTab = tab;
+    render();
+    window.scrollTo(0, 0);
+  }
+
+  // Reads navTabs() -- the same ordered list the top nav already renders
+  // from, itself built from CFG.main.tabs + EXIT_INTERVIEW_TAB +
+  // INSPECTION_TAB -- to find the current screen's neighbors, so this
+  // never needs its own separate hardcoded tab order and automatically
+  // stays correct if a future milestone adds another synthetic tab.
+  // Previous/Next are simply omitted (not disabled-but-present) at
+  // either end; the Next button's own CSS margin-left:auto keeps it
+  // flush right whether or not a Previous button is present next to it,
+  // so the layout never depends on which buttons exist.
+  function renderBottomNavHtml() {
+    var tabs = navTabs();
+    var idx = tabs.indexOf(activeTab);
+    var prevTab = idx > 0 ? tabs[idx - 1] : null;
+    var nextTab = (idx !== -1 && idx < tabs.length - 1) ? tabs[idx + 1] : null;
+    return '<nav class="bottom-nav">' +
+      (prevTab
+        ? '<button type="button" class="bottom-nav-btn" data-role="bottom-prev" data-tab="' + esc(prevTab) + '">&larr; Previous</button>'
+        : '') +
+      (nextTab
+        ? '<button type="button" class="bottom-nav-btn bottom-nav-btn-next" data-role="bottom-next" data-tab="' + esc(nextTab) + '">Next &rarr;</button>'
+        : '') +
+      '</nav>';
+  }
+
+  function wireBottomNav() {
+    Array.prototype.forEach.call(document.querySelectorAll('[data-role="bottom-prev"], [data-role="bottom-next"]'), function (btn) {
+      btn.onclick = function () { switchToTab(btn.dataset.tab); };
     });
   }
 
@@ -2745,15 +2898,17 @@
     renderTabs();
 
     if (activeTab === EXIT_INTERVIEW_TAB) {
-      $('#screen').innerHTML = renderExitInterviewHtml();
+      $('#screen').innerHTML = renderExitInterviewHtml() + renderBottomNavHtml();
       wireFields();
       wireExitInterviewControls();
+      wireBottomNav();
       return;
     }
 
     if (activeTab === INSPECTION_TAB) {
-      $('#screen').innerHTML = renderInspectionTabHtml();
+      $('#screen').innerHTML = renderInspectionTabHtml() + renderBottomNavHtml();
       wireInspectionTabControls();
+      wireBottomNav();
       return;
     }
 
@@ -2768,8 +2923,9 @@
       ? fields.map(fieldHtml).join('')
       : '<div class="shell-note">No fields on this tab.</div>';
 
-    $('#screen').innerHTML = warning + fieldsHtml;
+    $('#screen').innerHTML = warning + fieldsHtml + renderBottomNavHtml();
     wireFields();
+    wireBottomNav();
   }
 
   // Text/LongText update `values` on every keystroke without
@@ -2780,6 +2936,31 @@
   function wireFields() {
     Array.prototype.forEach.call(document.querySelectorAll('.field'), function (el) {
       var id = el.dataset.fieldId;
+
+      // Milestone 19 #1/#2: tapping any non-control part of the card
+      // (label, blank background, reminder text) activates the field --
+      // reveals its Note/Photo actions and highlights the whole card --
+      // without touching `values` or scheduling a save. Every inner
+      // control (option/counter buttons, Note/Photo toggles, text focus)
+      // already calls setActiveField()/activateFieldNoRender() itself as
+      // the first step of its own handler, and a click on any of them
+      // bubbles up through the DOM to this same card-level handler after
+      // that inner handler has already run -- activateFieldNoRender()'s
+      // own `if (activeFieldId === id) return;` guard then makes this a
+      // no-op in the common case. stopPropagation() is still required,
+      // though: a Dynamic FOLLOW_UP field's `.field` card is rendered
+      // *nested inside* its triggering MAIN field's own `.field` card
+      // (see fieldHtml()'s dynamicHtml placement), so without it a click
+      // anywhere in the inner card would keep bubbling past this
+      // handler to the outer MAIN field's own card-click handler, which
+      // would then re-activate the *outer* field and undo the inner
+      // one's correct activation. Stopping propagation here means only
+      // the innermost `.field` a click actually landed in ever claims
+      // activation, which is what should happen regardless of nesting.
+      el.onclick = function (ev) {
+        activateFieldNoRender(id);
+        if (ev && ev.stopPropagation) ev.stopPropagation();
+      };
 
       var textInput = el.querySelector('[data-role="text"]');
       if (textInput) {
@@ -3007,7 +3188,7 @@
     flushPendingSave().catch(function () {});
   });
 
-  fetch('config.json?v=0.18', { cache: 'no-store' })
+  fetch('config.json?v=0.19', { cache: 'no-store' })
     .then(function (r) {
       if (!r.ok) throw new Error('HTTP ' + r.status);
       return r.json();

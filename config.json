@@ -1,5 +1,5 @@
 {
-  "version": "0.18",
+  "version": "0.19",
   "inputRules": {
     "sheet": "INPUT RULES",
     "validTypes": [
@@ -457,6 +457,7 @@
         "tab": "Exterior",
         "type": "MultiSelect",
         "options": [
+          "Open",
           "Garage",
           "Carport",
           "Covered",

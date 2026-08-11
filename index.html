@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
-<title>Clipboard-Flux 0.18</title>
+<title>Clipboard-Flux 0.19</title>
 <meta name="theme-color" content="#17324d">
 <style>
 :root{--navy:#17324d;--bg:#eef2f5;--line:#d9e0e6;--muted:#66727e;--paper:#fff}
@@ -18,10 +18,11 @@ nav.tabs button.active{background:var(--navy);color:#fff}
 main{padding:8px 16px 16px;max-width:640px;margin:auto}
 .shell-note{background:#fff;border:1px solid var(--line);border-radius:14px;padding:14px 16px;margin-bottom:14px;font-size:14px;color:var(--muted)}
 .shell-note.error{color:#a33;border-color:#e3ad1d;background:#fff3e0}
-.field{background:#fff;border:1px solid var(--line);border-radius:12px;padding:12px;margin:10px 0;position:relative}
+.field{background:#fff;border:1px solid var(--line);border-radius:12px;padding:12px;margin:10px 0;position:relative;transition:background-color .12s,box-shadow .12s,border-color .12s}
 .field label{display:block;font-weight:700;font-size:15px;margin-bottom:8px;padding-right:36px}
 .field-actions{display:none;position:absolute;top:10px;right:10px;gap:6px}
 .field.active .field-actions{display:flex}
+.field.active{background:#eaf3fc;border-color:var(--navy);box-shadow:0 0 0 2px var(--navy)}
 .field-action-btn{position:relative;width:30px;height:30px;display:inline-flex;align-items:center;justify-content:center;border-radius:8px;border:1.5px solid #8fa1b2;background:var(--bg);color:var(--navy);font-size:15px;line-height:1;padding:0}
 .field-action-btn[aria-pressed="true"]{background:var(--navy);color:#fff;border-color:var(--navy)}
 .action-count{position:absolute;top:-6px;right:-6px;min-width:15px;height:15px;padding:0 3px;border-radius:999px;background:#c0392b;color:#fff;font-size:10px;font-weight:800;line-height:15px;text-align:center}
@@ -86,6 +87,9 @@ main{padding:8px 16px 16px;max-width:640px;margin:auto}
 .insp-tab-group{display:flex;flex-direction:column;gap:10px}
 .insp-tab-btn{min-height:52px;border-radius:12px;border:1.5px solid var(--navy);background:#fff;color:var(--navy);font-size:16px;font-weight:700}
 .insp-tab-btn-danger{border-color:#a33;color:#a33}
+.bottom-nav{display:flex;gap:10px;margin-top:22px;padding:14px 0 calc(14px + env(safe-area-inset-bottom));border-top:1px solid var(--line)}
+.bottom-nav-btn{min-height:52px;padding:0 24px;border-radius:12px;border:1.5px solid var(--navy);background:#fff;color:var(--navy);font-size:16px;font-weight:700}
+.bottom-nav-btn-next{margin-left:auto;background:var(--navy);color:#fff}
 .inspection-modal-backdrop{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.6);display:flex;align-items:center;justify-content:center;z-index:60;padding:20px}
 .inspection-modal-body{position:relative;background:#fff;border-radius:14px;padding:16px;max-width:480px;width:100%;max-height:80vh;overflow-y:auto}
 .inspection-modal-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;gap:10px}
@@ -101,7 +105,7 @@ main{padding:8px 16px 16px;max-width:640px;margin:auto}
 </style>
 </head>
 <body>
-<header><span class="brand">Clipboard-Flux</span><span class="version" id="version">0.18</span></header>
+<header><span class="brand">Clipboard-Flux</span><span class="version" id="version">0.19</span></header>
 <div id="inspection-bar"></div>
 <nav class="tabs" id="tabs"></nav>
 <main>
@@ -111,6 +115,6 @@ main{padding:8px 16px 16px;max-width:640px;margin:auto}
 </main>
 <div id="inspection-modal" hidden></div>
 <div id="photo-viewer" hidden></div>
-<script src="app.js?v=0.18"></script>
+<script src="app.js?v=0.19"></script>
 </body>
 </html>
