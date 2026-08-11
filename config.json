@@ -99,6 +99,24 @@
         "reminder": ""
       },
       {
+        "id": "inspection_type",
+        "label": "Inspection Type",
+        "urar": "",
+        "tab": "Property",
+        "type": "MultiSelect",
+        "options": [
+          "Conventional",
+          "FHA",
+          "Private",
+          "Vacant Land",
+          "Drive By",
+          "Other"
+        ],
+        "followUpTrigger": [],
+        "followUpGroup": "",
+        "reminder": ""
+      },
+      {
         "id": "occupancy",
         "label": "Occupancy",
         "urar": "Subject",
@@ -365,23 +383,10 @@
           "Yes",
           "No"
         ],
-        "followUpTrigger": [],
-        "followUpGroup": "",
-        "reminder": ""
-      },
-      {
-        "id": "gas_supply",
-        "label": "Gas Supply",
-        "urar": "Site",
-        "tab": "Site",
-        "type": "Button",
-        "options": [
-          "Public",
-          "Private",
-          "Other"
+        "followUpTrigger": [
+          "Yes"
         ],
-        "followUpTrigger": [],
-        "followUpGroup": "",
+        "followUpGroup": "gas",
         "reminder": ""
       },
       {
@@ -1545,7 +1550,7 @@
   },
   "followUp": {
     "sheet": "FOLLOW_UP",
-    "questionCount": 46,
+    "questionCount": 47,
     "groups": [
       {
         "group": "pud_association",
@@ -1706,6 +1711,27 @@
             "options": [
               "Public",
               "Private"
+            ],
+            "destination": "Dynamic",
+            "showWhenQuestion": "",
+            "showWhenValue": [],
+            "showWhenQuestionId": null,
+            "showWhenInvalid": false
+          }
+        ]
+      },
+      {
+        "group": "gas",
+        "questions": [
+          {
+            "id": "gas__gas_service",
+            "group": "gas",
+            "label": "Gas Service",
+            "type": "Button",
+            "options": [
+              "Public",
+              "Private",
+              "Other"
             ],
             "destination": "Dynamic",
             "showWhenQuestion": "",
