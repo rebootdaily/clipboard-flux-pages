@@ -84,6 +84,7 @@
       "Property",
       "Off Site",
       "Site",
+      "Car Storage",
       "Exterior",
       "Interior"
     ],
@@ -436,7 +437,7 @@
         "id": "driveway_surface",
         "label": "Driveway Surface",
         "urar": "Improvements",
-        "tab": "Exterior",
+        "tab": "Car Storage",
         "type": "MultiSelect",
         "options": [
           "Concrete",
@@ -458,7 +459,7 @@
         "id": "driveway_capacity",
         "label": "Driveway Capacity",
         "urar": "Improvements",
-        "tab": "Exterior",
+        "tab": "Car Storage",
         "type": "Counter",
         "options": [],
         "followUpTrigger": [],
@@ -469,7 +470,7 @@
         "id": "car_storage",
         "label": "Car Storage",
         "urar": "Improvements",
-        "tab": "Exterior",
+        "tab": "Car Storage",
         "type": "MultiSelect",
         "options": [
           "Open",
@@ -487,7 +488,7 @@
         "id": "car_storage_capacity",
         "label": "Car Storage Capacity",
         "urar": "Improvements",
-        "tab": "Exterior",
+        "tab": "Car Storage",
         "type": "Counter",
         "options": [],
         "followUpTrigger": [],
@@ -498,7 +499,7 @@
         "id": "car_storage_attachment",
         "label": "Car Storage Attachment",
         "urar": "Improvements",
-        "tab": "Exterior",
+        "tab": "Car Storage",
         "type": "MultiSelect",
         "options": [
           "Attached",
@@ -514,7 +515,7 @@
         "id": "car_storage_notes",
         "label": "Car Storage Notes",
         "urar": "Improvements",
-        "tab": "Exterior",
+        "tab": "Car Storage",
         "type": "Text",
         "options": [],
         "followUpTrigger": [],
@@ -606,9 +607,9 @@
         "options": [
           "Concrete",
           "Crawl Space",
+          "Block and Pier",
           "Pier and Beam",
           "Piles",
-          "Piers",
           "Full",
           "Basement",
           "Partial Basement",
@@ -1572,7 +1573,7 @@
   },
   "followUp": {
     "sheet": "FOLLOW_UP",
-    "questionCount": 51,
+    "questionCount": 56,
     "groups": [
       {
         "group": "occupancy_vacant",
@@ -1742,9 +1743,26 @@
         "group": "manufactured",
         "questions": [
           {
-            "id": "manufactured__hud_label_number",
+            "id": "manufactured__number_of_sections",
             "group": "manufactured",
-            "label": "HUD Label Number",
+            "label": "Number of Sections",
+            "type": "Button",
+            "options": [
+              "One",
+              "Two",
+              "Three",
+              "Other"
+            ],
+            "destination": "Dynamic",
+            "showWhenQuestion": "",
+            "showWhenValue": [],
+            "showWhenQuestionId": null,
+            "showWhenInvalid": false
+          },
+          {
+            "id": "manufactured__manufac_s_vin_s",
+            "group": "manufactured",
+            "label": "Manufac#'s/VIN#'s",
             "type": "Text",
             "options": [],
             "destination": "Dynamic",
@@ -1754,9 +1772,57 @@
             "showWhenInvalid": false
           },
           {
-            "id": "manufactured__hud_certification_number",
+            "id": "manufactured__hud_certification_label",
             "group": "manufactured",
-            "label": "HUD Certification Number",
+            "label": "HUD Certification Label",
+            "type": "Text",
+            "options": [],
+            "destination": "Dynamic",
+            "showWhenQuestion": "",
+            "showWhenValue": [],
+            "showWhenQuestionId": null,
+            "showWhenInvalid": false
+          },
+          {
+            "id": "manufactured__manufacturer_s_name",
+            "group": "manufactured",
+            "label": "Manufacturer's Name",
+            "type": "Text",
+            "options": [],
+            "destination": "Dynamic",
+            "showWhenQuestion": "",
+            "showWhenValue": [],
+            "showWhenQuestionId": null,
+            "showWhenInvalid": false
+          },
+          {
+            "id": "manufactured__trade_model",
+            "group": "manufactured",
+            "label": "Trade/Model",
+            "type": "Text",
+            "options": [],
+            "destination": "Dynamic",
+            "showWhenQuestion": "",
+            "showWhenValue": [],
+            "showWhenQuestionId": null,
+            "showWhenInvalid": false
+          },
+          {
+            "id": "manufactured__manufacture_year",
+            "group": "manufactured",
+            "label": "Manufacture Year",
+            "type": "Text",
+            "options": [],
+            "destination": "Dynamic",
+            "showWhenQuestion": "",
+            "showWhenValue": [],
+            "showWhenQuestionId": null,
+            "showWhenInvalid": false
+          },
+          {
+            "id": "manufactured__skirting",
+            "group": "manufactured",
+            "label": "Skirting",
             "type": "Text",
             "options": [],
             "destination": "Dynamic",
