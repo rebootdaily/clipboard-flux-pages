@@ -377,7 +377,7 @@
   var AUTOSAVE_DEBOUNCE_MS = 700;
   var MIGRATED_INSPECTION_ADDRESS = 'Unsaved / Migrated Inspection';
   // The exported-file schema is versioned independently of
-  // 0.22.4 -- app releases and the inspection-file format can
+  // 0.22.4.1 -- app releases and the inspection-file format can
   // and will drift out of step (a future app version might still need
   // to read a schemaVersion 1 file, or refuse a newer one it doesn't
   // understand yet), so import validation checks schema/schemaVersion
@@ -385,10 +385,10 @@
   var EXPORT_SCHEMA = 'clipboard-flux-inspection';
   var EXPORT_SCHEMA_VERSION = 1;
   var SUPPORTED_SCHEMA_VERSIONS = [1];
-  // Stamped at build time exactly like every other 0.22.4
+  // Stamped at build time exactly like every other 0.22.4.1
   // token in this file -- informational only in the export, never
   // itself validated on import.
-  var APP_VERSION = '0.22.4';
+  var APP_VERSION = '0.22.4.1';
   // Same database as Milestone 14's photos -- name kept for continuity
   // even though it now also holds inspection records; renaming it would
   // mean either abandoning existing photo data or writing a whole
@@ -461,6 +461,56 @@
   // propertyAddress, createdAt, updatedAt}) -- what the inspection bar
   // displays and what Save/Reset write back to.
   var activeInspection = null;
+  // ---- Boot state (Milestone 22.4.1) ----
+  //
+  // Field report: a real Android/Chrome device got stuck showing
+  // "Loading…" everywhere -- inspection bar, Inspection tab, both
+  // field-photo thumbnails and the Photos tab empty -- and Export PDF
+  // alerted "No active inspection to export." Root cause (see
+  // openPhotoDb()'s own comment): the app's one indexedDB.open() call had
+  // no `onblocked` handler, so a blocked open (most plausibly another
+  // stale/backgrounded tab still holding a pre-0.22.3 v2 connection open
+  // against the v3 database Milestone 22.3 introduced) left the shared
+  // photoDbPromise permanently unsettled -- neither resolved nor
+  // rejected -- so every dependent boot step (activeInspection
+  // resolution, photo cache load) hung forever, resolveActiveInspection
+  // AndBoot()'s own .catch() never fired (nothing ever rejected), and the
+  // UI was stuck on whatever its first paint showed. `activeInspection`
+  // genuinely was still null, so Export PDF's pre-existing guard wasn't
+  // technically wrong -- just uninformative about *why*.
+  //
+  // `bootState` makes "the app hasn't finished restoring yet" a distinct,
+  // first-class state from both "there is no inspection" and "restoration
+  // failed," instead of all three collapsing into the same null-
+  // `activeInspection` check every caller used to test separately:
+  //   'restoring' -- resolveActiveInspectionAndBoot() is still running;
+  //                  every inspection-dependent action must decline with
+  //                  a truthful "still loading" message, never a false
+  //                  "no active inspection" one (see
+  //                  ensureBootReadyForAction()).
+  //   'ready'     -- boot's promise chain completed successfully;
+  //                  activeInspection reflects real (or freshly created)
+  //                  stored state.
+  //   'error'     -- boot's promise chain rejected or timed out.
+  //                  `bootErrorMessage` holds the safe, user-facing
+  //                  reason. Deliberately does NOT fabricate a pseudo-
+  //                  inspection for a *blocked* open (unlike the
+  //                  pre-existing "IndexedDB genuinely unavailable"
+  //                  degrade path, kept unchanged below) -- the user's
+  //                  real inspection is very likely still safely stored,
+  //                  just temporarily unreachable, and inventing a
+  //                  throwaway in-memory inspection here would risk the
+  //                  user typing real answers into a session that can
+  //                  never be saved back to their actual data once the
+  //                  block clears.
+  var bootState = 'restoring';
+  var bootErrorMessage = null;
+  // Diagnostic-only safety net (#31), never the underlying fix -- guards
+  // against any other genuinely-hanging async browser API this sequence
+  // depends on, beyond the specific blocked-open case openPhotoDb()'s
+  // onblocked handler now resolves directly. Long enough that a slow but
+  // healthy device is never falsely timed out.
+  var BOOT_TIMEOUT_MS = 20000;
   // 'saving' | 'saved' | 'failed' -- drives the compact save-status word
   // in #inspection-bar and the Inspection tab. See scheduleAutoSave()/
   // performSave()/flushPendingSave() below for the full design.
@@ -942,6 +992,17 @@
     }
   }
 
+  // Milestone 22.4.1: safe, minimal checkpoint logging through boot --
+  // console.log only, never inspection answers, photo Blobs, image URLs,
+  // or other private data (#6) -- so a field report that includes
+  // browser console output is actually useful for diagnosing exactly
+  // where restoration stalled or failed, without exposing anything
+  // sensitive. Guarded the same way every other console access in this
+  // file is, for browsers where `console` itself may be absent.
+  function bootLog(checkpoint, extra) {
+    window.console && console.log && console.log('[Clipboard-Flux boot] ' + checkpoint, extra || '');
+  }
+
   // Opens (and caches) the IndexedDB connection. Three object stores as
   // of Milestone 15: `photos` (keyPath `id`, indexed on `fieldId` and,
   // new this milestone, `inspectionId` -- a photo is now looked up by
@@ -955,8 +1016,24 @@
   // event.oldVersion. Rejects (once, cached) if IndexedDB is
   // unavailable/blocked -- callers surface that via dbUnavailable
   // rather than throwing into the render path.
+  //
+  // Milestone 22.4.1: `req.onblocked` is the actual field-bug fix (see
+  // bootState's own comment for the full diagnosis) -- an open request
+  // against a newer version (this database went v2->v3 in Milestone
+  // 22.3) blocks, silently and indefinitely, for as long as any other
+  // tab/connection still holds the older version open and never receives/
+  // acts on the resulting `versionchange` event -- exactly what an Android
+  // Chrome backgrounded/suspended tab can do. Without this handler,
+  // neither `onsuccess` nor `onerror` ever fires, so `photoDbPromise`
+  // (and therefore every idb*() call and the whole boot chain) hung
+  // forever. Now it rejects instead -- tagged `clipboardFluxBlocked` so
+  // resolveActiveInspectionAndBoot() can show a specific, actionable
+  // message and deliberately avoid fabricating a pseudo-inspection for
+  // what is very likely still a perfectly intact, just-temporarily-
+  // unreachable, real inspection.
   function openPhotoDb() {
     if (photoDbPromise) return photoDbPromise;
+    bootLog('photo DB open started');
     photoDbPromise = new Promise(function (resolve, reject) {
       if (!window.indexedDB) {
         reject(new Error('IndexedDB not available'));
@@ -986,10 +1063,28 @@
           db.createObjectStore(FOOTPRINT_REFERENCE_STORE, { keyPath: 'inspectionId' });
         }
       };
-      req.onsuccess = function () { resolve(req.result); };
-      req.onerror = function () { reject(req.error); };
+      req.onblocked = function () {
+        window.console && console.error && console.error('Clipboard-Flux: IndexedDB open blocked by another connection');
+        var err = new Error('Storage is blocked by another open tab of this app.');
+        err.clipboardFluxBlocked = true;
+        reject(err);
+      };
+      req.onsuccess = function () { bootLog('photo DB open completed'); resolve(req.result); };
+      req.onerror = function () {
+        window.console && console.error && console.error('Clipboard-Flux: IndexedDB open failed', req.error);
+        reject(req.error);
+      };
     });
     return photoDbPromise;
+  }
+
+  // Milestone 22.4.1: the one safe, non-destructive way to let Retry
+  // actually retry a blocked/failed open -- clears only the in-memory
+  // cached Promise reference (never touches any stored record) so the
+  // next openPhotoDb() call issues a fresh indexedDB.open() rather than
+  // immediately re-returning the same already-settled (rejected) Promise.
+  function resetPhotoDbConnection() {
+    photoDbPromise = null;
   }
 
   function idbAdd(record) {
@@ -1817,6 +1912,7 @@
         notesHandTool = 'pencil';
         notesHandPointers = {};
         activeTab = (CFG && CFG.main.tabs[0]) || null;
+        bootLog('inspection memory hydration completed (switchToInspection)', { inspectionId: meta.inspectionId });
         return loadAllPhotosIntoCache().then(function () {
           return loadFootprintReferenceBitmap();
         });
@@ -1997,10 +2093,13 @@
   // failure reading the pointed-to inspection itself) falls through to
   // bootstrapFresh().
   function resolveActiveInspectionAndBoot() {
+    bootLog('BOOT START');
     var pointedId = loadActiveInspectionId();
+    bootLog('active inspection key read', { found: !!pointedId });
     var boot;
     if (pointedId) {
       boot = idbGetInspection(pointedId).then(function (meta) {
+        bootLog('active inspection record lookup completed', { found: !!meta });
         if (!meta) return bootstrapFresh();
         activeInspection = meta;
         // Milestone 22: footprint has no localStorage mirror the way
@@ -2033,10 +2132,18 @@
           // below would immediately overwrite real saved notes with the
           // safe-but-empty module-init default.
           notes = sanitizeNotes(data && data.notes);
+          bootLog('inspection memory hydration completed (footprint/reference/notes)');
+          bootLog('inspection photo query started');
           return loadAllPhotosIntoCache();
         }).then(function () {
+          bootLog('inspection photo query completed', {
+            fieldCount: Object.keys(photosByField).length,
+            generalCount: generalPhotos.length
+          });
+          bootLog('reference blob load started');
           return loadFootprintReferenceBitmap();
         }).then(function () {
+          bootLog('reference blob load completed', { present: !!footprintReferenceBitmap });
           return performSave().catch(function (e) {
             window.console && console.error && console.error('Clipboard-Flux: boot reconciliation save failed', e);
           });
@@ -2045,9 +2152,48 @@
     } else {
       boot = bootstrapFresh();
     }
-    return boot.catch(function (e) {
+    // Milestone 22.4.1 (#31): a bounded, purely diagnostic safety net --
+    // never the underlying fix, see openPhotoDb()'s onblocked handler for
+    // that -- against any other genuinely-hanging async browser API this
+    // sequence might depend on. Racing, not replacing: `boot`'s own
+    // .then() callbacks above are already attached and keep running to
+    // completion in the background regardless of which side of the race
+    // settles first, so a slow-but-eventually-successful restore still
+    // finishes hydrating real state even if the timeout already moved the
+    // UI to the Restore Error state first; the user's data is never at
+    // risk either way, only the UI's up-to-dateness, and Retry re-reads
+    // whatever is actually in memory/storage at that point.
+    boot = Promise.race([
+      boot,
+      new Promise(function (resolve, reject) {
+        setTimeout(function () {
+          var err = new Error('Inspection restore timed out.');
+          err.clipboardFluxTimeout = true;
+          reject(err);
+        }, BOOT_TIMEOUT_MS);
+      })
+    ]);
+    return boot.then(function () {
+      bootState = 'ready';
+      bootErrorMessage = null;
+    }, function (e) {
       window.console && console.error && console.error('Clipboard-Flux: inspection boot failed', e);
+      bootState = 'error';
+      if (e && e.clipboardFluxBlocked) {
+        // See bootState's own comment -- deliberately does NOT fabricate
+        // a pseudo-inspection here. The real stored inspection is very
+        // likely still completely intact, just temporarily unreachable;
+        // Retry (which clears the cached, now-rejected DB connection via
+        // resetPhotoDbConnection()) is the safe path back to it.
+        bootErrorMessage = 'Storage is blocked by another open tab of this app. Close other Clipboard-Flux tabs, then tap Retry.';
+        return;
+      }
+      if (e && e.clipboardFluxTimeout) {
+        bootErrorMessage = 'Inspection restore timed out. Your stored data has not been reset.';
+        return;
+      }
       dbUnavailable = true;
+      bootErrorMessage = 'Inspection could not be restored. Your stored data has not been reset.';
       if (!activeInspection) {
         // No durable inspection storage reachable at all -- rather than
         // leaving activeInspection null (which would strand the bar on
@@ -2066,8 +2212,23 @@
         };
       }
     }).then(function () {
+      bootLog('BOOT READY', { state: bootState });
       render();
     });
+  }
+
+  // Milestone 22.4.1: the one non-destructive way back from the Restore
+  // Error state -- clears only the cached (now-settled, rejected) DB
+  // connection Promise so the next attempt issues a fresh
+  // indexedDB.open(), then re-runs the exact same read-only resolution
+  // process. Never clears storage, never resets/creates an inspection.
+  function retryBootRestore() {
+    if (bootState === 'restoring') return;
+    resetPhotoDbConnection();
+    bootState = 'restoring';
+    bootErrorMessage = null;
+    render();
+    resolveActiveInspectionAndBoot();
   }
 
   // Under auto-save there's no separate "unsaved working draft" to lose
@@ -2109,6 +2270,38 @@
     });
   }
 
+  // Milestone 22.4.1 (#9/#32): the shared guard for every inspection-
+  // dependent action button (Export PDF, Export JSON, Save Now, Reset).
+  // Before this fix, each of these only ever checked `!activeInspection`
+  // -- true both while boot is still resolving AND once it has genuinely
+  // finished with nothing to show, so a tap mid-restore produced the
+  // exact field-reported "No active inspection to export" alert, which
+  // isn't a lie so much as a statement made before it's actually known to
+  // be true. Distinguishing bootState === 'restoring' first means the
+  // user now sees an honest "still loading" message instead.
+  function ensureBootReadyForAction(actionLabel) {
+    if (bootState === 'restoring') {
+      window.alert('Inspection is still loading. Please wait a moment and try again.');
+      return false;
+    }
+    // A settled Restore Error with no activeInspection (the blocked-
+    // storage case -- see bootState's own comment) is a different, more
+    // specific truth than "no active inspection": there may well BE one,
+    // just not currently reachable. Surfacing bootErrorMessage here
+    // instead of the generic "No active inspection to X" keeps this
+    // guard from making the same kind of not-yet-true (or, here, not-
+    // actually-true) claim #32 flags.
+    if (bootState === 'error' && !activeInspection) {
+      window.alert(bootErrorMessage || 'Inspection could not be restored.');
+      return false;
+    }
+    if (!activeInspection || !activeInspection.inspectionId) {
+      window.alert('No active inspection to ' + actionLabel + '.');
+      return false;
+    }
+    return true;
+  }
+
   // Explicit manual checkpoint (Milestone 18 #2's fallback action, now
   // living in the Inspection tab as "Save Now") -- bypasses the debounce
   // and writes immediately. Also how a 'failed' status gets retried:
@@ -2116,6 +2309,10 @@
   // it just tries again with whatever's currently in memory, which is
   // exactly what a retry should do.
   function handleSaveInspectionClick() {
+    if (bootState === 'restoring') {
+      window.alert('Inspection is still loading. Please wait a moment and try again.');
+      return;
+    }
     performSave().catch(function (e) {
       window.console && console.error && console.error('Clipboard-Flux: could not save inspection', e);
       window.alert('Could not save this inspection: ' + e.message);
@@ -2132,6 +2329,10 @@
   }
 
   function handleResetInspectionClick() {
+    if (bootState === 'restoring') {
+      window.alert('Inspection is still loading. Please wait a moment and try again.');
+      return;
+    }
     if (!activeInspection) return;
     var addr = activeInspection.propertyAddress || '(no address)';
     var ok = window.confirm(
@@ -2410,10 +2611,7 @@
       window.alert('Export isn\'t available in this browser (IndexedDB is blocked or unsupported).');
       return;
     }
-    if (!activeInspection || !activeInspection.inspectionId) {
-      window.alert('No active inspection to export.');
-      return;
-    }
+    if (!ensureBootReadyForAction('export')) return;
     var id = activeInspection.inspectionId;
     flushPendingSave().then(function () {
       exportInspectionJson(id);
@@ -3392,10 +3590,7 @@
       window.alert('PDF export isn\'t available in this browser (IndexedDB is blocked or unsupported).');
       return;
     }
-    if (!activeInspection || !activeInspection.inspectionId) {
-      window.alert('No active inspection to export.');
-      return;
-    }
+    if (!ensureBootReadyForAction('export')) return;
     var id = activeInspection.inspectionId;
     flushPendingSave().then(function () {
       generatePdfExport(id);
@@ -3417,10 +3612,28 @@
   // fast, focus-safe path) and from the bottom of the main render() (so
   // a full re-render, e.g. after Load/tab switch, always reflects the
   // current activeInspection too).
+  // Milestone 22.4.1: the one place that turns bootState + activeInspection
+  // into what the user actually sees for "which inspection is this" --
+  // used by both renderInspectionBar() and renderInspectionTabHtml() so
+  // they can never disagree. 'restoring' always shows "Loading…" (the
+  // truthful, still-in-progress state, never conflated with "no
+  // inspection" the way a bare `activeInspection` null-check used to);
+  // 'error' with no activeInspection yet (the blocked-storage case, see
+  // bootState's own comment -- no pseudo-inspection was fabricated) shows
+  // the specific bootErrorMessage instead of a misleading address; every
+  // other case (ready, or error with the pre-existing degraded pseudo-
+  // inspection) shows the real address exactly as before this milestone.
+  function inspectionAddressLabel() {
+    if (bootState === 'restoring') return 'Loading…';
+    if (bootState === 'error' && !activeInspection) return bootErrorMessage || 'Inspection could not be restored.';
+    return activeInspection ? (activeInspection.propertyAddress || '(no address)') : 'Loading…';
+  }
+
   function renderInspectionBar() {
     var el = document.getElementById('inspection-bar');
     if (!el) return;
-    var addr = activeInspection ? (activeInspection.propertyAddress || '(no address)') : 'Loading…';
+    var addr = inspectionAddressLabel();
+    var addrErrorClass = (bootState === 'error' && !activeInspection) ? ' error' : '';
     var statusHtml = '<span class="save-status save-status-' + saveStatus + '">' + esc(saveStatusLabel()) + '</span>';
     var warningHtml = dbUnavailable
       ? '<div class="shell-note error">Inspection save/load isn\'t available in this browser ' +
@@ -3428,7 +3641,7 @@
       : '';
     el.innerHTML =
       '<div class="inspection-bar-row">' +
-        '<span class="inspection-address">' + esc(addr) + '</span>' +
+        '<span class="inspection-address' + addrErrorClass + '">' + esc(addr) + '</span>' +
         statusHtml +
       '</div>' + warningHtml;
   }
@@ -5480,34 +5693,52 @@
   // alongside the same save-status word the compact header shows, plus
   // when that status last actually landed.
   function renderInspectionTabHtml() {
-    var addr = activeInspection ? (activeInspection.propertyAddress || '(no address)') : 'Loading…';
+    var addr = inspectionAddressLabel();
     var updated = (activeInspection && activeInspection.updatedAt) ? formatDate(activeInspection.updatedAt) : '';
+    // Disabled while genuinely restoring, and also while settled into a
+    // Restore Error with no activeInspection at all (the blocked-storage
+    // case) -- these actions cannot succeed in either state, and a
+    // visibly greyed-out button is clearer than one that looks tappable
+    // but only ever alerts (see ensureBootReadyForAction()).
+    var disabledAttr = (bootState === 'restoring' || (bootState === 'error' && !activeInspection)) ? ' disabled' : '';
     var warningHtml = dbUnavailable
       ? '<div class="shell-note error">Inspection save/load isn\'t available in this browser ' +
         '(IndexedDB is blocked or unsupported) -- changes will only last for this session.</div>'
       : '';
+    // Milestone 22.4.1 (#30): Retry is deliberately the ONLY new control
+    // here -- non-destructive (retryBootRestore() only clears an
+    // in-memory cached Promise reference, never storage), shown solely
+    // while bootState === 'error' so it can never be tapped mid-restore
+    // or once things are already working.
+    var retryHtml = bootState === 'error'
+      ? '<div class="insp-tab-group"><button type="button" class="insp-tab-btn" data-role="insp-retry">Retry</button></div>'
+      : '';
+    var addrErrorClass = (bootState === 'error' && !activeInspection) ? ' error' : '';
     return warningHtml +
       '<div class="insp-tab-section">' +
-        '<div class="insp-tab-address">' + esc(addr) + '</div>' +
+        '<div class="insp-tab-address' + addrErrorClass + '">' + esc(addr) + '</div>' +
         '<div class="insp-tab-status">' + esc(saveStatusLabel()) +
           (updated ? ' &middot; Last saved ' + esc(updated) : '') + '</div>' +
       '</div>' +
+      retryHtml +
       '<div class="insp-tab-group">' +
         '<button type="button" class="insp-tab-btn" data-role="insp-new">New Inspection</button>' +
         '<button type="button" class="insp-tab-btn" data-role="insp-load">Load Inspection</button>' +
-        '<button type="button" class="insp-tab-btn" data-role="insp-save">Save Now</button>' +
-        '<button type="button" class="insp-tab-btn insp-tab-btn-danger" data-role="insp-reset">Reset Current Inspection</button>' +
+        '<button type="button" class="insp-tab-btn" data-role="insp-save"' + disabledAttr + '>Save Now</button>' +
+        '<button type="button" class="insp-tab-btn insp-tab-btn-danger" data-role="insp-reset"' + disabledAttr + '>Reset Current Inspection</button>' +
       '</div>' +
       '<div class="insp-tab-heading">Export / Import</div>' +
       '<div class="insp-tab-group">' +
-        '<button type="button" class="insp-tab-btn" data-role="insp-export-pdf">Export PDF</button>' +
-        '<button type="button" class="insp-tab-btn" data-role="insp-export">Export JSON</button>' +
+        '<button type="button" class="insp-tab-btn" data-role="insp-export-pdf"' + disabledAttr + '>Export PDF</button>' +
+        '<button type="button" class="insp-tab-btn" data-role="insp-export"' + disabledAttr + '>Export JSON</button>' +
         '<button type="button" class="insp-tab-btn" data-role="insp-import">Import JSON</button>' +
       '</div>' +
       '<input type="file" accept=".json,application/json" data-role="import-json-input" hidden>';
   }
 
   function wireInspectionTabControls() {
+    var retryBtn = document.querySelector('[data-role="insp-retry"]');
+    if (retryBtn) retryBtn.onclick = retryBootRestore;
     var newBtn = document.querySelector('[data-role="insp-new"]');
     if (newBtn) newBtn.onclick = handleNewInspectionClick;
     var saveBtn = document.querySelector('[data-role="insp-save"]');
@@ -6401,7 +6632,27 @@
     flushPendingSave().catch(function () {});
   });
 
-  fetch('config.json?v=0.22.4', { cache: 'no-store' })
+  // Milestone 22.4.1 (#18/#19): a bfcache restore (event.persisted true)
+  // resumes this exact frozen JS heap rather than re-running this IIFE,
+  // so activeInspection/bootState/photosByField etc. are all already
+  // correct as-is in the overwhelmingly common case -- no action needed,
+  // and definitely nothing destructive. The one narrow, justified
+  // exception: if the page was frozen while stuck in the Restore Error
+  // state (e.g. a blocked-storage condition that may well have cleared
+  // while this tab was suspended -- the other tab holding the block was
+  // itself a very plausible thing to have been closed/backgrounded
+  // during that time), a bfcache resume is a safe, low-risk moment to
+  // retry automatically rather than leaving the user staring at a stale
+  // error from before they backgrounded the app. Never fires for a
+  // normal (non-bfcache) load, and never touches 'restoring' or 'ready'.
+  window.addEventListener('pageshow', function (event) {
+    if (event.persisted && bootState === 'error') {
+      bootLog('pageshow after bfcache restore, retrying from Restore Error state');
+      retryBootRestore();
+    }
+  });
+
+  fetch('config.json?v=0.22.4.1', { cache: 'no-store' })
     .then(function (r) {
       if (!r.ok) throw new Error('HTTP ' + r.status);
       return r.json();
