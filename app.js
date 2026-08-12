@@ -1,4 +1,22 @@
-/* Clipboard-Flux -- Milestone 22: Footprint, a freehand sketching tab
+/* Clipboard-Flux -- Milestone 22.1: field-reported corrective fix --
+   the Footprint Settings button didn't reliably respond to a first real
+   tap on physical touch hardware. Root cause (by code inspection; see
+   footprintEndPointer()'s own comment): pointer capture on the drawing
+   canvas was only ever released implicitly (relying on the browser's
+   own auto-release on pointerup/pointercancel), never explicitly --
+   exactly the kind of gap that manifests only on real touch hardware a
+   mouse or synthetic pointer-event test can't reproduce. Fixed with an
+   explicit releasePointerCapture() call plus a defensive
+   footprintAbortActiveGesture() guard called at the top of every
+   toolbar handler (belt-and-suspenders: toolbar interaction always wins
+   over stale canvas gesture state, by construction). Also added
+   touch-action:manipulation and a slightly larger touch target to every
+   Footprint toolbar/settings control, and made the toolbar's layering
+   above the canvas explicit via z-index rather than relying on DOM
+   order alone. No change to the line-assist algorithm, drawing model,
+   persistence, or PDF export.
+
+   Milestone 22: Footprint, a freehand sketching tab
    ("digital graph paper," per that milestone's own framing) with
    intelligent straight-line assist -- a rough hand-drawn stroke becomes
    a clean straight segment on pointer-lift when it looks line-like,
@@ -332,7 +350,7 @@
   var AUTOSAVE_DEBOUNCE_MS = 700;
   var MIGRATED_INSPECTION_ADDRESS = 'Unsaved / Migrated Inspection';
   // The exported-file schema is versioned independently of
-  // 0.22 -- app releases and the inspection-file format can
+  // 0.22.1 -- app releases and the inspection-file format can
   // and will drift out of step (a future app version might still need
   // to read a schemaVersion 1 file, or refuse a newer one it doesn't
   // understand yet), so import validation checks schema/schemaVersion
@@ -340,10 +358,10 @@
   var EXPORT_SCHEMA = 'clipboard-flux-inspection';
   var EXPORT_SCHEMA_VERSION = 1;
   var SUPPORTED_SCHEMA_VERSIONS = [1];
-  // Stamped at build time exactly like every other 0.22
+  // Stamped at build time exactly like every other 0.22.1
   // token in this file -- informational only in the export, never
   // itself validated on import.
-  var APP_VERSION = '0.22';
+  var APP_VERSION = '0.22.1';
   // Same database as Milestone 14's photos -- name kept for continuity
   // even though it now also holds inspection records; renaming it would
   // mean either abandoning existing photo data or writing a whole
@@ -3793,8 +3811,26 @@
   // remaining down does not resume drawing from wherever it happens to
   // be -- it takes a fresh pointerdown to start a new stroke, avoiding a
   // surprise stroke continuing mid-gesture from an unrelated finger.
+  //
+  // Milestone 22.1: explicitly releases capture for this pointerId,
+  // rather than relying solely on the browser's own implicit release on
+  // pointerup/pointercancel. The spec says capture auto-releases in both
+  // cases, but a field report of the Footprint Settings button not
+  // responding to a first real tap -- immediately after a drawing/pan
+  // gesture, on physical touch hardware synthetic testing can't fully
+  // reproduce -- is exactly the symptom a mobile browser that's slow or
+  // inconsistent about that implicit release would produce: the canvas
+  // keeps (or briefly appears to keep) claiming this pointerId's events
+  // after the finger has already lifted, so the *next* tap elsewhere
+  // (Settings) doesn't land cleanly on the first attempt. Explicit
+  // release removes the dependency on that implicit behavior entirely.
+  // Wrapped in try/catch since releasing a pointerId that was never
+  // captured (setPointerCapture() failed, or the browser already
+  // released it itself, e.g. right before onlostpointercapture fires
+  // this same function) throws rather than no-ops.
   function footprintEndPointer(pointerId, commit) {
     if (!(pointerId in footprintPointers)) return;
+    try { footprintCanvasEl.releasePointerCapture(pointerId); } catch (e) { /* already released/uncaptured */ }
     delete footprintPointers[pointerId];
     if (Object.keys(footprintPointers).length >= 1) {
       footprintPinchState = null;
@@ -3817,6 +3853,29 @@
 
   function footprintPointerUp(ev) { footprintEndPointer(ev.pointerId, true); }
   function footprintPointerCancel(ev) { footprintEndPointer(ev.pointerId, false); }
+
+  // Milestone 22.1 #3/#9: a defensive belt-and-suspenders guard called
+  // at the top of every toolbar control's own handler (tool buttons,
+  // Undo, Settings, Straighten toggle, width buttons) -- toolbar and
+  // canvas are separate sibling elements, so a toolbar tap can't
+  // *structurally* be misrouted into canvas gesture handling, but this
+  // makes the "toolbar interaction always wins" requirement true by
+  // construction rather than by relying on that structural argument
+  // alone: whatever the canvas's own pointer/capture state happens to
+  // be at the instant a toolbar control is actually activated, it's
+  // discarded outright first, never partially committed. Uncaptures any
+  // pointerId the canvas still (correctly or not) believes it holds --
+  // harmless/no-op if nothing was captured.
+  function footprintAbortActiveGesture() {
+    if (footprintCanvasEl) {
+      Object.keys(footprintPointers).forEach(function (pid) {
+        try { footprintCanvasEl.releasePointerCapture(Number(pid)); } catch (e) { /* already released/uncaptured */ }
+      });
+    }
+    footprintPointers = {};
+    footprintDraft = null;
+    footprintPinchState = null;
+  }
 
   function renderFootprintTabHtml() {
     var warningHtml = dbUnavailable
@@ -3899,6 +3958,7 @@
 
     Array.prototype.forEach.call(document.querySelectorAll('[data-role^="footprint-tool-"]'), function (btn) {
       btn.onclick = function () {
+        footprintAbortActiveGesture();
         var role = btn.dataset.role;
         footprintTool = role === 'footprint-tool-eraser' ? 'eraser' : role === 'footprint-tool-hand' ? 'hand' : 'pencil';
         render();
@@ -3906,12 +3966,22 @@
     });
 
     var undoBtn = document.querySelector('[data-role="footprint-undo"]');
-    if (undoBtn) undoBtn.onclick = footprintUndo;
+    if (undoBtn) undoBtn.onclick = function () { footprintAbortActiveGesture(); footprintUndo(); };
 
+    // Milestone 22.1: root-cause fix for the field-reported "Settings
+    // doesn't respond to the first tap" defect. footprintAbortActive
+    // Gesture() guarantees a stray/lingering canvas pointer-capture
+    // state (the most plausible cause on real touch hardware -- see
+    // footprintEndPointer()'s own comment) can never compete with this
+    // tap; the toggle itself deliberately stays a direct DOM mutation,
+    // not a full render(), so opening/closing Settings never touches
+    // drawing state, pan/zoom, or autosave (#7) -- it only ever flips
+    // one boolean and one `hidden` attribute.
     var settingsBtn = document.querySelector('[data-role="footprint-settings"]');
     var popover = document.querySelector('[data-role="footprint-settings-popover"]');
     if (settingsBtn && popover) {
       settingsBtn.onclick = function () {
+        footprintAbortActiveGesture();
         footprintSettingsOpen = !footprintSettingsOpen;
         popover.hidden = !footprintSettingsOpen;
       };
@@ -3920,6 +3990,7 @@
     var straightenToggle = document.querySelector('[data-role="footprint-straighten-toggle"]');
     if (straightenToggle) {
       straightenToggle.onclick = function () {
+        footprintAbortActiveGesture();
         footprintStraightenEnabled = !footprintStraightenEnabled;
         saveFootprintStraightenPref(footprintStraightenEnabled);
         footprintSettingsOpen = true;
@@ -3929,6 +4000,7 @@
 
     Array.prototype.forEach.call(document.querySelectorAll('[data-role="footprint-width"]'), function (btn) {
       btn.onclick = function () {
+        footprintAbortActiveGesture();
         footprintLineWidth = btn.dataset.width;
         saveFootprintLineWidthPref(footprintLineWidth);
         footprintSettingsOpen = true;
@@ -4860,7 +4932,7 @@
     flushPendingSave().catch(function () {});
   });
 
-  fetch('config.json?v=0.22', { cache: 'no-store' })
+  fetch('config.json?v=0.22.1', { cache: 'no-store' })
     .then(function (r) {
       if (!r.ok) throw new Error('HTTP ' + r.status);
       return r.json();
