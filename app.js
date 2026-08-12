@@ -377,7 +377,7 @@
   var AUTOSAVE_DEBOUNCE_MS = 700;
   var MIGRATED_INSPECTION_ADDRESS = 'Unsaved / Migrated Inspection';
   // The exported-file schema is versioned independently of
-  // 0.22.4.1 -- app releases and the inspection-file format can
+  // 0.22.4.2 -- app releases and the inspection-file format can
   // and will drift out of step (a future app version might still need
   // to read a schemaVersion 1 file, or refuse a newer one it doesn't
   // understand yet), so import validation checks schema/schemaVersion
@@ -385,10 +385,10 @@
   var EXPORT_SCHEMA = 'clipboard-flux-inspection';
   var EXPORT_SCHEMA_VERSION = 1;
   var SUPPORTED_SCHEMA_VERSIONS = [1];
-  // Stamped at build time exactly like every other 0.22.4.1
+  // Stamped at build time exactly like every other 0.22.4.2
   // token in this file -- informational only in the export, never
   // itself validated on import.
-  var APP_VERSION = '0.22.4.1';
+  var APP_VERSION = '0.22.4.2';
   // Same database as Milestone 14's photos -- name kept for continuity
   // even though it now also holds inspection records; renaming it would
   // mean either abandoning existing photo data or writing a whole
@@ -679,7 +679,7 @@
   // depth: initialized to a safe empty document inline (same reasoning as
   // `footprint`'s own module-init comment) rather than null.
   var NOTES_SCHEMA_VERSION = 1;
-  var notes = { version: NOTES_SCHEMA_VERSION, text: '', hand: { strokes: [], logicalWidth: 0, logicalHeight: 0 } };
+  var notes = { version: NOTES_SCHEMA_VERSION, text: '', hand: { strokes: [], docHeight: 0 } };
   // 'text' | 'hand' -- which workspace is currently shown. Transient UI
   // state, same category as footprintTool: reset to 'text' (the fastest
   // capture path, #26) on every switchToInspection(), but otherwise left
@@ -705,6 +705,17 @@
   var notesHandPointers = {};
   var notesHandDraft = null;
   var notesHandResizeListenerAdded = false;
+  // Milestone 22.4.2 (#16/#17): same self-guarding once-ever pattern,
+  // for the Text workspace's auto-height recompute on resize/rotation.
+  var notesTextResizeListenerAdded = false;
+  var NOTES_TEXT_MIN_HEIGHT_PX = 240;
+  // Milestone 22.4.2: a second, independent global listener (added once,
+  // self-guarding, exact same convention as the resize listener above) --
+  // grows the document as the user scrolls near its current bottom. Kept
+  // separate from the resize listener since they answer different
+  // questions (resize: "did the viewport's width change," scroll: "is
+  // the user approaching the bottom of an already-sized document").
+  var notesHandScrollListenerAdded = false;
   // One fixed default stroke thickness (#9 -- no Thin/Medium/Thick this
   // milestone) and noise/sampling thresholds tuned for small handwritten
   // marks rather than Footprint's architectural-line scale.
@@ -713,6 +724,30 @@
   var NOTES_HAND_MIN_SAMPLE_SCREEN_PX = 2;
   var NOTES_HAND_EXPORT_TARGET_LONG_EDGE = 1600;
   var NOTES_HAND_EXPORT_PADDING_RATIO = 0.08;
+  // Milestone 22.4.2: continuous-notebook document model (#4/#5/#6) --
+  // the canvas element's own CSS/backing-store height *is* the document
+  // height (no separate virtualized viewport), so native page scrolling
+  // is what "scrolls the notebook," with zero redraw cost while
+  // scrolling and zero manual scroll-offset math for stroke coordinates
+  // (see notesHandScreenToDoc()'s own comment). NOTES_HAND_MIN_DOC_HEIGHT
+  // is the starting room before any stroke exists; NOTES_HAND_GROWTH_CHUNK
+  // is how much room is added at a time as the user nears the bottom
+  // (NOTES_HAND_BOTTOM_BUFFER px away, #6's "reasonable bottom buffer" --
+  // never the final few pixels). NOTES_HAND_MAX_DPR caps the backing-store
+  // device-pixel-ratio specifically for this one ever-growing canvas
+  // (Footprint's canvas, bounded to ~62vh, never needed this) so a long
+  // field session's memory footprint stays bounded even on a 3x-DPR
+  // phone -- 2x remains visually indistinguishable for handwriting ink.
+  var NOTES_HAND_MIN_DOC_HEIGHT = 700;
+  var NOTES_HAND_GROWTH_CHUNK = 700;
+  var NOTES_HAND_BOTTOM_BUFFER = 350;
+  var NOTES_HAND_MAX_DPR = 2;
+  // Sensible print-page proportions for PDF pagination (#21/#22) -- a
+  // slice this many document-px tall (relative to its own width) roughly
+  // matches one letter-page's printable aspect ratio, so no single slice
+  // image is ever itself taller than one physical PDF page.
+  var NOTES_HAND_PDF_SLICE_ASPECT = 1.4;
+  var NOTES_HAND_PDF_TARGET_WIDTH = 1200;
 
   // A flat {fieldId: value} map is all that's persisted -- MAIN fields
   // and FOLLOW_UP questions already share one `values` object and the
@@ -1748,7 +1783,7 @@
   }
 
   function defaultNotes() {
-    return { version: NOTES_SCHEMA_VERSION, text: '', hand: { strokes: [], logicalWidth: 0, logicalHeight: 0 } };
+    return { version: NOTES_SCHEMA_VERSION, text: '', hand: { strokes: [], docHeight: 0 } };
   }
 
   function generateNotesStrokeId() {
@@ -1768,6 +1803,20 @@
   // deliberately kept out of the data model rather than just out of the
   // UI, so there is nothing here that could quietly grow into
   // configurability later).
+  // Milestone 22.4.2: `docHeight` replaces 22.4's logicalWidth/
+  // logicalHeight fit-transform pair -- see the Notes section's own
+  // header comment for the full before/after. Backward compatibility
+  // (#49) is by construction, not conversion: a 22.4/22.4.1 stroke's
+  // (x,y) values were already raw CSS pixels relative to the canvas's
+  // own top-left at scale 1 (logicalWidth/logicalHeight were themselves
+  // just the canvas's own CSS size at first-draw time, and the fit
+  // transform was the identity whenever the canvas hadn't been resized
+  // since) -- exactly what this milestone's document-space model uses
+  // directly. Old points are copied through completely unchanged; only
+  // `docHeight` is computed fresh (never trusted blindly from a possibly
+  // hand-edited file) as the larger of whatever was persisted and enough
+  // room to contain every existing stroke, so nothing pre-existing is
+  // ever clipped by a too-short canvas on first load after upgrading.
   function sanitizeNotes(raw) {
     if (!raw || typeof raw !== 'object') return defaultNotes();
     var text = typeof raw.text === 'string' ? raw.text : '';
@@ -1778,11 +1827,13 @@
       var id = (typeof s.id === 'string' && s.id) ? s.id : generateNotesStrokeId();
       return { id: id, points: s.points.map(function (p) { return { x: p.x, y: p.y }; }) };
     }) : [];
-    var logicalWidth = (typeof handRaw.logicalWidth === 'number' && isFinite(handRaw.logicalWidth) && handRaw.logicalWidth > 0)
-      ? handRaw.logicalWidth : 0;
-    var logicalHeight = (typeof handRaw.logicalHeight === 'number' && isFinite(handRaw.logicalHeight) && handRaw.logicalHeight > 0)
-      ? handRaw.logicalHeight : 0;
-    return { version: NOTES_SCHEMA_VERSION, text: text, hand: { strokes: strokes, logicalWidth: logicalWidth, logicalHeight: logicalHeight } };
+    var persistedDocHeight = (typeof handRaw.docHeight === 'number' && isFinite(handRaw.docHeight) && handRaw.docHeight > 0)
+      ? handRaw.docHeight : 0;
+    var maxStrokeY = strokes.reduce(function (max, s) {
+      return s.points.reduce(function (m, p) { return Math.max(m, p.y); }, max);
+    }, 0);
+    var docHeight = Math.max(persistedDocHeight, maxStrokeY + NOTES_HAND_BOTTOM_BUFFER, NOTES_HAND_MIN_DOC_HEIGHT);
+    return { version: NOTES_SCHEMA_VERSION, text: text, hand: { strokes: strokes, docHeight: docHeight } };
   }
 
   // Milestone 22.3: validates/normalizes whatever's sitting in a loaded
@@ -3286,6 +3337,8 @@
     '.pdf-footprint-image{width:100%;max-height:8.5in;object-fit:contain;display:block;' +
       'border:1px solid #d9e0e6;border-radius:4px}' +
     '.pdf-notes-text{font-size:9.5pt;white-space:pre-wrap;word-wrap:break-word}' +
+    '.pdf-notes-hand-image{width:100%;display:block;border:1px solid #d9e0e6;border-radius:4px;margin-bottom:8px}' +
+    '.pdf-notes-hand-page-break{break-after:page;page-break-after:always}' +
     '.pdf-empty-note{font-size:10pt;color:#66727e;font-style:italic}' +
     '.pdf-footer-note{margin-top:16px;padding-top:6px;border-top:1px solid #d9e0e6;font-size:7pt;color:#9aa5ad}';
 
@@ -3373,19 +3426,32 @@
   // canvas chrome can ever leak into the PDF. Omitted entirely when
   // there's nothing to show, same "no empty section" convention
   // pdfBuildFootprintSectionHtml() already uses.
-  function pdfBuildNotesSectionHtml(notesText, handImageUrl) {
+  // Milestone 22.4.2 (#21): `handImageUrls` is now an array (one per
+  // paginated slice, see notesHandRenderExportPages()) rather than a
+  // single image -- every slice but the last forces a page break right
+  // after it (.pdf-notes-hand-page-break), so a long handwritten
+  // document prints across as many physical pages as it actually needs
+  // instead of being squashed onto one. The live Notes UI itself stays
+  // completely continuous either way -- pagination is purely a PDF
+  // rendering concern, never surfaced in the app (#21's explicit
+  // requirement).
+  function pdfBuildNotesSectionHtml(notesText, handImageUrls) {
     var hasText = !!(notesText && notesText.trim());
-    if (!hasText && !handImageUrl) return '';
+    var hasHand = handImageUrls && handImageUrls.length > 0;
+    if (!hasText && !hasHand) return '';
     var textHtml = hasText
       ? '<div class="pdf-subsection">' +
           '<div class="pdf-subsection-heading">Inspection Notes</div>' +
           '<div class="pdf-notes-text">' + esc(notesText).replace(/\n/g, '<br>') + '</div>' +
         '</div>'
       : '';
-    var handHtml = handImageUrl
+    var handHtml = hasHand
       ? '<div class="pdf-subsection">' +
           '<div class="pdf-subsection-heading">Handwritten Notes</div>' +
-          '<img class="pdf-footprint-image" src="' + esc(handImageUrl) + '" alt="">' +
+          handImageUrls.map(function (url, i) {
+            var breakClass = i < handImageUrls.length - 1 ? ' pdf-notes-hand-page-break' : '';
+            return '<img class="pdf-notes-hand-image' + breakClass + '" src="' + esc(url) + '" alt="">';
+          }).join('') +
         '</div>'
       : '';
     return '<div class="pdf-section pdf-notes-section">' +
@@ -3401,7 +3467,7 @@
     return base + '_' + stamp + '_Inspection';
   }
 
-  function buildPrintDocumentHtml(meta, data, photosWithUrls, footprintImageUrl, notesHandImageUrl) {
+  function buildPrintDocumentHtml(meta, data, photosWithUrls, footprintImageUrl, notesHandImageUrls) {
     var values = data.values || {};
     var disregarded = data.disregarded || {};
     var otherText = data.otherText || {};
@@ -3429,7 +3495,7 @@
     var photosHtml = pdfBuildPhotosSectionHtml(fieldPhotos, values, disregarded);
     var generalPhotosHtml = pdfBuildGeneralPhotosSectionHtml(generalPhotosForPdf);
     var footprintHtml = pdfBuildFootprintSectionHtml(footprintImageUrl);
-    var notesHtml = pdfBuildNotesSectionHtml(data.notes && data.notes.text, notesHandImageUrl);
+    var notesHtml = pdfBuildNotesSectionHtml(data.notes && data.notes.text, notesHandImageUrls);
     var bodyHtml = mainHtml + eiHtml + photosHtml + generalPhotosHtml + footprintHtml + notesHtml;
     if (!bodyHtml) {
       bodyHtml = '<div class="pdf-empty-note">No inspection content has been entered yet.</div>';
@@ -3481,7 +3547,7 @@
   // like the print-content-load safety net below it -- not the primary
   // mechanism either way, so this isn't "blindly adding a delay" as the
   // fix itself.
-  function printViaHiddenIframe(html, photosWithUrls, footprintImageUrl, notesHandImageUrl) {
+  function printViaHiddenIframe(html, photosWithUrls, footprintImageUrl, notesHandImageUrls) {
     cleanupPdfPrintIframe();
     var iframe = document.createElement('iframe');
     iframe.style.position = 'fixed';
@@ -3495,11 +3561,12 @@
     // rides along in the exact same cleanup array as every photo's --
     // one list, one revoke pass, so a Footprint export can never leak an
     // object URL any more than a photo-heavy export already couldn't.
-    // Milestone 22.4: the hand-notes export image's object URL joins the
-    // same list, same reasoning.
+    // Milestone 22.4/22.4.2: every hand-notes page image's object URL
+    // (now possibly several, one per paginated slice) joins the same
+    // list, same reasoning.
     iframe.__objectUrls = photosWithUrls.map(function (p) { return p.objectUrl; });
     if (footprintImageUrl) iframe.__objectUrls.push(footprintImageUrl);
-    if (notesHandImageUrl) iframe.__objectUrls.push(notesHandImageUrl);
+    if (notesHandImageUrls) iframe.__objectUrls = iframe.__objectUrls.concat(notesHandImageUrls);
     document.body.appendChild(iframe);
     pdfPrintIframe = iframe;
 
@@ -3559,19 +3626,20 @@
       // itself async (canvas.toBlob()), so it's resolved here before
       // building the printable document -- buildPrintDocumentHtml()
       // stays synchronous otherwise, same as every other section.
-      // Milestone 22.4: the hand-notes image is the exact same kind of
-      // async rasterization, resolved alongside it via Promise.all
-      // rather than chained serially -- the two exports are independent
-      // of each other, so there's no reason to wait on one before
-      // starting the other.
+      // Milestone 22.4/22.4.2: the hand-notes pages are the exact same
+      // kind of async rasterization (now possibly several images, one
+      // per paginated slice), resolved alongside the Footprint image via
+      // Promise.all rather than chained serially -- the two exports are
+      // independent of each other, so there's no reason to wait on one
+      // before starting the other.
       return Promise.all([
         footprintExportImageBlob(sanitizeFootprint(data.footprint)),
-        notesHandExportImageBlob(sanitizeNotes(data.notes).hand)
-      ]).then(function (blobs) {
-        var footprintImageUrl = blobs[0] ? URL.createObjectURL(blobs[0]) : null;
-        var notesHandImageUrl = blobs[1] ? URL.createObjectURL(blobs[1]) : null;
-        var html = buildPrintDocumentHtml(meta, data, photosWithUrls, footprintImageUrl, notesHandImageUrl);
-        printViaHiddenIframe(html, photosWithUrls, footprintImageUrl, notesHandImageUrl);
+        notesHandExportImagePages(sanitizeNotes(data.notes).hand)
+      ]).then(function (results) {
+        var footprintImageUrl = results[0] ? URL.createObjectURL(results[0]) : null;
+        var notesHandImageUrls = results[1].map(function (blob) { return URL.createObjectURL(blob); });
+        var html = buildPrintDocumentHtml(meta, data, photosWithUrls, footprintImageUrl, notesHandImageUrls);
+        printViaHiddenIframe(html, photosWithUrls, footprintImageUrl, notesHandImageUrls);
       });
     }).catch(function (e) {
       window.console && console.error && console.error('Clipboard-Flux: PDF export failed', e);
@@ -5250,61 +5318,83 @@
     if (resetTransformBtn) resetTransformBtn.onclick = handleReferenceResetTransformClick;
   }
 
-  // ---- Notes tab (Milestone 22.4) ----
+  // ---- Notes tab (Milestone 22.4, continuous workspace Milestone 22.4.2) ----
   //
   // Two independent per-inspection workspaces -- one plain multiline text
-  // area, one small handwriting scratchpad -- for capturing a thought
-  // immediately without choosing a category or destination first (#1/#26).
-  // This is deliberately NOT a second Footprint engine (#7): no line-
-  // assist (classifyStroke() is never called anywhere in this section),
-  // no pan/zoom, no reference underlay, one fixed stroke thickness, and a
-  // four-button toolbar (Pencil/Eraser/Undo/Clear) instead of Footprint's
-  // six-plus-two-popovers surface.
+  // area, one handwriting notebook -- for capturing a thought immediately
+  // without choosing a category or destination first. Deliberately NOT a
+  // second Footprint engine: no line-assist (classifyStroke() is never
+  // called anywhere in this section), no pan/zoom, no reference underlay,
+  // one fixed stroke thickness, and a four-button toolbar (Pencil/Eraser/
+  // Undo/Clear) instead of Footprint's six-plus-two-popovers surface.
   //
-  // Viewport/orientation stability (#13/#21) without replicating
-  // Footprint's pan/zoom system: a hand-note stroke's points are stored
-  // in a small fixed logical coordinate space (notes.hand.logicalWidth/
-  // logicalHeight -- just two numbers, established once from the canvas's
-  // own CSS size the first time a stroke is ever drawn, then persisted
-  // alongside the strokes). Every draw/redraw computes a fresh *uniform*
-  // (never per-axis) "contain" fit of that logical rectangle into the
-  // canvas's current CSS size (notesHandFitTransform()) -- uniform
-  // scaling is what keeps every stroke's own shape undistorted across a
-  // portrait<->landscape rotation, where independently scaling x and y
-  // would visibly stretch every mark. The trade-off is a small,
-  // deliberate letterbox margin on one axis when the current canvas's
-  // aspect ratio doesn't exactly match the logical one -- never
-  // stretching, clipping, or losing content, which is what #21 actually
-  // requires. There is no persisted "view" the user can pan/zoom -- this
-  // fit is a pure function of (logical size, current canvas size),
-  // recomputed automatically on every resize, so it can never drift from
-  // user action the way a stateful view transform could.
+  // Milestone 22.4.2 field report: the Hand workspace felt like a bounded
+  // page rather than a notebook -- 22.4's model fit a small fixed logical
+  // rectangle into whatever the current canvas happened to be, which
+  // meant there was always a hard edge the user could reach. This
+  // replaces that with a genuinely continuous document:
   //
-  // Isolation from Footprint (#29): every piece of mutable state here
+  // - The <canvas> element's own CSS/backing-store height *is* the
+  //   document height (notes.hand.docHeight) -- there is no separate
+  //   "viewport into a bigger surface" to keep in sync. The canvas lives
+  //   in normal page flow (same as every other tab's content), so
+  //   scrolling the Notes tab is just the browser's own native page
+  //   scroll -- zero redraw cost while scrolling, and no custom gesture/
+  //   virtualization engine (#8 of 22.4.2's explicit "do not build a
+  //   complex gesture engine unless required").
+  // - Stroke points are raw CSS-pixel document coordinates: x/y relative
+  //   to the canvas element's own top-left, y simply growing downward as
+  //   the document grows. There is no scale/fit transform anywhere in
+  //   this section any more (contrast Footprint's pan/zoom and 22.4's
+  //   own contain-fit, both deliberately absent here). A pointer event's
+  //   document coordinates are just `clientX/Y -
+  //   canvas.getBoundingClientRect().left/top` -- getBoundingClientRect()
+  //   already reflects the canvas's current position after scrolling, by
+  //   definition, so this can never suffer the "draw at scroll position
+  //   Y -> stroke reappears offset by scrollTop" bug class (22.4.2 #9) --
+  //   there is no manual scroll-offset math to get wrong in the first
+  //   place.
+  // - notesHandEnsureDocHeight() grows the canvas (in
+  //   NOTES_HAND_GROWTH_CHUNK increments, triggered
+  //   NOTES_HAND_BOTTOM_BUFFER px before the true bottom, #6) on scroll
+  //   and while actively drawing, so the user experiences "keep
+  //   scrolling down and keep writing" (#5) without a visible jump:
+  //   existing content redraws at its exact same coordinates immediately
+  //   after every resize.
+  // - Backward compatibility (#49): see sanitizeNotes()'s own comment --
+  //   pre-22.4.2 stroke coordinates need no conversion at all.
+  //
+  // Isolation from Footprint (#29/#45): every piece of mutable state here
   // (notesHandPointers/notesHandDraft/notesHandUndoStack/notesHandTool/
   // notesHandCanvasEl/notesHandCtx) is its own variable, never shared
   // with footprint's equivalents -- switching tabs mid-gesture in either
   // direction cannot continue, cancel, or otherwise touch the other
-  // drawing surface's state.
+  // drawing surface's state, and this tab's own page-scroll listener
+  // never touches Footprint's pan/zoom/gesture state either.
 
-  function notesHandFitTransform() {
-    var dpr = window.devicePixelRatio || 1;
-    var cssW = notesHandCanvasEl.width / dpr;
-    var cssH = notesHandCanvasEl.height / dpr;
-    var lw = notes.hand.logicalWidth || cssW;
-    var lh = notes.hand.logicalHeight || cssH;
-    var scale = Math.min(cssW / lw, cssH / lh) || 1;
-    return { scale: scale, offsetX: (cssW - lw * scale) / 2, offsetY: (cssH - lh * scale) / 2 };
-  }
-
-  function notesHandScreenToLogical(clientX, clientY) {
+  // Document-space coordinates: getBoundingClientRect() already accounts
+  // for scroll, so this is a direct, un-transformed mapping -- see this
+  // section's own header comment for why that's what eliminates the
+  // scroll-offset bug class by construction rather than by careful math.
+  function notesHandScreenToDoc(clientX, clientY) {
     var rect = notesHandCanvasEl.getBoundingClientRect();
-    var fit = notesHandFitTransform();
-    return { x: (clientX - rect.left - fit.offsetX) / fit.scale, y: (clientY - rect.top - fit.offsetY) / fit.scale };
+    return { x: clientX - rect.left, y: clientY - rect.top };
   }
 
+  function notesHandCappedDpr() {
+    return Math.min(window.devicePixelRatio || 1, NOTES_HAND_MAX_DPR);
+  }
+
+  // Sets the canvas's CSS height from notes.hand.docHeight (the document
+  // height, driven by JS, not by content auto-sizing the way an ordinary
+  // element would be) and syncs the backing store to the canvas's
+  // resulting on-screen size -- same DPR-aware pattern Footprint's own
+  // setupFootprintCanvasBackingStore() uses, just with a capped DPR
+  // (NOTES_HAND_MAX_DPR) since this canvas, unlike Footprint's, has no
+  // fixed upper bound on how tall it can grow over a long field session.
   function setupNotesHandCanvasBackingStore() {
-    var dpr = window.devicePixelRatio || 1;
+    var dpr = notesHandCappedDpr();
+    notesHandCanvasEl.style.height = notes.hand.docHeight + 'px';
     var rect = notesHandCanvasEl.getBoundingClientRect();
     var w = Math.max(1, Math.round(rect.width * dpr));
     var h = Math.max(1, Math.round(rect.height * dpr));
@@ -5314,32 +5404,64 @@
     notesHandCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
   }
 
-  function notesHandDrawOneStroke(ctx, points, fit) {
+  // Grows the document (never shrinks it -- existing content never needs
+  // less room than it already has) to at least `minHeight`, in
+  // NOTES_HAND_GROWTH_CHUNK increments so growth feels like steadily
+  // extending notebook paper rather than one sudden jump (#5's "avoid
+  // sudden visible jumps"). Resizing a canvas element clears its pixel
+  // content by spec, so every growth redraws from the stroke data --
+  // cheap and rare (only when actually approaching the bottom), never
+  // triggered merely by scrolling elsewhere in the document.
+  function notesHandEnsureDocHeight(minHeight) {
+    if (!notesHandCanvasEl) return;
+    var current = notes.hand.docHeight || NOTES_HAND_MIN_DOC_HEIGHT;
+    if (minHeight <= current) return;
+    var next = current;
+    while (next < minHeight) next += NOTES_HAND_GROWTH_CHUNK;
+    notes.hand.docHeight = next;
+    setupNotesHandCanvasBackingStore();
+    drawNotesHandCanvas();
+    scheduleAutoSave();
+  }
+
+  // #6: checked on scroll and while actively drawing -- "approaching the
+  // lower portion of the document" is whichever of those two moments
+  // happens first, so expansion feels responsive regardless of exactly
+  // how the user got near the edge.
+  function notesHandMaybeGrowForScroll() {
+    if (!notesHandCanvasEl) return;
+    var rect = notesHandCanvasEl.getBoundingClientRect();
+    var viewportBottom = window.innerHeight || document.documentElement.clientHeight;
+    if (rect.bottom - viewportBottom < NOTES_HAND_BOTTOM_BUFFER) {
+      notesHandEnsureDocHeight((notes.hand.docHeight || NOTES_HAND_MIN_DOC_HEIGHT) + NOTES_HAND_BOTTOM_BUFFER);
+    }
+  }
+
+  function notesHandDrawOneStroke(ctx, points) {
     if (points.length < 2) return;
     ctx.beginPath();
-    ctx.moveTo(points[0].x * fit.scale + fit.offsetX, points[0].y * fit.scale + fit.offsetY);
+    ctx.moveTo(points[0].x, points[0].y);
     for (var i = 1; i < points.length; i++) {
-      ctx.lineTo(points[i].x * fit.scale + fit.offsetX, points[i].y * fit.scale + fit.offsetY);
+      ctx.lineTo(points[i].x, points[i].y);
     }
     ctx.stroke();
   }
 
   function drawNotesHandCanvas() {
     if (!notesHandCtx || !notesHandCanvasEl) return;
-    var dpr = window.devicePixelRatio || 1;
+    var dpr = notesHandCappedDpr();
     var cssW = notesHandCanvasEl.width / dpr;
     var cssH = notesHandCanvasEl.height / dpr;
     var ctx = notesHandCtx;
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     ctx.clearRect(0, 0, cssW, cssH);
-    var fit = notesHandFitTransform();
     ctx.lineCap = 'round';
     ctx.lineJoin = 'round';
     ctx.strokeStyle = '#1c3a52';
     ctx.lineWidth = NOTES_HAND_STROKE_WIDTH;
-    notes.hand.strokes.forEach(function (s) { notesHandDrawOneStroke(ctx, s.points, fit); });
+    notes.hand.strokes.forEach(function (s) { notesHandDrawOneStroke(ctx, s.points); });
     if (notesHandDraft && notesHandDraft.mode === 'draw' && notesHandDraft.points.length > 1) {
-      notesHandDrawOneStroke(ctx, notesHandDraft.points, fit);
+      notesHandDrawOneStroke(ctx, notesHandDraft.points);
     }
   }
 
@@ -5348,6 +5470,10 @@
     if (notesHandUndoStack.length > NOTES_HAND_UNDO_LIMIT) notesHandUndoStack.shift();
   }
 
+  // #13: Undo is based on completed strokes regardless of where they sit
+  // vertically -- it just pops the whole strokes array back to its prior
+  // snapshot, exactly like Footprint's own undo, with no dependency on
+  // current scroll position at all.
   function notesHandUndo() {
     if (!notesHandUndoStack.length) return;
     notes.hand.strokes = notesHandUndoStack.pop();
@@ -5355,19 +5481,17 @@
     render();
   }
 
-  // Mild input smoothing (#8/#9): reuses classifyStroke()'s sibling
+  // Mild input smoothing: reuses classifyStroke()'s sibling
   // smoothFreehandPoints() exactly as-is -- it's already a generic pure
   // function over any points array, not Footprint-specific -- and never
   // calls classifyStroke() itself, so a hand note is never straightened
-  // into a clean line no matter how line-like it looks (#8's explicit
-  // requirement).
+  // into a clean line no matter how line-like it looks.
   function notesHandCommitDraft(draft) {
     var pts = draft.points;
     if (pts.length < 2) return;
-    var fit = notesHandFitTransform();
     var pathLenPx = 0;
     for (var i = 1; i < pts.length; i++) {
-      pathLenPx += Math.hypot(pts[i].x - pts[i - 1].x, pts[i].y - pts[i - 1].y) * fit.scale;
+      pathLenPx += Math.hypot(pts[i].x - pts[i - 1].x, pts[i].y - pts[i - 1].y);
     }
     if (pathLenPx < NOTES_HAND_NOISE_SCREEN_PX) return;
     notesHandPushUndoSnapshot();
@@ -5386,15 +5510,17 @@
 
   // Same lazy-snapshot-on-first-hit convention as footprintEraseAt() --
   // one erase gesture, however many strokes it actually removes, is one
-  // undo step (#10/#11).
+  // undo step. #14: correct regardless of document depth, since the hit
+  // point is already in the same document-space coordinates every
+  // stroke's own points are stored in -- no separate depth-aware logic
+  // needed.
   function notesHandEraseAt(clientX, clientY) {
-    var lp = notesHandScreenToLogical(clientX, clientY);
-    var fit = notesHandFitTransform();
-    var r = Math.max(14, NOTES_HAND_STROKE_WIDTH * 4) / fit.scale;
+    var dp = notesHandScreenToDoc(clientX, clientY);
+    var r = Math.max(14, NOTES_HAND_STROKE_WIDTH * 4);
     var changedAny = false;
     var kept = [];
     notes.hand.strokes.forEach(function (s) {
-      if (notesHandStrokeHit(s, lp, r)) {
+      if (notesHandStrokeHit(s, dp, r)) {
         if (!notesHandDraft.snapshotTaken) {
           notesHandPushUndoSnapshot();
           notesHandDraft.snapshotTaken = true;
@@ -5410,13 +5536,14 @@
     }
   }
 
-  // #12: confirmation required, cancel leaves everything untouched
-  // (window.confirm()'s own semantics already guarantee that -- nothing
-  // runs unless the user picks OK). Also pushes an undo snapshot before
-  // clearing, so a confirmed-but-regretted Clear can still be recovered
-  // by Undo, same safety margin every other destructive action in this
-  // file gets. A no-op (no confirm dialog at all) when there's nothing to
-  // clear.
+  // #15: clears every stroke in the entire continuous document, never
+  // just whatever's currently scrolled into view -- notes.hand.strokes
+  // is simply the whole document's content, with no separate "visible
+  // portion" concept anywhere in the data model. Confirmation required
+  // (window.confirm()'s own semantics already guarantee Cancel leaves
+  // everything untouched); pushes an undo snapshot first, so a confirmed
+  // Clear can still be recovered by Undo. No-op (no dialog at all) when
+  // there's nothing to clear.
   function notesHandClear() {
     if (!notes.hand.strokes.length) return;
     if (!window.confirm('Clear all handwritten notes?')) return;
@@ -5426,13 +5553,17 @@
     render();
   }
 
-  // #14/#15: a second concurrent pointer is never a supported gesture on
-  // this canvas (there is no pan/zoom mode to fall into, unlike
-  // Footprint) -- whatever single-pointer draft was in progress is
-  // discarded outright the instant a second pointer arrives, and every
-  // pointer stays inert until the whole gesture fully lifts. This is what
-  // keeps a resting palm or an incidental second touch from smearing or
-  // continuing a stroke, without needing any pinch/pan handling at all.
+  // A second concurrent pointer is never a supported gesture on this
+  // canvas (no pan/zoom mode to fall into, unlike Footprint) -- whatever
+  // single-pointer draft was in progress is discarded outright the
+  // instant a second pointer arrives, and every pointer stays inert
+  // until the whole gesture fully lifts. This is what keeps a resting
+  // palm or an incidental second touch from smearing or continuing a
+  // stroke, without needing any pinch/pan handling at all. Distinguishing
+  // a genuine one-finger vertical page-scroll from one-finger drawing
+  // (#8 of 22.4.2) is handled entirely by CSS `touch-action` on the
+  // canvas (see .notes-hand-canvas's own comment) rather than by any
+  // gesture-disambiguation logic here.
   function notesHandPointerDown(ev) {
     try { notesHandCanvasEl.setPointerCapture(ev.pointerId); } catch (e) { /* proceed uncaptured */ }
     notesHandPointers[ev.pointerId] = true;
@@ -5440,18 +5571,14 @@
       notesHandDraft = null;
       return;
     }
-    if (!notes.hand.logicalWidth || !notes.hand.logicalHeight) {
-      var dpr = window.devicePixelRatio || 1;
-      notes.hand.logicalWidth = notesHandCanvasEl.width / dpr;
-      notes.hand.logicalHeight = notesHandCanvasEl.height / dpr;
-    }
     if (notesHandTool === 'eraser') {
       notesHandDraft = { mode: 'erase', snapshotTaken: false };
       notesHandEraseAt(ev.clientX, ev.clientY);
       return;
     }
-    var lp = notesHandScreenToLogical(ev.clientX, ev.clientY);
-    notesHandDraft = { mode: 'draw', points: [lp] };
+    var dp = notesHandScreenToDoc(ev.clientX, ev.clientY);
+    notesHandDraft = { mode: 'draw', points: [dp] };
+    notesHandMaybeGrowForScroll();
     drawNotesHandCanvas();
   }
 
@@ -5464,12 +5591,11 @@
       return;
     }
     if (notesHandDraft.mode === 'draw') {
-      var lp = notesHandScreenToLogical(ev.clientX, ev.clientY);
-      var fit = notesHandFitTransform();
+      var dp = notesHandScreenToDoc(ev.clientX, ev.clientY);
       var last = notesHandDraft.points[notesHandDraft.points.length - 1];
-      var minDist = NOTES_HAND_MIN_SAMPLE_SCREEN_PX / fit.scale;
-      if (Math.hypot(lp.x - last.x, lp.y - last.y) >= minDist) {
-        notesHandDraft.points.push(lp);
+      if (Math.hypot(dp.x - last.x, dp.y - last.y) >= NOTES_HAND_MIN_SAMPLE_SCREEN_PX) {
+        notesHandDraft.points.push(dp);
+        notesHandMaybeGrowForScroll();
         drawNotesHandCanvas();
       }
     }
@@ -5523,50 +5649,80 @@
     return { minX: minX, minY: minY, maxX: maxX, maxY: maxY };
   }
 
-  // Full-bounds rasterization for PDF export (#22/#23) -- same technique
-  // as footprintRenderExportCanvas(), computed from the strokes' own
-  // logical-space geometry, never the live on-screen fit/canvas (so a
-  // PDF export always shows every mark regardless of what the canvas
-  // happens to be showing/scrolled to). The source of truth stays the
-  // vector strokes; this raster is generated fresh at export time and
-  // never written back to `notes` (#23).
-  function notesHandRenderExportCanvas(notesHand) {
+  // Milestone 22.4.2 (#21/#22): paginated full-document rasterization for
+  // PDF export -- replaces 22.4's single fit-to-one-image export (which
+  // would have squashed several screens of handwriting down to one
+  // unreadably tiny page). Slices the full stroke bounds into
+  // NOTES_HAND_PDF_SLICE_ASPECT-proportioned chunks (roughly one letter-
+  // page's printable aspect ratio each, so no single slice is itself
+  // taller than one physical page), rendering one canvas per slice. Every
+  // slice's canvas draws every stroke at its real, un-filtered
+  // coordinates -- the canvas's own natural clipping (nothing draws
+  // outside width/height) is what keeps each slice showing only its own
+  // vertical range, without needing to first figure out which strokes
+  // belong to which slice. Always at least one page when there's any
+  // content at all.
+  function notesHandRenderExportPages(notesHand) {
     var bounds = notesHandComputeBounds(notesHand.strokes);
-    if (!bounds) return null;
-    var w = bounds.maxX - bounds.minX;
-    var h = bounds.maxY - bounds.minY;
-    var longEdge = Math.max(w, h, 1);
-    var pad = Math.max(longEdge * NOTES_HAND_EXPORT_PADDING_RATIO, 10);
-    var totalW = w + pad * 2, totalH = h + pad * 2;
-    var scale = NOTES_HAND_EXPORT_TARGET_LONG_EDGE / Math.max(totalW, totalH);
-    var canvas = document.createElement('canvas');
-    canvas.width = Math.max(1, Math.round(totalW * scale));
-    canvas.height = Math.max(1, Math.round(totalH * scale));
-    var ctx = canvas.getContext('2d');
-    ctx.fillStyle = '#ffffff';
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-    ctx.translate((pad - bounds.minX) * scale, (pad - bounds.minY) * scale);
-    ctx.scale(scale, scale);
-    ctx.lineCap = 'round';
-    ctx.lineJoin = 'round';
-    ctx.strokeStyle = '#1c3a52';
-    ctx.lineWidth = NOTES_HAND_STROKE_WIDTH;
-    notesHand.strokes.forEach(function (s) {
-      if (s.points.length < 2) return;
-      ctx.beginPath();
-      ctx.moveTo(s.points[0].x, s.points[0].y);
-      for (var i = 1; i < s.points.length; i++) ctx.lineTo(s.points[i].x, s.points[i].y);
-      ctx.stroke();
-    });
-    return canvas;
+    if (!bounds) return [];
+    var pad = 24;
+    var contentW = Math.max(1, bounds.maxX - bounds.minX + pad * 2);
+    var contentH = Math.max(1, bounds.maxY - bounds.minY + pad * 2);
+    var scale = Math.min(2, NOTES_HAND_PDF_TARGET_WIDTH / contentW);
+    var sliceHeightDoc = contentW * NOTES_HAND_PDF_SLICE_ASPECT;
+    var pageCount = Math.max(1, Math.ceil(contentH / sliceHeightDoc));
+    var canvases = [];
+    for (var i = 0; i < pageCount; i++) {
+      var sliceTop = i * sliceHeightDoc;
+      var sliceBottom = Math.min(contentH, sliceTop + sliceHeightDoc);
+      var sliceH = Math.max(1, sliceBottom - sliceTop);
+      var canvas = document.createElement('canvas');
+      canvas.width = Math.max(1, Math.round(contentW * scale));
+      canvas.height = Math.max(1, Math.round(sliceH * scale));
+      var ctx = canvas.getContext('2d');
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.translate((pad - bounds.minX) * scale, (pad - bounds.minY - sliceTop) * scale);
+      ctx.scale(scale, scale);
+      ctx.lineCap = 'round';
+      ctx.lineJoin = 'round';
+      ctx.strokeStyle = '#1c3a52';
+      ctx.lineWidth = NOTES_HAND_STROKE_WIDTH;
+      notesHand.strokes.forEach(function (s) {
+        if (s.points.length < 2) return;
+        ctx.beginPath();
+        ctx.moveTo(s.points[0].x, s.points[0].y);
+        for (var j = 1; j < s.points.length; j++) ctx.lineTo(s.points[j].x, s.points[j].y);
+        ctx.stroke();
+      });
+      canvases.push(canvas);
+    }
+    return canvases;
   }
 
-  function notesHandExportImageBlob(notesHand) {
-    var canvas = notesHandRenderExportCanvas(notesHand);
-    if (!canvas) return Promise.resolve(null);
-    return new Promise(function (resolve) {
-      canvas.toBlob(function (blob) { resolve(blob); }, 'image/png');
-    });
+  function notesHandExportImagePages(notesHand) {
+    var canvases = notesHandRenderExportPages(notesHand);
+    if (!canvases.length) return Promise.resolve([]);
+    return Promise.all(canvases.map(function (canvas) {
+      return new Promise(function (resolve) {
+        canvas.toBlob(function (blob) { resolve(blob); }, 'image/png');
+      });
+    }));
+  }
+
+  // Milestone 22.4.2 (#16/#17): grows the textarea to fit its content
+  // exactly (no internal scrollbar of its own) so the surrounding Notes
+  // page scrolls naturally instead -- the standard reset-then-measure
+  // technique (collapse to 'auto' so scrollHeight reports the content's
+  // *natural* height rather than whatever the previous fixed height was,
+  // then set height to that measured value). NOTES_TEXT_MIN_HEIGHT_PX
+  // keeps a short/empty note from collapsing to an awkwardly small tap
+  // target. Only ever touches this element's own height style -- never
+  // its value, scroll position, or focus -- so it's safe to call on
+  // every keystroke without risking cursor/selection loss (#18).
+  function notesTextAutoSize(textarea) {
+    textarea.style.height = 'auto';
+    textarea.style.height = Math.max(textarea.scrollHeight, NOTES_TEXT_MIN_HEIGHT_PX) + 'px';
   }
 
   function renderNotesTabHtml() {
@@ -5583,7 +5739,7 @@
       '</div>';
     if (notesMode === 'hand') {
       return warningHtml + modeToggleHtml +
-        '<div class="footprint-toolbar">' +
+        '<div class="footprint-toolbar notes-hand-toolbar">' +
           '<div class="footprint-tool-group">' +
             '<button type="button" class="footprint-tool-btn' + (notesHandTool === 'pencil' ? ' active' : '') +
               '" data-role="notes-hand-tool-pencil" aria-pressed="' + (notesHandTool === 'pencil') + '" aria-label="Pencil">Pencil</button>' +
@@ -5596,9 +5752,7 @@
             '<button type="button" class="footprint-tool-btn footprint-tool-btn-danger" data-role="notes-hand-clear" aria-label="Clear">Clear</button>' +
           '</div>' +
         '</div>' +
-        '<div class="footprint-canvas-wrap">' +
-          '<canvas id="notes-hand-canvas" class="footprint-canvas" aria-label="Handwritten notes canvas"></canvas>' +
-        '</div>';
+        '<canvas id="notes-hand-canvas" class="notes-hand-canvas" aria-label="Handwritten notes canvas"></canvas>';
     }
     return warningHtml + modeToggleHtml +
       '<textarea class="notes-text-area" data-role="notes-text" placeholder="Inspection notes…" aria-label="Inspection notes">' +
@@ -5630,18 +5784,31 @@
 
     if (notesMode === 'text') {
       var textarea = document.querySelector('[data-role="notes-text"]');
-      // Milestone 22.4 #5: plain oninput mutation + scheduleAutoSave(),
-      // deliberately never a render() here -- the exact FN-011 double-tap/
-      // lost-focus defect class this file's Text/LongText fields already
-      // avoid the same way (see the "Text/LongText update `values` on
-      // every keystroke without re-rendering" comment below) -- a full
-      // render() mid-type would destroy this very textarea and drop
-      // keyboard focus and cursor position.
+      // Plain oninput mutation + scheduleAutoSave(), deliberately never a
+      // render() here -- the exact FN-011 double-tap/lost-focus defect
+      // class this file's Text/LongText fields already avoid the same
+      // way (see the "Text/LongText update `values` on every keystroke
+      // without re-rendering" comment below) -- a full render() mid-type
+      // would destroy this very textarea and drop keyboard focus, cursor
+      // position, and any active selection.
       if (textarea) {
         textarea.oninput = function () {
           notes.text = textarea.value;
           scheduleAutoSave();
+          notesTextAutoSize(textarea);
         };
+        // #17's "recompute safely after loading an existing inspection"
+        // -- sizes correctly for whatever content this render() already
+        // populated the textarea with (switching into Notes, switching
+        // Hand->Text, or a fresh inspection load), not just future typing.
+        notesTextAutoSize(textarea);
+      }
+      if (!notesTextResizeListenerAdded) {
+        notesTextResizeListenerAdded = true;
+        window.addEventListener('resize', function () {
+          var ta = document.querySelector('[data-role="notes-text"]');
+          if (ta) notesTextAutoSize(ta);
+        });
       }
       return;
     }
@@ -5667,6 +5834,21 @@
         setupNotesHandCanvasBackingStore();
         drawNotesHandCanvas();
       });
+    }
+
+    // Milestone 22.4.2 (#5/#6): the one listener that makes the notebook
+    // feel endless -- self-guarding via the same "look up the element
+    // fresh, no-op if this tab isn't currently showing it" convention as
+    // the resize listener just above, added once, ever, for the whole
+    // page's lifetime.
+    if (!notesHandScrollListenerAdded) {
+      notesHandScrollListenerAdded = true;
+      window.addEventListener('scroll', function () {
+        var el = document.getElementById('notes-hand-canvas');
+        if (!el) return;
+        notesHandCanvasEl = el;
+        notesHandMaybeGrowForScroll();
+      }, { passive: true });
     }
 
     Array.prototype.forEach.call(document.querySelectorAll('[data-role^="notes-hand-tool-"]'), function (btn) {
@@ -6256,6 +6438,20 @@
     return CFG.main.tabs.concat([EXIT_INTERVIEW_TAB, PHOTOS_TAB, FOOTPRINT_TAB, NOTES_TAB, INSPECTION_TAB]);
   }
 
+  // Milestone 22.4.2 (#23-41): single-row horizontally-scrolling ribbon
+  // -- the CSS (nav.tabs{flex-wrap:nowrap;overflow-x:auto}) is what makes
+  // it scroll instead of wrap; this function's only addition over the
+  // pre-22.4.2 version is the scrollIntoView() call at the end (#29-31).
+  // Called by every render() (tab switches, Previous/Next, boot, New/
+  // Load, field interactions -- anywhere render() already ran), which
+  // could in principle mean calling this far more often than the active
+  // tab actually changes -- but scrollIntoView({block:'nearest',
+  // inline:'nearest'}) is a true no-op whenever the target is already
+  // fully visible (the native, spec-defined behavior, not something this
+  // file re-implements), so this is safe and cheap to call
+  // unconditionally rather than tracking "did the active tab change"
+  // separately: "if already visible, leave the ribbon alone" (#29) comes
+  // for free from the browser itself.
   function renderTabs() {
     var alertCount = unresolvedExitInterviewGroups().length;
     $('#tabs').innerHTML = navTabs().map(function (t) {
@@ -6268,6 +6464,10 @@
     Array.prototype.forEach.call(document.querySelectorAll('#tabs button'), function (b) {
       b.onclick = function () { switchToTab(b.dataset.tab); };
     });
+    var activeBtn = document.querySelector('#tabs button.active');
+    if (activeBtn && activeBtn.scrollIntoView) {
+      activeBtn.scrollIntoView({ behavior: 'auto', block: 'nearest', inline: 'nearest' });
+    }
   }
 
   // The one place that changes activeTab (Milestone 19 #3) -- used by
@@ -6652,7 +6852,7 @@
     }
   });
 
-  fetch('config.json?v=0.22.4.1', { cache: 'no-store' })
+  fetch('config.json?v=0.22.4.2', { cache: 'no-store' })
     .then(function (r) {
       if (!r.ok) throw new Error('HTTP ' + r.status);
       return r.json();

@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
-<title>Clipboard-Flux 0.22.4.1</title>
+<title>Clipboard-Flux 0.22.4.2</title>
 <meta name="theme-color" content="#17324d">
 <style>
 :root{--navy:#17324d;--bg:#eef2f5;--line:#d9e0e6;--muted:#66727e;--paper:#fff}
@@ -12,8 +12,28 @@ body{margin:0;background:var(--bg);color:var(--navy);font-family:system-ui,-appl
 header{background:var(--navy);color:#fff;padding:7px 16px}
 .brand{font-weight:800;font-size:17px}
 .version{font-size:11px;opacity:.8;margin-left:6px}
-nav.tabs{display:flex;gap:4px;flex-wrap:wrap;padding:6px 10px;background:var(--paper);border-bottom:1px solid var(--line);position:sticky;top:0;z-index:5}
-nav.tabs button{border:0;background:transparent;padding:7px 12px;border-radius:10px;font-weight:700;color:#4a5660;font-size:13px}
+/* Milestone 22.4.2 (#23-41): a single-row horizontally-scrolling ribbon
+   replaces the old multi-row wrapping nav -- flex-wrap:nowrap is what
+   prevents wrapping, overflow-x:auto is what makes it scroll sideways
+   instead. Scrollbar hidden across engines (scrollbar-width/-ms-
+   overflow-style/::-webkit-scrollbar) purely cosmetically -- scrolling
+   itself is never disabled (#33). Horizontal padding uses env()
+   safe-area insets so the first/last tab stay reachable past a notch/
+   rounded corner on real devices (#35) without a large blank margin on
+   ordinary screens (env() resolves to 0 there, so max(10px, ...) is
+   just the normal 10px inset). Still sticky at the same top:0/z-index
+   as before (#36 -- preserve existing sticky behavior, introduce no
+   second sticky layer). */
+nav.tabs{display:flex;gap:6px;flex-wrap:nowrap;overflow-x:auto;overflow-y:hidden;-webkit-overflow-scrolling:touch;scrollbar-width:none;-ms-overflow-style:none;padding:8px max(10px,env(safe-area-inset-right)) 8px max(10px,env(safe-area-inset-left));background:var(--paper);border-bottom:1px solid var(--line);position:sticky;top:0;z-index:5}
+nav.tabs::-webkit-scrollbar{display:none}
+/* Larger/easier horizontally, compact vertically (#26): more font-size
+   and horizontal padding than the old wrapped tabs had room for, but a
+   restrained vertical padding keeps the ribbon's own height to one
+   modest row -- the whole point of this change is reclaiming vertical
+   space, not spending it on taller tabs. white-space:nowrap plus
+   flex:0 0 auto (#25/#37) is what keeps "Exit Interview" on one line at
+   its natural width instead of wrapping or being squeezed. */
+nav.tabs button{flex:0 0 auto;white-space:nowrap;border:0;background:transparent;padding:10px 16px;border-radius:10px;font-weight:700;color:#4a5660;font-size:15px;touch-action:manipulation}
 nav.tabs button.active{background:var(--navy);color:#fff}
 main{padding:8px 16px 16px;max-width:640px;margin:auto}
 .shell-note{background:#fff;border:1px solid var(--line);border-radius:14px;padding:14px 16px;margin-bottom:14px;font-size:14px;color:var(--muted)}
@@ -123,7 +143,35 @@ main{padding:8px 16px 16px;max-width:640px;margin:auto}
 .notes-mode-toggle{display:flex;gap:6px;margin-bottom:10px}
 .notes-mode-btn{flex:1;min-height:44px;border-radius:10px;border:1.5px solid var(--navy);background:#fff;color:var(--navy);font-size:14px;font-weight:700;touch-action:manipulation}
 .notes-mode-btn.active{background:var(--navy);color:#fff}
-.notes-text-area{width:100%;min-height:56vh;border:1px solid var(--line);border-radius:14px;padding:14px;font-size:16px;font-family:inherit;line-height:1.4;background:#fff;color:var(--navy);resize:vertical}
+/* Milestone 22.4.2 (#16/#17): no fixed vh height and no internal
+   scrollbar any more -- JS (notesTextAutoSize()) grows this element's
+   own height to fit its content exactly, so the surrounding Notes page
+   scrolls instead of a small boxed-in textarea. min-height keeps a
+   short/empty note from collapsing to an awkwardly small tap target;
+   resize:none since manual dragging would just be overridden by the
+   next keystroke's auto-size anyway. */
+.notes-text-area{width:100%;min-height:240px;border:1px solid var(--line);border-radius:14px;padding:14px;font-size:16px;font-family:inherit;line-height:1.4;background:#fff;color:var(--navy);overflow-y:hidden;resize:none}
+/* Milestone 22.4.2 (#4/#5/#12): the continuous handwriting notebook --
+   no wrapping box (contrast .footprint-canvas-wrap's fixed vh height
+   above), no inner scrollbar of its own; the canvas lives in normal
+   page flow and its CSS height is driven directly by JS
+   (setupNotesHandCanvasBackingStore()) from notes.hand.docHeight, so
+   the *page* scrolling this canvas is the app's own ordinary native
+   scroll -- the exact same mechanism a long Property tab already uses,
+   not a new paradigm. touch-action:pan-y (deliberately not Footprint's
+   touch-action:none) is what lets a one-finger vertical drag scroll the
+   page natively while pointer events still fire for drawing (#8) --
+   Apple Pencil input is exempt from this panning heuristic on iPadOS
+   regardless, so Pencil drawing stays reliable at any scroll position
+   (#9); a touch drag the browser resolves as a scroll instead fires
+   pointercancel, which the existing pointer-cancel handling already
+   discards cleanly with no stray mark ever committed. */
+.notes-hand-canvas{display:block;width:100%;touch-action:pan-y;background:#fff;border:1px solid var(--line);border-radius:14px}
+/* #12: stays visible while scrolling the long canvas without consuming
+   much space -- `top` docks it directly under the sticky tab ribbon
+   (nav.tabs's own rendered height); adjust together if either one's
+   proportions change. */
+.notes-hand-toolbar{position:sticky;top:54px;z-index:2;background:var(--paper);padding-top:6px;padding-bottom:6px;border-bottom:1px solid var(--line)}
 .bottom-nav{display:flex;gap:10px;margin-top:22px;padding:14px 0 calc(14px + env(safe-area-inset-bottom));border-top:1px solid var(--line)}
 .bottom-nav-btn{min-height:52px;padding:0 24px;border-radius:12px;border:1.5px solid var(--navy);background:#fff;color:var(--navy);font-size:16px;font-weight:700}
 .bottom-nav-btn-next{margin-left:auto;background:var(--navy);color:#fff}
@@ -142,7 +190,7 @@ main{padding:8px 16px 16px;max-width:640px;margin:auto}
 </style>
 </head>
 <body>
-<header><span class="brand">Clipboard-Flux</span><span class="version" id="version">0.22.4.1</span></header>
+<header><span class="brand">Clipboard-Flux</span><span class="version" id="version">0.22.4.2</span></header>
 <div id="inspection-bar"></div>
 <nav class="tabs" id="tabs"></nav>
 <main>
@@ -152,6 +200,6 @@ main{padding:8px 16px 16px;max-width:640px;margin:auto}
 </main>
 <div id="inspection-modal" hidden></div>
 <div id="photo-viewer" hidden></div>
-<script src="app.js?v=0.22.4.1"></script>
+<script src="app.js?v=0.22.4.2"></script>
 </body>
 </html>
