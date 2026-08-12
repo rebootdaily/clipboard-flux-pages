@@ -377,7 +377,7 @@
   var AUTOSAVE_DEBOUNCE_MS = 700;
   var MIGRATED_INSPECTION_ADDRESS = 'Unsaved / Migrated Inspection';
   // The exported-file schema is versioned independently of
-  // 0.22.4.2 -- app releases and the inspection-file format can
+  // 0.22.4.3 -- app releases and the inspection-file format can
   // and will drift out of step (a future app version might still need
   // to read a schemaVersion 1 file, or refuse a newer one it doesn't
   // understand yet), so import validation checks schema/schemaVersion
@@ -385,10 +385,10 @@
   var EXPORT_SCHEMA = 'clipboard-flux-inspection';
   var EXPORT_SCHEMA_VERSION = 1;
   var SUPPORTED_SCHEMA_VERSIONS = [1];
-  // Stamped at build time exactly like every other 0.22.4.2
+  // Stamped at build time exactly like every other 0.22.4.3
   // token in this file -- informational only in the export, never
   // itself validated on import.
-  var APP_VERSION = '0.22.4.2';
+  var APP_VERSION = '0.22.4.3';
   // Same database as Milestone 14's photos -- name kept for continuity
   // even though it now also holds inspection records; renaming it would
   // mean either abandoning existing photo data or writing a whole
@@ -6344,10 +6344,29 @@
   // name named here. This is the single source of truth both
   // isFollowUpGroupActive() (does the group show at all) and
   // fieldHtml()'s Dynamic placement (which one field shows it) build on.
+  //
+  // A trigger field's value is a plain string for Button but an array
+  // for MultiSelect (same distinction pdfFieldValueText()/
+  // pdfBuildMainSectionsHtml() already have to make elsewhere) -- every
+  // trigger field in the workbook had been Button-type until a
+  // MultiSelect one was added, which this didn't yet handle:
+  // `f.followUpTrigger.indexOf(values[f.id])` was checking whether the
+  // whole *array* `values[f.id]` was itself one of the listed trigger
+  // strings, which is never true by reference equality, so a MultiSelect
+  // trigger field could never activate its group no matter what was
+  // selected. Now: an array value activates the group if *any* selected
+  // option is one of the field's own trigger values (the same "does the
+  // selection include X" semantics MultiSelect already uses for Other,
+  // e.g. `arr.indexOf(OTHER_OPTION) !== -1`); a scalar value keeps the
+  // exact original Button-field check, unchanged.
   function activeSourceFieldsForGroup(groupName) {
     return CFG.main.fields.filter(function (f) {
-      return f.followUpGroup === groupName &&
-        f.followUpTrigger.indexOf(values[f.id]) !== -1;
+      if (f.followUpGroup !== groupName) return false;
+      var v = values[f.id];
+      if (Array.isArray(v)) {
+        return v.some(function (selected) { return f.followUpTrigger.indexOf(selected) !== -1; });
+      }
+      return f.followUpTrigger.indexOf(v) !== -1;
     });
   }
 
@@ -6852,7 +6871,7 @@
     }
   });
 
-  fetch('config.json?v=0.22.4.2', { cache: 'no-store' })
+  fetch('config.json?v=0.22.4.3', { cache: 'no-store' })
     .then(function (r) {
       if (!r.ok) throw new Error('HTTP ' + r.status);
       return r.json();

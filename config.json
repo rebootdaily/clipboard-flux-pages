@@ -1,5 +1,5 @@
 {
-  "version": "0.22.4.2",
+  "version": "0.22.4.3",
   "inputRules": {
     "sheet": "INPUT RULES",
     "validTypes": [
@@ -79,7 +79,7 @@
   },
   "main": {
     "sheet": "MAIN",
-    "fieldCount": 99,
+    "fieldCount": 97,
     "tabs": [
       "Property",
       "Off Site",
@@ -153,8 +153,10 @@
           "Unknown",
           "Other"
         ],
-        "followUpTrigger": [],
-        "followUpGroup": "",
+        "followUpTrigger": [
+          "Vacant"
+        ],
+        "followUpGroup": "occupancy_vacant",
         "reminder": ""
       },
       {
@@ -234,9 +236,11 @@
           "Modular",
           "Other"
         ],
-        "followUpTrigger": [],
-        "followUpGroup": "",
-        "reminder": ""
+        "followUpTrigger": [
+          "Manufactured"
+        ],
+        "followUpGroup": "manufactured",
+        "reminder": "If manufactured take photos of HUD lables and cert."
       },
       {
         "id": "location",
@@ -369,20 +373,6 @@
         "reminder": "FHA: Take photo of working utility"
       },
       {
-        "id": "electricity_on",
-        "label": "Electricity On",
-        "urar": "Site",
-        "tab": "Site",
-        "type": "Button",
-        "options": [
-          "Yes",
-          "No"
-        ],
-        "followUpTrigger": [],
-        "followUpGroup": "",
-        "reminder": ""
-      },
-      {
         "id": "water",
         "label": "Water",
         "urar": "Site",
@@ -397,20 +387,6 @@
         "followUpTrigger": [],
         "followUpGroup": "",
         "reminder": "FHA: Take photo of utility/locate if well. Well \u226550 ft from septic tank, \u2265100 ft from drain field."
-      },
-      {
-        "id": "water_on",
-        "label": "Water On",
-        "urar": "Site",
-        "tab": "Site",
-        "type": "Button",
-        "options": [
-          "Yes",
-          "No"
-        ],
-        "followUpTrigger": [],
-        "followUpGroup": "",
-        "reminder": ""
       },
       {
         "id": "gas_available",
@@ -1596,8 +1572,43 @@
   },
   "followUp": {
     "sheet": "FOLLOW_UP",
-    "questionCount": 47,
+    "questionCount": 51,
     "groups": [
+      {
+        "group": "occupancy_vacant",
+        "questions": [
+          {
+            "id": "occupancy_vacant__electricity_on",
+            "group": "occupancy_vacant",
+            "label": "Electricity on?",
+            "type": "Button",
+            "options": [
+              "Yes",
+              "No"
+            ],
+            "destination": "Exit Interview",
+            "showWhenQuestion": "",
+            "showWhenValue": [],
+            "showWhenQuestionId": null,
+            "showWhenInvalid": false
+          },
+          {
+            "id": "occupancy_vacant__water_on",
+            "group": "occupancy_vacant",
+            "label": "Water on?",
+            "type": "Button",
+            "options": [
+              "Yes",
+              "No"
+            ],
+            "destination": "Exit Interview",
+            "showWhenQuestion": "",
+            "showWhenValue": [],
+            "showWhenQuestionId": null,
+            "showWhenInvalid": false
+          }
+        ]
+      },
       {
         "group": "pud_association",
         "questions": [
@@ -1720,6 +1731,35 @@
             "type": "Text",
             "options": [],
             "destination": "Exit Interview",
+            "showWhenQuestion": "",
+            "showWhenValue": [],
+            "showWhenQuestionId": null,
+            "showWhenInvalid": false
+          }
+        ]
+      },
+      {
+        "group": "manufactured",
+        "questions": [
+          {
+            "id": "manufactured__hud_label_number",
+            "group": "manufactured",
+            "label": "HUD Label Number",
+            "type": "Text",
+            "options": [],
+            "destination": "Dynamic",
+            "showWhenQuestion": "",
+            "showWhenValue": [],
+            "showWhenQuestionId": null,
+            "showWhenInvalid": false
+          },
+          {
+            "id": "manufactured__hud_certification_number",
+            "group": "manufactured",
+            "label": "HUD Certification Number",
+            "type": "Text",
+            "options": [],
+            "destination": "Dynamic",
             "showWhenQuestion": "",
             "showWhenValue": [],
             "showWhenQuestionId": null,
@@ -2402,7 +2442,27 @@
       },
       {
         "category": "Exterior",
+        "label": "Pool Bath"
+      },
+      {
+        "category": "Exterior",
+        "label": "Amenities"
+      },
+      {
+        "category": "Exterior",
         "label": "Additional Exterior"
+      },
+      {
+        "category": "Exterior",
+        "label": "Storage"
+      },
+      {
+        "category": "Exterior",
+        "label": "View/Location"
+      },
+      {
+        "category": "Exterior",
+        "label": "Exterior View"
       },
       {
         "category": "Interior",
@@ -2414,11 +2474,31 @@
       },
       {
         "category": "Interior",
+        "label": "Balcony"
+      },
+      {
+        "category": "Interior",
+        "label": "View/Location"
+      },
+      {
+        "category": "Interior",
+        "label": "Dinning"
+      },
+      {
+        "category": "Interior",
+        "label": "Dinning Area"
+      },
+      {
+        "category": "Interior",
         "label": "Bedroom"
       },
       {
         "category": "Interior",
         "label": "Bathroom"
+      },
+      {
+        "category": "Interior",
+        "label": "1/2 Bath"
       },
       {
         "category": "Interior",
