@@ -373,7 +373,7 @@
   var AUTOSAVE_DEBOUNCE_MS = 700;
   var MIGRATED_INSPECTION_ADDRESS = 'Unsaved / Migrated Inspection';
   // The exported-file schema is versioned independently of
-  // 0.22.2 -- app releases and the inspection-file format can
+  // 0.22.3 -- app releases and the inspection-file format can
   // and will drift out of step (a future app version might still need
   // to read a schemaVersion 1 file, or refuse a newer one it doesn't
   // understand yet), so import validation checks schema/schemaVersion
@@ -381,19 +381,26 @@
   var EXPORT_SCHEMA = 'clipboard-flux-inspection';
   var EXPORT_SCHEMA_VERSION = 1;
   var SUPPORTED_SCHEMA_VERSIONS = [1];
-  // Stamped at build time exactly like every other 0.22.2
+  // Stamped at build time exactly like every other 0.22.3
   // token in this file -- informational only in the export, never
   // itself validated on import.
-  var APP_VERSION = '0.22.2';
+  var APP_VERSION = '0.22.3';
   // Same database as Milestone 14's photos -- name kept for continuity
   // even though it now also holds inspection records; renaming it would
   // mean either abandoning existing photo data or writing a whole
   // database-to-database copy migration for zero functional benefit.
   var PHOTO_DB_NAME = 'clipboard-flux-photos';
-  var PHOTO_DB_VERSION = 2;
+  // Milestone 22.3: v2->v3 adds one new store (footprintReferenceBlobs)
+  // for the Footprint reference-sketch underlay's image Blob -- purely
+  // additive, every existing store/record is untouched by this upgrade.
+  // See footprintReference's own comment for why the Blob lives in its
+  // own store, separate from the lightweight transform/opacity metadata
+  // that rides along on the existing inspectionData record.
+  var PHOTO_DB_VERSION = 3;
   var PHOTO_STORE = 'photos';
   var INSPECTIONS_STORE = 'inspections';
   var INSPECTION_DATA_STORE = 'inspectionData';
+  var FOOTPRINT_REFERENCE_STORE = 'footprintReferenceBlobs';
   var PHOTO_THUMB_MAX_DIM = 500;
   var CFG = null;
   var activeTab = null;
@@ -546,6 +553,63 @@
   var footprintDraft = null;
   var footprintPinchState = null;
   var footprintResizeHandler = null;
+  // Milestone 22.3: the Footprint reference-sketch underlay -- a county/
+  // property-appraiser image or PDF page traced *behind* the actual Flux
+  // drawing, architecturally kept separate from `footprint.strokes` at
+  // every layer (own render step, own gesture mode, own storage, never
+  // touched by Undo/Eraser, never included in PDF/bounds export -- see
+  // this section's own header comment below for the full design).
+  // `footprintReference` is lightweight metadata only (transform,
+  // opacity, visible, locked, filename, dimensions) -- it never holds
+  // the actual image Blob, which lives in its own IndexedDB store (see
+  // idbPutReferenceBlob()) and is written once at import/replace time,
+  // never on the routine autosave cycle that rewrites this metadata
+  // alongside `footprint` on every inspectionData save (see
+  // saveCurrentInspection()). null means no reference exists for the
+  // current inspection.
+  var footprintReference = null;
+  // The decoded, drawable form of the current reference's Blob --
+  // reloaded (via loadFootprintReferenceBitmap()) whenever the active
+  // inspection changes or a new/replacement reference is imported, then
+  // cached and reused across every redraw so drawFootprintCanvas() never
+  // has to decode the Blob itself. Closed (ImageBitmap.close()) before
+  // being replaced or cleared, to release its backing memory promptly.
+  var footprintReferenceBitmap = null;
+  // Whether the Reference popover is open -- same transient-UI-toggle
+  // category as footprintSettingsOpen, and deliberately mutually
+  // exclusive with it (opening one closes the other -- #26's "reference
+  // controls do not interfere with Settings").
+  var footprintReferencePanelOpen = false;
+  // Active two-finger scale+rotate gesture tracking for an *unlocked*
+  // reference -- the reference's own analog of footprintPinchState,
+  // kept entirely separate since transforming the reference and
+  // panning/zooming the canvas are mutually exclusive modes (#7 "do not
+  // simultaneously pan/zoom the Footprint canvas while the reference
+  // itself is being transformed").
+  var footprintReferenceGestureState = null;
+  // Set true the instant a move or scale/rotate gesture actually changes
+  // footprintReference.transform, cleared once that change is persisted.
+  // Deliberately a separate flag from footprintReferenceGestureState/
+  // footprintDraft, both of which are correctly cleared *before* the
+  // last pointer of a multi-finger gesture lifts (see footprintEndPointer()'s
+  // "still 1+ pointers remaining" branch, which intentionally freezes an
+  // in-progress 2-finger gesture the instant the first of the two
+  // fingers lifts) -- if persistence were gated on either of those
+  // instead, a real transform change would silently never get saved,
+  // since by the time the *second* (truly last) pointer lifts, both
+  // would already read as "nothing was happening."
+  var footprintReferenceTransformDirty = false;
+  // Resolution cap for a stored reference raster (longest edge, in
+  // pixels) -- matches the Footprint PDF export's own target long edge
+  // (see FOOTPRINT_EXPORT_TARGET_LONG_EDGE) for the same reasoning:
+  // sharp enough for tablet-screen tracing without storing an
+  // arbitrarily large source photo/PDF page. Applied uniformly to both
+  // directly-imported images and PDF-rendered pages, one code path for
+  // both (see footprintDownscaleToBlob()).
+  var FOOTPRINT_REFERENCE_MAX_DIM = 2200;
+  // Default opacity for a freshly imported reference -- clearly visible
+  // for tracing, but secondary to full-opacity Flux strokes (#10/#18).
+  var FOOTPRINT_REFERENCE_DEFAULT_OPACITY = 0.55;
 
   // A flat {fieldId: value} map is all that's persisted -- MAIN fields
   // and FOLLOW_UP questions already share one `values` object and the
@@ -865,6 +929,9 @@
         if (!db.objectStoreNames.contains(INSPECTION_DATA_STORE)) {
           db.createObjectStore(INSPECTION_DATA_STORE, { keyPath: 'inspectionId' });
         }
+        if (!db.objectStoreNames.contains(FOOTPRINT_REFERENCE_STORE)) {
+          db.createObjectStore(FOOTPRINT_REFERENCE_STORE, { keyPath: 'inspectionId' });
+        }
       };
       req.onsuccess = function () { resolve(req.result); };
       req.onerror = function () { reject(req.error); };
@@ -901,6 +968,44 @@
         var req = tx.objectStore(PHOTO_STORE).get(id);
         req.onsuccess = function () { resolve(req.result || null); };
         req.onerror = function () { reject(req.error); };
+      });
+    });
+  }
+
+  // Milestone 22.3: the Footprint reference sketch's image Blob, keyed
+  // directly by inspectionId (at most one reference per inspection) --
+  // its own tiny store, written only at import/replace/remove time
+  // (never on the routine autosave cycle that rewrites inspectionData,
+  // see footprintReference's own comment for why that split matters).
+  function idbPutReferenceBlob(inspectionId, blob) {
+    return openPhotoDb().then(function (db) {
+      return new Promise(function (resolve, reject) {
+        var tx = db.transaction(FOOTPRINT_REFERENCE_STORE, 'readwrite');
+        tx.objectStore(FOOTPRINT_REFERENCE_STORE).put({ inspectionId: inspectionId, blob: blob });
+        tx.oncomplete = function () { resolve(); };
+        tx.onerror = function () { reject(tx.error); };
+      });
+    });
+  }
+
+  function idbGetReferenceBlob(inspectionId) {
+    return openPhotoDb().then(function (db) {
+      return new Promise(function (resolve, reject) {
+        var tx = db.transaction(FOOTPRINT_REFERENCE_STORE, 'readonly');
+        var req = tx.objectStore(FOOTPRINT_REFERENCE_STORE).get(inspectionId);
+        req.onsuccess = function () { resolve(req.result || null); };
+        req.onerror = function () { reject(req.error); };
+      });
+    });
+  }
+
+  function idbDeleteReferenceBlob(inspectionId) {
+    return openPhotoDb().then(function (db) {
+      return new Promise(function (resolve, reject) {
+        var tx = db.transaction(FOOTPRINT_REFERENCE_STORE, 'readwrite');
+        tx.objectStore(FOOTPRINT_REFERENCE_STORE).delete(inspectionId);
+        tx.oncomplete = function () { resolve(); };
+        tx.onerror = function () { reject(tx.error); };
       });
     });
   }
@@ -1093,6 +1198,37 @@
       generalPhotos = general;
     }).catch(function () {
       dbUnavailable = true;
+    });
+  }
+
+  // Milestone 22.3: decodes the current inspection's reference-sketch
+  // Blob (if any) into a drawable ImageBitmap, caching it in
+  // footprintReferenceBitmap for drawFootprintCanvas() to reuse across
+  // every redraw without re-decoding. Called wherever loadAllPhotosInto
+  // Cache() already is (boot, switchToInspection()) so the Footprint
+  // tab's first paint for a given inspection never has to wait on this
+  // itself. Closes the previous bitmap first to release its memory
+  // promptly -- a stale bitmap from the *previous* inspection must never
+  // linger and be drawn against a different inspection's reference
+  // metadata/transform. Failure here (corrupt stored Blob, decode
+  // unsupported) degrades to "no reference visible" rather than
+  // breaking the tab -- footprintReference metadata is left alone so
+  // the user can still see/replace/remove it via the Reference panel.
+  function loadFootprintReferenceBitmap() {
+    if (footprintReferenceBitmap) {
+      try { footprintReferenceBitmap.close(); } catch (e) { /* already closed */ }
+      footprintReferenceBitmap = null;
+    }
+    if (!activeInspection || !activeInspection.inspectionId || !footprintReference) {
+      return Promise.resolve();
+    }
+    return idbGetReferenceBlob(activeInspection.inspectionId).then(function (rec) {
+      if (!rec || !rec.blob) return;
+      return createImageBitmap(rec.blob).then(function (bmp) {
+        footprintReferenceBitmap = bmp;
+      });
+    }).catch(function (e) {
+      window.console && console.error && console.error('Clipboard-Flux: could not load reference image', e);
     });
   }
 
@@ -1463,6 +1599,46 @@
     return 'fp_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8);
   }
 
+  // Milestone 22.3: validates/normalizes whatever's sitting in a loaded
+  // or imported inspectionData record's `reference` property, the same
+  // "structurally validate, fail safe rather than trust blindly" posture
+  // sanitizeFootprint() already established -- a malformed/corrupt
+  // record (or a hand-edited JSON file) degrades to "no reference"
+  // (null) rather than throwing or rendering garbage. Never validates or
+  // touches an actual image Blob -- there isn't one in this object at
+  // all, by design (see footprintReference's own comment).
+  function sanitizeReference(raw) {
+    if (!raw || typeof raw !== 'object') return null;
+    if (raw.sourceType !== 'image' && raw.sourceType !== 'pdf') return null;
+    if (typeof raw.width !== 'number' || typeof raw.height !== 'number' ||
+      !isFinite(raw.width) || !isFinite(raw.height) || raw.width <= 0 || raw.height <= 0) {
+      return null;
+    }
+    var t = (raw.transform && typeof raw.transform === 'object') ? raw.transform : {};
+    return {
+      version: 1,
+      sourceType: raw.sourceType,
+      filename: typeof raw.filename === 'string' ? raw.filename : '',
+      mimeType: typeof raw.mimeType === 'string' ? raw.mimeType : '',
+      pdfPageIndex: typeof raw.pdfPageIndex === 'number' ? raw.pdfPageIndex : null,
+      pdfPageCount: typeof raw.pdfPageCount === 'number' ? raw.pdfPageCount : null,
+      width: raw.width,
+      height: raw.height,
+      transform: {
+        x: typeof t.x === 'number' && isFinite(t.x) ? t.x : 0,
+        y: typeof t.y === 'number' && isFinite(t.y) ? t.y : 0,
+        scale: (typeof t.scale === 'number' && isFinite(t.scale) && t.scale > 0) ? t.scale : 1,
+        rotation: typeof t.rotation === 'number' && isFinite(t.rotation) ? t.rotation : 0
+      },
+      opacity: (typeof raw.opacity === 'number' && isFinite(raw.opacity))
+        ? Math.max(0.05, Math.min(1, raw.opacity)) : FOOTPRINT_REFERENCE_DEFAULT_OPACITY,
+      visible: raw.visible !== false,
+      locked: raw.locked !== false,
+      createdAt: typeof raw.createdAt === 'string' ? raw.createdAt : new Date().toISOString(),
+      updatedAt: typeof raw.updatedAt === 'string' ? raw.updatedAt : new Date().toISOString()
+    };
+  }
+
   // Replaces values/disregarded/otherText/fieldNotes/footprint wholesale
   // (an inspection switch, not a merge) and immediately syncs the result
   // to localStorage via the existing save*() functions, so the new
@@ -1484,6 +1660,7 @@
     fieldNotes = (data && data.fieldNotes) || {};
     externalPhotoManifest = (data && Array.isArray(data.externalPhotoManifest)) ? data.externalPhotoManifest : [];
     footprint = sanitizeFootprint(data && data.footprint);
+    footprintReference = sanitizeReference(data && data.reference);
     saveValues();
     saveDisregarded();
     saveOtherText();
@@ -1532,8 +1709,15 @@
         footprintDraft = null;
         footprintTool = 'pencil';
         footprintView = { scale: 1, x: 0, y: 0 };
+        // Milestone 22.3: the reference-edit gesture and popover-open
+        // state are session UI, same category as the Footprint state
+        // just above -- never carried across an inspection switch.
+        footprintReferenceGestureState = null;
+        footprintReferencePanelOpen = false;
         activeTab = (CFG && CFG.main.tabs[0]) || null;
-        return loadAllPhotosIntoCache();
+        return loadAllPhotosIntoCache().then(function () {
+          return loadFootprintReferenceBitmap();
+        });
       });
     });
   }
@@ -1550,7 +1734,7 @@
     var id = generateInspectionId();
     var now = new Date().toISOString();
     var meta = { inspectionId: id, propertyAddress: propertyAddress || '', createdAt: now, updatedAt: now };
-    var data = { inspectionId: id, values: {}, disregarded: {}, otherText: {}, fieldNotes: {}, externalPhotoManifest: [], footprint: defaultFootprint() };
+    var data = { inspectionId: id, values: {}, disregarded: {}, otherText: {}, fieldNotes: {}, externalPhotoManifest: [], footprint: defaultFootprint(), reference: null };
     return idbPutInspection(meta)
       .then(function () { return idbPutInspectionData(data); })
       .then(function () { return switchToInspection(id); });
@@ -1571,8 +1755,9 @@
     var id = activeInspection.inspectionId;
     var now = new Date().toISOString();
     return idbDeleteAllPhotosForInspection(id)
+      .then(function () { return idbDeleteReferenceBlob(id); })
       .then(function () {
-        var data = { inspectionId: id, values: {}, disregarded: {}, otherText: {}, fieldNotes: {}, externalPhotoManifest: [], footprint: defaultFootprint() };
+        var data = { inspectionId: id, values: {}, disregarded: {}, otherText: {}, fieldNotes: {}, externalPhotoManifest: [], footprint: defaultFootprint(), reference: null };
         return idbPutInspectionData(data);
       })
       .then(function () {
@@ -1605,7 +1790,8 @@
       otherText: otherText,
       fieldNotes: fieldNotes,
       externalPhotoManifest: externalPhotoManifest,
-      footprint: footprint || defaultFootprint()
+      footprint: footprint || defaultFootprint(),
+      reference: footprintReference
     };
     return idbPutInspectionData(data)
       .then(function () {
@@ -1726,9 +1912,21 @@
         // session and, worse, let that reconciliation save immediately
         // overwrite this inspection's real saved strokes with an empty
         // document the moment any autosave next fired.
+        //
+        // Milestone 22.3: `reference` metadata is exactly the same
+        // category as `footprint` here -- no localStorage mirror, must
+        // be read fresh on this fast path for the identical reason. Its
+        // image Blob is loaded separately (loadFootprintReferenceBitmap(),
+        // its own store, never touched by this reconciliation save at
+        // all) but must still be kicked off here so the Footprint tab's
+        // first paint after a refresh already has a decoded bitmap ready
+        // rather than a one-frame flash of "no reference."
         return idbGetInspectionData(pointedId).then(function (data) {
           footprint = sanitizeFootprint(data && data.footprint);
+          footprintReference = sanitizeReference(data && data.reference);
           return loadAllPhotosIntoCache();
+        }).then(function () {
+          return loadFootprintReferenceBitmap();
         }).then(function () {
           return performSave().catch(function (e) {
             window.console && console.error && console.error('Clipboard-Flux: boot reconciliation save failed', e);
@@ -2046,6 +2244,15 @@
         // gotten this far in the first place, and a hand-edited export
         // is guaranteed well-formed too.
         footprint: sanitizeFootprint(data.footprint),
+        // Milestone 22.3: lightweight reference metadata only -- never
+        // the image Blob (there is no base64 anywhere in this object,
+        // matching #21's explicit rule). This is informational/round-
+        // trip context only; importing this file never resurrects a
+        // live reference from it (see commitImport()'s own comment) --
+        // the metadata alone can't reconstruct the actual sketch, and
+        // #21 explicitly forbids pretending it exists when the Blob
+        // doesn't.
+        reference: sanitizeReference(data.reference),
         photos: photos.map(function (p) {
           return {
             id: p.id,
@@ -2258,7 +2465,16 @@
       // stroke and falls back to an empty document if `footprint` itself
       // is missing/malformed -- an imported file's drawing is never
       // trusted blindly, same posture as every other imported field.
-      footprint: sanitizeFootprint(parsed.footprint)
+      footprint: sanitizeFootprint(parsed.footprint),
+      // Milestone 22.3 #21: deliberately always null here, regardless of
+      // what `parsed.reference` contains -- the export only ever wrote
+      // lightweight metadata, never the image Blob, so there is no
+      // actual sketch to restore. Resurrecting `footprintReference` from
+      // this metadata alone would be exactly the "JSON record that
+      // pretends the reference image exists when the actual Blob is
+      // absent" #21 explicitly forbids -- the user re-imports the
+      // reference file itself if they want it back on this inspection.
+      reference: null
     };
     idbPutInspection(meta)
       .then(function () { return idbPutInspectionData(data); })
@@ -3596,6 +3812,23 @@
     ctx.save();
     ctx.translate(footprintView.x, footprintView.y);
     ctx.scale(footprintView.scale, footprintView.scale);
+    // Milestone 22.3: reference underlay drawn *after* the grid but
+    // *before* strokes -- visually secondary to Flux drawing (#18) but
+    // still above the grid, inside the exact same view transform every
+    // stroke uses (see this section's own header comment on world-
+    // coordinate registration). ctx.save()/restore() scoped tightly
+    // around just this draw so globalAlpha never leaks into the
+    // full-opacity strokes drawn immediately after.
+    if (footprintReference && footprintReference.visible && footprintReferenceBitmap) {
+      ctx.save();
+      ctx.globalAlpha = footprintReference.opacity;
+      ctx.translate(footprintReference.transform.x, footprintReference.transform.y);
+      ctx.rotate(footprintReference.transform.rotation);
+      var refW = footprintReference.width * footprintReference.transform.scale;
+      var refH = footprintReference.height * footprintReference.transform.scale;
+      ctx.drawImage(footprintReferenceBitmap, -refW / 2, -refH / 2, refW, refH);
+      ctx.restore();
+    }
     ctx.lineCap = 'round';
     ctx.lineJoin = 'round';
     ctx.strokeStyle = '#1c3a52';
@@ -3749,6 +3982,43 @@
     footprintView.y = (midY - ps.rectTop) - anchorWorldY * newScale;
   }
 
+  // Milestone 22.3: the reference's own two-finger scale+rotate gesture
+  // -- deliberately separate from footprintComputePinchState()/
+  // footprintApplyPinchPan() above (which pan/zoom the *canvas view*),
+  // since transforming the reference and navigating the canvas are
+  // mutually exclusive modes (#7) that happen to share the same "two
+  // fingers, track distance and angle" shape but never run at the same
+  // time -- footprintPointerDown() branches to one or the other, never
+  // both. Unlike the canvas's own pinch-pan, this deliberately keeps the
+  // reference's own center (transform.x/y) fixed during a 2-finger
+  // gesture -- simpler than also anchoring under the fingers, and the
+  // user can always follow up with a 1-finger move afterward.
+  function footprintComputeReferenceGestureState() {
+    var ids = Object.keys(footprintPointers);
+    var p0 = footprintPointers[ids[0]], p1 = footprintPointers[ids[1]];
+    return {
+      startDist: Math.hypot(p1.x - p0.x, p1.y - p0.y) || 1,
+      startAngle: Math.atan2(p1.y - p0.y, p1.x - p0.x),
+      startScale: footprintReference.transform.scale,
+      startRotation: footprintReference.transform.rotation
+    };
+  }
+
+  function footprintApplyReferenceGesture() {
+    var ids = Object.keys(footprintPointers);
+    if (ids.length < 2 || !footprintReferenceGestureState || !footprintReference) return;
+    var p0 = footprintPointers[ids[0]], p1 = footprintPointers[ids[1]];
+    var dist = Math.hypot(p1.x - p0.x, p1.y - p0.y) || 1;
+    var angle = Math.atan2(p1.y - p0.y, p1.x - p0.x);
+    var gs = footprintReferenceGestureState;
+    var newScale = gs.startScale * (dist / gs.startDist);
+    footprintReference.transform.scale = Math.max(0.001, Math.min(1000, newScale));
+    // Arbitrary rotation, never snapped to 90/45-degree increments (#8) --
+    // the raw accumulated angle delta, full stop.
+    footprintReference.transform.rotation = gs.startRotation + (angle - gs.startAngle);
+    footprintReferenceTransformDirty = true;
+  }
+
   // pointerdown: a second concurrent pointer always wins over drawing
   // (#15 -- "avoid accidental drawing during two-finger navigation") --
   // any in-progress single-pointer draft is simply abandoned (never
@@ -3769,6 +4039,28 @@
     try { footprintCanvasEl.setPointerCapture(ev.pointerId); } catch (e) { /* proceed uncaptured */ }
     footprintPointers[ev.pointerId] = { x: ev.clientX, y: ev.clientY };
     var count = Object.keys(footprintPointers).length;
+
+    // Milestone 22.3: an *unlocked* reference intercepts every canvas
+    // gesture before normal tool-based handling ever runs -- one finger
+    // moves it, two fingers scale+rotate it, and neither drawing, the
+    // eraser, nor canvas pan/zoom can happen at the same time (#7). This
+    // check comes first, unconditionally, so it can never be bypassed by
+    // whatever footprintTool happens to be selected.
+    if (footprintReference && !footprintReference.locked) {
+      if (count >= 2) {
+        footprintDraft = null;
+        footprintReferenceGestureState = footprintComputeReferenceGestureState();
+        return;
+      }
+      var refWp = footprintScreenToWorld(ev.clientX, ev.clientY);
+      footprintDraft = {
+        mode: 'reference-move',
+        startWorld: refWp,
+        startTransformX: footprintReference.transform.x,
+        startTransformY: footprintReference.transform.y
+      };
+      return;
+    }
 
     if (count >= 2) {
       footprintDraft = null;
@@ -3793,6 +4085,22 @@
   function footprintPointerMove(ev) {
     if (!(ev.pointerId in footprintPointers)) return;
     footprintPointers[ev.pointerId] = { x: ev.clientX, y: ev.clientY };
+
+    if (footprintReference && !footprintReference.locked) {
+      if (Object.keys(footprintPointers).length >= 2) {
+        footprintApplyReferenceGesture();
+        drawFootprintCanvas();
+        return;
+      }
+      if (footprintDraft && footprintDraft.mode === 'reference-move') {
+        var refWp = footprintScreenToWorld(ev.clientX, ev.clientY);
+        footprintReference.transform.x = footprintDraft.startTransformX + (refWp.x - footprintDraft.startWorld.x);
+        footprintReference.transform.y = footprintDraft.startTransformY + (refWp.y - footprintDraft.startWorld.y);
+        footprintReferenceTransformDirty = true;
+        drawFootprintCanvas();
+      }
+      return;
+    }
 
     if (Object.keys(footprintPointers).length >= 2) {
       footprintApplyPinchPan();
@@ -3857,18 +4165,33 @@
     delete footprintPointers[pointerId];
     if (Object.keys(footprintPointers).length >= 1) {
       footprintPinchState = null;
+      footprintReferenceGestureState = null;
       footprintDraft = null;
       return;
     }
 
     footprintPinchState = null;
+    footprintReferenceGestureState = null;
     var draft = footprintDraft;
     footprintDraft = null;
-    if (!draft) { drawFootprintCanvas(); return; }
+    // Milestone 22.3: footprintReferenceTransformDirty deliberately
+    // survives the "still 1+ pointers remaining" branch above (see its
+    // own comment) -- it's the one reliable signal that a move or
+    // scale+rotate gesture actually changed footprintReference.transform
+    // at some point during this whole interaction, read only now that
+    // every pointer has genuinely lifted. Covers both gesture shapes
+    // (1-finger move, 2-finger scale+rotate) uniformly, since both set
+    // this same flag rather than needing their own separate checks here.
+    var referenceTransformChanged = footprintReferenceTransformDirty;
+    footprintReferenceTransformDirty = false;
+    if (!draft && !referenceTransformChanged) { drawFootprintCanvas(); return; }
 
-    if (draft.mode === 'draw' && commit) {
+    if (referenceTransformChanged && commit && footprintReference) {
+      footprintReference.updatedAt = new Date().toISOString();
+      scheduleAutoSave();
+    } else if (draft && draft.mode === 'draw' && commit) {
       footprintCommitDrawDraft(draft);
-    } else if (draft.mode === 'erase' && commit && draft.snapshotTaken) {
+    } else if (draft && draft.mode === 'erase' && commit && draft.snapshotTaken) {
       scheduleAutoSave();
     }
     render();
@@ -3898,6 +4221,441 @@
     footprintPointers = {};
     footprintDraft = null;
     footprintPinchState = null;
+    // Milestone 22.3: an in-progress reference move/scale/rotate gesture
+    // is exactly the same category of "canvas gesture state a toolbar
+    // tap must always win over" as footprintDraft/footprintPinchState.
+    // Not reverting footprintReference.transform itself here (whatever
+    // partial change already happened stays exactly as the user last
+    // saw it) -- just clearing the *tracking* state, matching how an
+    // aborted draw/erase draft is discarded, not undone stroke-by-stroke.
+    // Any real change is still captured by the next save regardless
+    // (saveCurrentInspection() always writes the current reference
+    // wholesale, not conditionally), so nothing is silently lost.
+    footprintReferenceGestureState = null;
+    footprintReferenceTransformDirty = false;
+  }
+
+  // ---- Footprint reference-sketch underlay (Milestone 22.3) ----
+  //
+  // A county/property-appraiser sketch, imported as an image or PDF page
+  // and traced *behind* the actual Flux drawing -- never Flux geometry
+  // itself (#2). Architecturally kept separate from `footprint.strokes`
+  // at every layer: its own metadata object (footprintReference), its
+  // own Blob store (footprintReferenceBlobs, never the same IndexedDB
+  // record `footprint` lives on), its own gesture mode (entered only
+  // when unlocked, mutually exclusive with normal drawing/pan), never
+  // touched by Undo (footprintPushUndoSnapshot() is never called
+  // anywhere in this section) or the Eraser (footprintEraseAt() only
+  // ever iterates `footprint.strokes`), and never read by the PDF
+  // export's bounds/render path (footprintComputeBounds()/
+  // footprintRenderExportCanvas() only ever see `footprint.strokes` --
+  // see that section's own code, unchanged by this milestone). Tracing
+  // over the reference produces ordinary Pencil strokes through the
+  // exact same footprintCommitDrawDraft()/classifyStroke() pipeline
+  // every other stroke already goes through; moving, hiding, or
+  // deleting the reference can therefore never alter a single already-
+  // traced stroke, by construction rather than by a separate guard.
+  //
+  // PDF rendering uses a locally vendored copy of pdf.js
+  // (app_template/vendor/pdfjs/{pdf.mjs,pdf.worker.mjs}, MPL-2.0,
+  // fetched once at build time from an official Mozilla release, never
+  // loaded from a CDN at runtime -- #4's explicit "prefer a stable
+  // local/project-controlled solution"). Loaded lazily via a dynamic
+  // import() the first time the user actually picks a PDF, not on every
+  // page load, so the ~3MB library cost is paid only by inspections that
+  // use this feature. Rendered with `intent: 'print'` rather than the
+  // default `intent: 'display'` -- confirmed by direct testing that
+  // 'display' internally paces itself via requestAnimationFrame, which
+  // can stall indefinitely in an environment where the tab is never
+  // actually composited/visible; 'print' renders synchronously to
+  // completion instead. This is also the semantically correct choice
+  // regardless of that finding: this is a one-shot "rasterize the whole
+  // page once" operation, not an interactive incremental viewer, which
+  // is exactly what 'print' intent is for.
+  //
+  // Resolution: every imported reference (image or PDF page) is
+  // rasterized once, capped at FOOTPRINT_REFERENCE_MAX_DIM (2200px) on
+  // its longest edge, and stored as a single PNG Blob in its own
+  // IndexedDB store -- never re-rasterized on subsequent app use (the
+  // decoded ImageBitmap is cached in footprintReferenceBitmap and reused
+  // across every redraw/pan/zoom). A PDF page is rendered directly at
+  // its target scale in one pass (no separate render-then-downscale
+  // step, since pdf.js can render straight to any target resolution); an
+  // imported image is decoded once via createImageBitmap() then drawn
+  // through an offscreen canvas at the capped size, one shared code path
+  // (footprintRasterToBlob()) for the final encode either way.
+  //
+  // World-coordinate registration (#12/#28): the reference is drawn with
+  // ctx.drawImage() *inside* the exact same ctx.translate(footprintView.x,
+  // footprintView.y); ctx.scale(footprintView.scale, ...) block
+  // drawFootprintCanvas() already applies to strokes and the grid, with
+  // its own (x, y, scale, rotation) applied as a further nested
+  // transform on top -- there is no separate screen-positioned DOM
+  // element to keep in sync; panning, zooming, or resizing the canvas
+  // moves and scales the reference and every stroke identically, by the
+  // same mechanism already proven stable across orientation changes for
+  // strokes alone (Milestone 22's own testing).
+
+  var FOOTPRINT_REFERENCE_MAX_FILE_BYTES = 60 * 1024 * 1024;
+  var footprintPdfJsPromise = null;
+
+  function loadPdfJsLib() {
+    if (window.pdfjsLib) return Promise.resolve(window.pdfjsLib);
+    if (footprintPdfJsPromise) return footprintPdfJsPromise;
+    footprintPdfJsPromise = import('./vendor/pdfjs/pdf.mjs').then(function (mod) {
+      mod.GlobalWorkerOptions.workerSrc = 'vendor/pdfjs/pdf.worker.mjs';
+      window.pdfjsLib = mod;
+      return mod;
+    }).catch(function (e) {
+      footprintPdfJsPromise = null;
+      throw e;
+    });
+    return footprintPdfJsPromise;
+  }
+
+  // Shared final encode step for an *image* import -- draws the decoded
+  // bitmap through an offscreen canvas at the resolution cap (never
+  // upscaled past the source's own size, only ever downscaled) and
+  // encodes it. JPEG source stays JPEG (avoids ballooning size for
+  // photo-like scans); everything else becomes PNG, which compresses a
+  // typical line-art/technical-drawing sketch far better than JPEG would
+  // without introducing artifacts near thin traced lines.
+  function footprintRasterToBlob(drawable, srcWidth, srcHeight, mimeType) {
+    var scale = Math.min(1, FOOTPRINT_REFERENCE_MAX_DIM / Math.max(srcWidth, srcHeight));
+    var w = Math.max(1, Math.round(srcWidth * scale));
+    var h = Math.max(1, Math.round(srcHeight * scale));
+    var canvas = document.createElement('canvas');
+    canvas.width = w;
+    canvas.height = h;
+    var ctx = canvas.getContext('2d');
+    ctx.drawImage(drawable, 0, 0, w, h);
+    var outType = mimeType === 'image/jpeg' ? 'image/jpeg' : 'image/png';
+    return new Promise(function (resolve, reject) {
+      canvas.toBlob(function (blob) {
+        if (!blob) { reject(new Error('Could not encode image')); return; }
+        resolve({ blob: blob, width: w, height: h });
+      }, outType, outType === 'image/jpeg' ? 0.85 : undefined);
+    });
+  }
+
+  function footprintImportImageFile(file) {
+    return createImageBitmap(file).then(function (bitmap) {
+      return footprintRasterToBlob(bitmap, bitmap.width, bitmap.height, file.type).then(function (result) {
+        bitmap.close();
+        return result;
+      }, function (e) {
+        bitmap.close();
+        throw e;
+      });
+    });
+  }
+
+  // PDFs render straight to their target resolution in one pass (vector
+  // source, so there's no quality cost to choosing the scale up front) --
+  // unlike footprintRasterToBlob(), this always targets the full
+  // FOOTPRINT_REFERENCE_MAX_DIM budget rather than capping at 1x, since a
+  // small/letter-size county PDF page should still render crisply rather
+  // than at its native ~72dpi "point" size.
+  function footprintRenderPdfPageToBlob(page) {
+    var baseViewport = page.getViewport({ scale: 1 });
+    var scale = FOOTPRINT_REFERENCE_MAX_DIM / Math.max(baseViewport.width, baseViewport.height);
+    var viewport = page.getViewport({ scale: scale });
+    var canvas = document.createElement('canvas');
+    canvas.width = Math.max(1, Math.round(viewport.width));
+    canvas.height = Math.max(1, Math.round(viewport.height));
+    var ctx = canvas.getContext('2d');
+    return page.render({ canvasContext: ctx, viewport: viewport, intent: 'print' }).promise.then(function () {
+      return new Promise(function (resolve, reject) {
+        canvas.toBlob(function (blob) {
+          if (!blob) { reject(new Error('Could not encode PDF page')); return; }
+          resolve({ blob: blob, width: canvas.width, height: canvas.height });
+        }, 'image/png');
+      });
+    });
+  }
+
+  // Milestone 22 #5-equivalent for the reference: centered on the
+  // current view, uniformly scaled (never distorted) to fit within ~85%
+  // of the visible canvas -- the same "fit, don't fill, preserve aspect
+  // ratio" rule Footprint's own PDF export uses for padding, applied
+  // here to on-screen initial placement instead. Also what "Reset
+  // Position" recomputes on demand.
+  function footprintComputeInitialTransform(imgWidth, imgHeight) {
+    var cssW = 600, cssH = 400, centerWorld = { x: 0, y: 0 };
+    if (footprintCanvasEl) {
+      var rect = footprintCanvasEl.getBoundingClientRect();
+      cssW = rect.width || cssW;
+      cssH = rect.height || cssH;
+      centerWorld = footprintScreenToWorld(rect.left + cssW / 2, rect.top + cssH / 2);
+    }
+    var visibleWorldW = cssW / footprintView.scale;
+    var visibleWorldH = cssH / footprintView.scale;
+    var fitScale = Math.min((visibleWorldW * 0.85) / imgWidth, (visibleWorldH * 0.85) / imgHeight);
+    return { x: centerWorld.x, y: centerWorld.y, scale: Math.max(0.001, fitScale), rotation: 0 };
+  }
+
+  // The one place that actually commits an imported reference -- called
+  // only once the new Blob is fully decoded/rendered/ready in memory, so
+  // every step before this can fail freely without touching
+  // footprintReference/footprintReferenceBitmap at all. Writes the Blob
+  // to its own store *first*; footprintReference/footprintReferenceBitmap
+  // (and therefore any existing reference being replaced) are only
+  // overwritten after that write has actually succeeded -- #31's "do not
+  // destroy an existing reference until a replacement has successfully
+  // imported" is satisfied by this ordering, not by a separate rollback
+  // path. A brand-new reference starts unlocked (#5's "enter a temporary
+  // Reference Edit mode") and with the Reference panel open, so the user
+  // lands directly on the position/scale/rotate controls they need next.
+  function finalizeReferenceImport(info) {
+    if (!activeInspection || !activeInspection.inspectionId) {
+      window.alert('No active inspection to attach this reference to.');
+      return;
+    }
+    var id = activeInspection.inspectionId;
+    idbPutReferenceBlob(id, info.blob).then(function () {
+      if (footprintReferenceBitmap) {
+        try { footprintReferenceBitmap.close(); } catch (e) { /* already closed */ }
+        footprintReferenceBitmap = null;
+      }
+      return createImageBitmap(info.blob);
+    }).then(function (bitmap) {
+      footprintReferenceBitmap = bitmap;
+      var now = new Date().toISOString();
+      footprintReference = {
+        version: 1,
+        sourceType: info.sourceType,
+        filename: info.filename,
+        mimeType: info.mimeType,
+        pdfPageIndex: info.pdfPageIndex,
+        pdfPageCount: info.pdfPageCount,
+        width: info.width,
+        height: info.height,
+        transform: footprintComputeInitialTransform(info.width, info.height),
+        opacity: FOOTPRINT_REFERENCE_DEFAULT_OPACITY,
+        visible: true,
+        locked: false,
+        createdAt: now,
+        updatedAt: now
+      };
+      footprintReferencePanelOpen = true;
+      footprintSettingsOpen = false;
+      scheduleAutoSave();
+      render();
+    }).catch(function (e) {
+      window.console && console.error && console.error('Clipboard-Flux: could not finalize reference import', e);
+      window.alert('Could not save the reference sketch: ' + e.message);
+    });
+  }
+
+  function footprintImportPdfPage(pdfDoc, pageNum, file) {
+    return pdfDoc.getPage(pageNum).then(function (page) {
+      return footprintRenderPdfPageToBlob(page);
+    }).then(function (result) {
+      finalizeReferenceImport({
+        blob: result.blob,
+        width: result.width,
+        height: result.height,
+        sourceType: 'pdf',
+        filename: file.name || '',
+        mimeType: 'application/pdf',
+        pdfPageIndex: pageNum - 1,
+        pdfPageCount: pdfDoc.numPages
+      });
+    });
+  }
+
+  // Reuses the existing Load-Inspection-duplicate-id choice modal
+  // machinery (renderChoiceModal()/#inspection-modal) for the multi-page
+  // picker (#4's "keep this interaction compact... do not build a
+  // general-purpose PDF viewer") -- a flat list of page numbers, no
+  // thumbnails (would mean rendering every page just to let the user
+  // pick one), reusing markup/CSS this file already has and already
+  // scrolls correctly for a long list via its own max-height.
+  function footprintPromptPdfPageChoice(pdfDoc, file) {
+    var choices = [];
+    var numPages = pdfDoc.numPages;
+    for (var i = 1; i <= numPages; i++) {
+      (function (pageNum) {
+        choices.push({
+          label: 'Page ' + pageNum,
+          action: function () {
+            closeInspectionModal();
+            footprintImportPdfPage(pdfDoc, pageNum, file).catch(function (e) {
+              window.console && console.error && console.error('Clipboard-Flux: reference PDF page import failed', e);
+              window.alert('Could not import that PDF page: ' + e.message);
+            });
+          }
+        });
+      })(i);
+    }
+    choices.push({ label: 'Cancel', action: closeInspectionModal });
+    renderChoiceModal({
+      title: 'Select Reference Page',
+      message: 'This PDF has ' + numPages + ' pages -- choose the one with the sketch.',
+      choices: choices
+    });
+  }
+
+  // The one entry point for both "Import Reference" (no reference yet)
+  // and "Replace Reference" (confirmed by the caller before this ever
+  // runs) -- validates type/size up front and rejects anything else with
+  // a plain alert before any decode work starts (#31's unsupported-file
+  // handling). A cancelled file picker never calls this at all (the
+  // input's own onchange only fires with a real file), so there's
+  // nothing special to handle for that case.
+  function handleReferenceFileSelected(file) {
+    if (!file) return;
+    var type = file.type;
+    var isPdf = type === 'application/pdf' || /\.pdf$/i.test(file.name || '');
+    var isImage = type === 'image/jpeg' || type === 'image/png' || type === 'image/webp';
+    if (!isPdf && !isImage) {
+      window.alert('Unsupported file type. Please choose a JPEG, PNG, or WebP image, or a PDF.');
+      return;
+    }
+    if (file.size > FOOTPRINT_REFERENCE_MAX_FILE_BYTES) {
+      window.alert('That file is too large to import as a reference sketch (60MB limit).');
+      return;
+    }
+
+    if (isImage) {
+      footprintImportImageFile(file).then(function (result) {
+        finalizeReferenceImport({
+          blob: result.blob,
+          width: result.width,
+          height: result.height,
+          sourceType: 'image',
+          filename: file.name || '',
+          mimeType: file.type,
+          pdfPageIndex: null,
+          pdfPageCount: null
+        });
+      }).catch(function (e) {
+        window.console && console.error && console.error('Clipboard-Flux: reference image import failed', e);
+        window.alert('Could not import that image (it may be corrupted or an unsupported format): ' + e.message);
+      });
+      return;
+    }
+
+    file.arrayBuffer().then(function (buf) {
+      return loadPdfJsLib().then(function (pdfjsLib) {
+        return pdfjsLib.getDocument({ data: buf }).promise;
+      });
+    }).then(function (pdfDoc) {
+      if (pdfDoc.numPages <= 1) {
+        return footprintImportPdfPage(pdfDoc, 1, file);
+      }
+      footprintPromptPdfPageChoice(pdfDoc, file);
+      return null;
+    }).catch(function (e) {
+      window.console && console.error && console.error('Clipboard-Flux: reference PDF import failed', e);
+      window.alert('Could not open that PDF (it may be corrupted, password-protected, or unsupported): ' + e.message);
+    });
+  }
+
+  function handleReferenceRemoveClick() {
+    if (!footprintReference || !activeInspection || !activeInspection.inspectionId) return;
+    if (!window.confirm('Remove the reference sketch? This will not affect your traced Footprint drawing.')) return;
+    var id = activeInspection.inspectionId;
+    idbDeleteReferenceBlob(id).then(function () {
+      footprintReference = null;
+      if (footprintReferenceBitmap) {
+        try { footprintReferenceBitmap.close(); } catch (e) { /* already closed */ }
+        footprintReferenceBitmap = null;
+      }
+      scheduleAutoSave();
+      render();
+    }).catch(function (e) {
+      window.console && console.error && console.error('Clipboard-Flux: could not remove reference', e);
+      window.alert('Could not remove the reference sketch: ' + e.message);
+    });
+  }
+
+  function handleReferenceLockToggleClick() {
+    if (!footprintReference) return;
+    footprintReference.locked = !footprintReference.locked;
+    footprintReference.updatedAt = new Date().toISOString();
+    scheduleAutoSave();
+    render();
+  }
+
+  function handleReferenceVisibleToggleClick() {
+    if (!footprintReference) return;
+    footprintReference.visible = !footprintReference.visible;
+    footprintReference.updatedAt = new Date().toISOString();
+    scheduleAutoSave();
+    render();
+  }
+
+  // 'input' (fires continuously while dragging the slider) only updates
+  // the live value and redraws the canvas directly -- never a full
+  // render(), which would recreate the <input> mid-drag and lose the
+  // user's grip on the thumb. 'change' (fires once, on release) is what
+  // actually persists (#17's "opacity change completed/debounced").
+  function handleReferenceOpacityInput(rangeEl) {
+    if (!footprintReference) return;
+    footprintReference.opacity = Math.max(0.05, Math.min(1, Number(rangeEl.value) / 100));
+    drawFootprintCanvas();
+  }
+
+  function handleReferenceOpacityChange(rangeEl) {
+    if (!footprintReference) return;
+    handleReferenceOpacityInput(rangeEl);
+    footprintReference.updatedAt = new Date().toISOString();
+    scheduleAutoSave();
+  }
+
+  function handleReferenceResetTransformClick() {
+    if (!footprintReference) return;
+    footprintReference.transform = footprintComputeInitialTransform(footprintReference.width, footprintReference.height);
+    footprintReference.updatedAt = new Date().toISOString();
+    scheduleAutoSave();
+    render();
+  }
+
+  // Milestone 22.3 #25: everything reference-related lives behind one
+  // compact "Reference" toolbar button, never permanent Move/Rotate/
+  // Opacity/Remove buttons in the main toolbar -- the popover's own
+  // content switches entirely on whether footprintReference exists (an
+  // Import prompt vs. the full set of reference controls), so there is
+  // still only ever one popover markup block, not two competing ones.
+  function footprintReferencePopoverHtml() {
+    var fileInputHtml = '<input type="file" accept="image/jpeg,image/png,image/webp,application/pdf" ' +
+      'data-role="footprint-reference-file-input" hidden>';
+    if (!footprintReference) {
+      return '<div class="footprint-settings-row"><span>No reference sketch imported</span></div>' +
+        '<div class="footprint-tool-group">' +
+          '<button type="button" class="footprint-tool-btn" data-role="footprint-reference-import">Import Reference</button>' +
+        '</div>' + fileInputHtml;
+    }
+    var r = footprintReference;
+    return '<div class="footprint-settings-row">' +
+        '<span>Reference Sketch</span>' +
+        '<span class="footprint-reference-filename">' + esc(r.filename || '(untitled)') + '</span>' +
+      '</div>' +
+      '<div class="footprint-settings-row">' +
+        '<span>Lock</span>' +
+        '<button type="button" class="footprint-toggle-btn' + (r.locked ? ' on' : '') +
+          '" data-role="footprint-reference-lock-toggle" aria-pressed="' + r.locked + '">' +
+          (r.locked ? 'Locked' : 'Unlocked') + '</button>' +
+      '</div>' +
+      '<div class="footprint-settings-row">' +
+        '<span>Show</span>' +
+        '<button type="button" class="footprint-toggle-btn' + (r.visible ? ' on' : '') +
+          '" data-role="footprint-reference-visible-toggle" aria-pressed="' + r.visible + '">' +
+          (r.visible ? 'Visible' : 'Hidden') + '</button>' +
+      '</div>' +
+      '<div class="footprint-settings-row">' +
+        '<span>Opacity</span>' +
+        '<input type="range" class="footprint-reference-opacity-input" data-role="footprint-reference-opacity" ' +
+          'min="10" max="100" step="5" value="' + Math.round(r.opacity * 100) + '">' +
+      '</div>' +
+      '<div class="footprint-tool-group">' +
+        '<button type="button" class="footprint-tool-btn" data-role="footprint-reference-reset-transform">Reset Position</button>' +
+      '</div>' +
+      '<div class="footprint-tool-group">' +
+        '<button type="button" class="footprint-tool-btn" data-role="footprint-reference-replace">Replace</button>' +
+        '<button type="button" class="footprint-tool-btn footprint-tool-btn-danger" data-role="footprint-reference-remove">Remove</button>' +
+      '</div>' + fileInputHtml;
   }
 
   function renderFootprintTabHtml() {
@@ -3924,6 +4682,8 @@
           '<button type="button" class="footprint-tool-btn" data-role="footprint-undo"' +
             (footprintUndoStack.length ? '' : ' disabled') + '>Undo</button>' +
           '<button type="button" class="footprint-tool-btn" data-role="footprint-settings">Settings</button>' +
+          '<button type="button" class="footprint-tool-btn' + (footprintReferencePanelOpen ? ' active' : '') +
+            '" data-role="footprint-reference">Reference</button>' +
         '</div>' +
       '</div>' +
       '<div class="footprint-settings-popover" data-role="footprint-settings-popover"' +
@@ -3938,6 +4698,10 @@
           '<span>Line Thickness</span>' +
           '<div class="footprint-width-group">' + widthButtonsHtml + '</div>' +
         '</div>' +
+      '</div>' +
+      '<div class="footprint-settings-popover footprint-reference-popover" data-role="footprint-reference-popover"' +
+        (footprintReferencePanelOpen ? '' : ' hidden') + '>' +
+        footprintReferencePopoverHtml() +
       '</div>' +
       '<div class="footprint-canvas-wrap">' +
         '<canvas id="footprint-canvas" class="footprint-canvas"></canvas>' +
@@ -4000,13 +4764,23 @@
     // not a full render(), so opening/closing Settings never touches
     // drawing state, pan/zoom, or autosave (#7) -- it only ever flips
     // one boolean and one `hidden` attribute.
+    //
+    // Milestone 22.3 #26: Settings and Reference are kept mutually
+    // exclusive -- opening one always closes the other -- so the two
+    // popovers can never compete for the same toolbar-adjacent space or
+    // leave a stale one open behind the other.
     var settingsBtn = document.querySelector('[data-role="footprint-settings"]');
     var popover = document.querySelector('[data-role="footprint-settings-popover"]');
+    var referencePopover = document.querySelector('[data-role="footprint-reference-popover"]');
     if (settingsBtn && popover) {
       settingsBtn.onclick = function () {
         footprintAbortActiveGesture();
         footprintSettingsOpen = !footprintSettingsOpen;
         popover.hidden = !footprintSettingsOpen;
+        if (footprintSettingsOpen) {
+          footprintReferencePanelOpen = false;
+          if (referencePopover) referencePopover.hidden = true;
+        }
       };
     }
 
@@ -4030,6 +4804,72 @@
         render();
       };
     });
+
+    wireFootprintReferenceControls(popover, referencePopover);
+  }
+
+  // Milestone 22.3: every Reference-popover control, wired fresh on
+  // every render() the same way the rest of this function's controls
+  // are. Grouped into its own function purely to keep
+  // wireFootprintTabControls() itself from growing unreadably long --
+  // not a separate render pass or a separate DOM-replace cycle, so all
+  // the same "re-wired fresh every time" guarantees apply.
+  function wireFootprintReferenceControls(settingsPopoverEl, referencePopoverEl) {
+    var referenceBtn = document.querySelector('[data-role="footprint-reference"]');
+    if (referenceBtn && referencePopoverEl) {
+      referenceBtn.onclick = function () {
+        footprintAbortActiveGesture();
+        footprintReferencePanelOpen = !footprintReferencePanelOpen;
+        referencePopoverEl.hidden = !footprintReferencePanelOpen;
+        if (footprintReferencePanelOpen) {
+          footprintSettingsOpen = false;
+          if (settingsPopoverEl) settingsPopoverEl.hidden = true;
+        }
+      };
+    }
+
+    var fileInput = document.querySelector('[data-role="footprint-reference-file-input"]');
+    var importBtn = document.querySelector('[data-role="footprint-reference-import"]');
+    var replaceBtn = document.querySelector('[data-role="footprint-reference-replace"]');
+    if (fileInput) {
+      fileInput.onchange = function () {
+        var file = fileInput.files && fileInput.files[0];
+        fileInput.value = '';
+        if (file) handleReferenceFileSelected(file);
+      };
+    }
+    if (importBtn && fileInput) {
+      importBtn.onclick = function () { fileInput.click(); };
+    }
+    if (replaceBtn && fileInput) {
+      // #31: nothing is destroyed by this click itself -- the existing
+      // reference is only ever replaced once the newly picked file has
+      // fully imported (see finalizeReferenceImport()'s own comment).
+      // This confirm is purely to set the user's expectation up front.
+      replaceBtn.onclick = function () {
+        if (window.confirm('Choose a new file to replace the current reference sketch?')) {
+          fileInput.click();
+        }
+      };
+    }
+
+    var removeBtn = document.querySelector('[data-role="footprint-reference-remove"]');
+    if (removeBtn) removeBtn.onclick = handleReferenceRemoveClick;
+
+    var lockToggle = document.querySelector('[data-role="footprint-reference-lock-toggle"]');
+    if (lockToggle) lockToggle.onclick = handleReferenceLockToggleClick;
+
+    var visibleToggle = document.querySelector('[data-role="footprint-reference-visible-toggle"]');
+    if (visibleToggle) visibleToggle.onclick = handleReferenceVisibleToggleClick;
+
+    var opacityInput = document.querySelector('[data-role="footprint-reference-opacity"]');
+    if (opacityInput) {
+      opacityInput.oninput = function () { handleReferenceOpacityInput(opacityInput); };
+      opacityInput.onchange = function () { handleReferenceOpacityChange(opacityInput); };
+    }
+
+    var resetTransformBtn = document.querySelector('[data-role="footprint-reference-reset-transform"]');
+    if (resetTransformBtn) resetTransformBtn.onclick = handleReferenceResetTransformClick;
   }
 
   // The synthetic Inspection tab's content -- every inspection-
@@ -4955,7 +5795,7 @@
     flushPendingSave().catch(function () {});
   });
 
-  fetch('config.json?v=0.22.2', { cache: 'no-store' })
+  fetch('config.json?v=0.22.3', { cache: 'no-store' })
     .then(function (r) {
       if (!r.ok) throw new Error('HTTP ' + r.status);
       return r.json();

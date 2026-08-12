@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
-<title>Clipboard-Flux 0.22.2</title>
+<title>Clipboard-Flux 0.22.3</title>
 <meta name="theme-color" content="#17324d">
 <style>
 :root{--navy:#17324d;--bg:#eef2f5;--line:#d9e0e6;--muted:#66727e;--paper:#fff}
@@ -112,6 +112,9 @@ main{padding:8px 16px 16px;max-width:640px;margin:auto}
 .footprint-width-group{display:flex;gap:6px}
 .footprint-width-btn{min-height:36px;padding:0 12px;border-radius:8px;border:1.5px solid var(--line);background:#fff;color:var(--navy);font-size:12px;font-weight:700;touch-action:manipulation}
 .footprint-width-btn.active{border-color:var(--navy);background:var(--navy);color:#fff}
+.footprint-tool-btn-danger{border-color:#a33;color:#a33}
+.footprint-reference-filename{font-size:12px;font-weight:700;color:var(--muted);max-width:60%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.footprint-reference-opacity-input{width:120px;touch-action:manipulation}
 .footprint-canvas-wrap{position:relative;z-index:0;width:100%;height:62vh;min-height:380px;max-height:640px;background:#fff;border:1px solid var(--line);border-radius:14px;overflow:hidden}
 .footprint-canvas{width:100%;height:100%;display:block;touch-action:none;background:#fff}
 .bottom-nav{display:flex;gap:10px;margin-top:22px;padding:14px 0 calc(14px + env(safe-area-inset-bottom));border-top:1px solid var(--line)}
@@ -132,7 +135,7 @@ main{padding:8px 16px 16px;max-width:640px;margin:auto}
 </style>
 </head>
 <body>
-<header><span class="brand">Clipboard-Flux</span><span class="version" id="version">0.22.2</span></header>
+<header><span class="brand">Clipboard-Flux</span><span class="version" id="version">0.22.3</span></header>
 <div id="inspection-bar"></div>
 <nav class="tabs" id="tabs"></nav>
 <main>
@@ -142,6 +145,6 @@ main{padding:8px 16px 16px;max-width:640px;margin:auto}
 </main>
 <div id="inspection-modal" hidden></div>
 <div id="photo-viewer" hidden></div>
-<script src="app.js?v=0.22.2"></script>
+<script src="app.js?v=0.22.3"></script>
 </body>
 </html>
