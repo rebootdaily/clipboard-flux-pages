@@ -1,5 +1,5 @@
 {
-  "version": "0.22.3",
+  "version": "0.22.4",
   "inputRules": {
     "sheet": "INPUT RULES",
     "validTypes": [
@@ -97,7 +97,7 @@
         "options": [],
         "followUpTrigger": [],
         "followUpGroup": "",
-        "reminder": ""
+        "reminder": "Include unit number"
       },
       {
         "id": "city",
@@ -554,7 +554,7 @@
         "options": [],
         "followUpTrigger": [],
         "followUpGroup": "",
-        "reminder": "ANSI: a level is below-grade if any part of it is below grade."
+        "reminder": "ANSI: A level is below-grade if any part of it is below grade."
       },
       {
         "id": "number_of_units",
@@ -640,7 +640,7 @@
         ],
         "followUpTrigger": [],
         "followUpGroup": "",
-        "reminder": "MDC rental: no basement/cellar space may be used as a habitable room."
+        "reminder": "MDC: No basement/cellar space may be used as a habitable room. 17-26(5)"
       },
       {
         "id": "foundation_walls",
@@ -711,7 +711,7 @@
         ],
         "followUpTrigger": [],
         "followUpGroup": "",
-        "reminder": "FHA: roof life under 2 yrs \u2192 subject to inspection."
+        "reminder": ""
       },
       {
         "id": "roof_updated",

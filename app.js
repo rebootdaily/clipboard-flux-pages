@@ -365,6 +365,10 @@
   // it's a synthetic tab like its two neighbors, not a field-driven one.
   var PHOTOS_TAB = 'Photos';
   var FOOTPRINT_TAB = 'Footprint';
+  // Milestone 22.4: fast field-capture text/handwriting scratchpad, one
+  // per inspection -- sits between Footprint and Inspection in navTabs(),
+  // same synthetic-tab convention every tab in this list already uses.
+  var NOTES_TAB = 'Notes';
   var INSPECTION_TAB = 'Inspection';
   // How long to wait after the last edit before actually writing to
   // IndexedDB -- long enough that rapid typing collapses into one write,
@@ -373,7 +377,7 @@
   var AUTOSAVE_DEBOUNCE_MS = 700;
   var MIGRATED_INSPECTION_ADDRESS = 'Unsaved / Migrated Inspection';
   // The exported-file schema is versioned independently of
-  // 0.22.3 -- app releases and the inspection-file format can
+  // 0.22.4 -- app releases and the inspection-file format can
   // and will drift out of step (a future app version might still need
   // to read a schemaVersion 1 file, or refuse a newer one it doesn't
   // understand yet), so import validation checks schema/schemaVersion
@@ -381,10 +385,10 @@
   var EXPORT_SCHEMA = 'clipboard-flux-inspection';
   var EXPORT_SCHEMA_VERSION = 1;
   var SUPPORTED_SCHEMA_VERSIONS = [1];
-  // Stamped at build time exactly like every other 0.22.3
+  // Stamped at build time exactly like every other 0.22.4
   // token in this file -- informational only in the export, never
   // itself validated on import.
-  var APP_VERSION = '0.22.3';
+  var APP_VERSION = '0.22.4';
   // Same database as Milestone 14's photos -- name kept for continuity
   // even though it now also holds inspection records; renaming it would
   // mean either abandoning existing photo data or writing a whole
@@ -610,6 +614,55 @@
   // Default opacity for a freshly imported reference -- clearly visible
   // for tracing, but secondary to full-opacity Flux strokes (#10/#18).
   var FOOTPRINT_REFERENCE_DEFAULT_OPACITY = 0.55;
+
+  // ---- Notes (Milestone 22.4) ----
+  //
+  // One typed-text workspace and one handwritten-scratchpad workspace per
+  // inspection -- deliberately not a second Footprint (#7: no line-assist,
+  // no pan/zoom, no reference underlay, no shapes/colors/layers). `notes`
+  // is loaded/saved the same way `footprint`/`footprintReference` are:
+  // no localStorage mirror (see applyInspectionDataToMemory()'s and
+  // resolveActiveInspectionAndBoot()'s own comments for why that category
+  // of state must always be re-read from IndexedDB fresh, never assumed
+  // correct from module-init), written wholesale by saveCurrentInspection()
+  // alongside everything else on the normal autosave cycle. Defense in
+  // depth: initialized to a safe empty document inline (same reasoning as
+  // `footprint`'s own module-init comment) rather than null.
+  var NOTES_SCHEMA_VERSION = 1;
+  var notes = { version: NOTES_SCHEMA_VERSION, text: '', hand: { strokes: [], logicalWidth: 0, logicalHeight: 0 } };
+  // 'text' | 'hand' -- which workspace is currently shown. Transient UI
+  // state, same category as footprintTool: reset to 'text' (the fastest
+  // capture path, #26) on every switchToInspection(), but otherwise left
+  // alone by ordinary tab navigation -- revisiting Notes later in the same
+  // session naturally returns to whichever mode was last used (#27),
+  // simply because nothing else ever touches this variable.
+  var notesMode = 'text';
+  // Undo history for the *current* Hand-notes session only, deliberately
+  // its own array -- never shared with footprintUndoStack (#11/#29).
+  // Whole snapshots of notes.hand.strokes, same convention as
+  // footprintUndoStack.
+  var notesHandUndoStack = [];
+  var NOTES_HAND_UNDO_LIMIT = 50;
+  // 'pencil' | 'eraser' -- transient UI state, own variable, never shared
+  // with footprintTool (#29).
+  var notesHandTool = 'pencil';
+  // Canvas/pointer/gesture handles -- own set, deliberately never shared
+  // with footprintCanvasEl/footprintPointers/footprintDraft (#29): the two
+  // drawing surfaces must never be able to continue or interfere with
+  // each other's in-progress gesture.
+  var notesHandCanvasEl = null;
+  var notesHandCtx = null;
+  var notesHandPointers = {};
+  var notesHandDraft = null;
+  var notesHandResizeListenerAdded = false;
+  // One fixed default stroke thickness (#9 -- no Thin/Medium/Thick this
+  // milestone) and noise/sampling thresholds tuned for small handwritten
+  // marks rather than Footprint's architectural-line scale.
+  var NOTES_HAND_STROKE_WIDTH = 3;
+  var NOTES_HAND_NOISE_SCREEN_PX = 3;
+  var NOTES_HAND_MIN_SAMPLE_SCREEN_PX = 2;
+  var NOTES_HAND_EXPORT_TARGET_LONG_EDGE = 1600;
+  var NOTES_HAND_EXPORT_PADDING_RATIO = 0.08;
 
   // A flat {fieldId: value} map is all that's persisted -- MAIN fields
   // and FOLLOW_UP questions already share one `values` object and the
@@ -1599,6 +1652,44 @@
     return 'fp_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8);
   }
 
+  function defaultNotes() {
+    return { version: NOTES_SCHEMA_VERSION, text: '', hand: { strokes: [], logicalWidth: 0, logicalHeight: 0 } };
+  }
+
+  function generateNotesStrokeId() {
+    return 'note_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8);
+  }
+
+  // Milestone 22.4: same "validate structurally, drop what's malformed
+  // rather than reject or crash the whole load" posture as
+  // sanitizeFootprint()/sanitizeReference() -- used for both a normal
+  // IndexedDB load (a pre-0.22.4 inspection simply has no `notes`
+  // property at all, same schemaless-per-record tolerance every other
+  // additive field in this file already gets) and JSON import (#25: an
+  // older file with no `notes` property must keep importing successfully,
+  // never fail). A hand-note stroke needs at least one point; anything
+  // else malformed is silently dropped rather than aborting the load. No
+  // per-stroke width is stored (#9/#20 -- one fixed default thickness,
+  // deliberately kept out of the data model rather than just out of the
+  // UI, so there is nothing here that could quietly grow into
+  // configurability later).
+  function sanitizeNotes(raw) {
+    if (!raw || typeof raw !== 'object') return defaultNotes();
+    var text = typeof raw.text === 'string' ? raw.text : '';
+    var handRaw = (raw.hand && typeof raw.hand === 'object') ? raw.hand : {};
+    var strokes = Array.isArray(handRaw.strokes) ? handRaw.strokes.filter(function (s) {
+      return s && typeof s === 'object' && Array.isArray(s.points) && s.points.length >= 1 && s.points.every(isFinitePoint);
+    }).map(function (s) {
+      var id = (typeof s.id === 'string' && s.id) ? s.id : generateNotesStrokeId();
+      return { id: id, points: s.points.map(function (p) { return { x: p.x, y: p.y }; }) };
+    }) : [];
+    var logicalWidth = (typeof handRaw.logicalWidth === 'number' && isFinite(handRaw.logicalWidth) && handRaw.logicalWidth > 0)
+      ? handRaw.logicalWidth : 0;
+    var logicalHeight = (typeof handRaw.logicalHeight === 'number' && isFinite(handRaw.logicalHeight) && handRaw.logicalHeight > 0)
+      ? handRaw.logicalHeight : 0;
+    return { version: NOTES_SCHEMA_VERSION, text: text, hand: { strokes: strokes, logicalWidth: logicalWidth, logicalHeight: logicalHeight } };
+  }
+
   // Milestone 22.3: validates/normalizes whatever's sitting in a loaded
   // or imported inspectionData record's `reference` property, the same
   // "structurally validate, fail safe rather than trust blindly" posture
@@ -1661,6 +1752,7 @@
     externalPhotoManifest = (data && Array.isArray(data.externalPhotoManifest)) ? data.externalPhotoManifest : [];
     footprint = sanitizeFootprint(data && data.footprint);
     footprintReference = sanitizeReference(data && data.reference);
+    notes = sanitizeNotes(data && data.notes);
     saveValues();
     saveDisregarded();
     saveOtherText();
@@ -1714,6 +1806,16 @@
         // just above -- never carried across an inspection switch.
         footprintReferenceGestureState = null;
         footprintReferencePanelOpen = false;
+        // Milestone 22.4: Hand-notes session/undo/gesture state is the
+        // exact same category as Footprint's own just above -- this
+        // session's drawing history, never a different inspection's.
+        // notesMode resets to 'text' (#26's fastest-capture default);
+        // notesHandTool resets to 'pencil', matching footprintTool.
+        notesMode = 'text';
+        notesHandUndoStack = [];
+        notesHandDraft = null;
+        notesHandTool = 'pencil';
+        notesHandPointers = {};
         activeTab = (CFG && CFG.main.tabs[0]) || null;
         return loadAllPhotosIntoCache().then(function () {
           return loadFootprintReferenceBitmap();
@@ -1734,7 +1836,7 @@
     var id = generateInspectionId();
     var now = new Date().toISOString();
     var meta = { inspectionId: id, propertyAddress: propertyAddress || '', createdAt: now, updatedAt: now };
-    var data = { inspectionId: id, values: {}, disregarded: {}, otherText: {}, fieldNotes: {}, externalPhotoManifest: [], footprint: defaultFootprint(), reference: null };
+    var data = { inspectionId: id, values: {}, disregarded: {}, otherText: {}, fieldNotes: {}, externalPhotoManifest: [], footprint: defaultFootprint(), reference: null, notes: defaultNotes() };
     return idbPutInspection(meta)
       .then(function () { return idbPutInspectionData(data); })
       .then(function () { return switchToInspection(id); });
@@ -1757,7 +1859,7 @@
     return idbDeleteAllPhotosForInspection(id)
       .then(function () { return idbDeleteReferenceBlob(id); })
       .then(function () {
-        var data = { inspectionId: id, values: {}, disregarded: {}, otherText: {}, fieldNotes: {}, externalPhotoManifest: [], footprint: defaultFootprint(), reference: null };
+        var data = { inspectionId: id, values: {}, disregarded: {}, otherText: {}, fieldNotes: {}, externalPhotoManifest: [], footprint: defaultFootprint(), reference: null, notes: defaultNotes() };
         return idbPutInspectionData(data);
       })
       .then(function () {
@@ -1791,7 +1893,8 @@
       fieldNotes: fieldNotes,
       externalPhotoManifest: externalPhotoManifest,
       footprint: footprint || defaultFootprint(),
-      reference: footprintReference
+      reference: footprintReference,
+      notes: notes || defaultNotes()
     };
     return idbPutInspectionData(data)
       .then(function () {
@@ -1924,6 +2027,12 @@
         return idbGetInspectionData(pointedId).then(function (data) {
           footprint = sanitizeFootprint(data && data.footprint);
           footprintReference = sanitizeReference(data && data.reference);
+          // Milestone 22.4: `notes` is exactly the same category as
+          // footprint/reference here -- no localStorage mirror, must be
+          // read fresh on this fast path or the reconciliation save just
+          // below would immediately overwrite real saved notes with the
+          // safe-but-empty module-init default.
+          notes = sanitizeNotes(data && data.notes);
           return loadAllPhotosIntoCache();
         }).then(function () {
           return loadFootprintReferenceBitmap();
@@ -2253,6 +2362,12 @@
         // #21 explicitly forbids pretending it exists when the Blob
         // doesn't.
         reference: sanitizeReference(data.reference),
+        // Milestone 22.4: structured text + vector stroke data, same
+        // "no Blobs/base64" posture as `footprint` above -- a hand-note
+        // stroke is just numbers, so it's included directly and restored
+        // in full on import (#24), unlike `reference` which can never be
+        // resurrected from metadata alone.
+        notes: sanitizeNotes(data.notes),
         photos: photos.map(function (p) {
           return {
             id: p.id,
@@ -2474,7 +2589,14 @@
       // pretends the reference image exists when the actual Blob is
       // absent" #21 explicitly forbids -- the user re-imports the
       // reference file itself if they want it back on this inspection.
-      reference: null
+      reference: null,
+      // Milestone 22.4 #24: unlike `reference`, notes has no Blob to lose
+      // -- sanitizeNotes() already drops anything malformed, so it's
+      // safe to fully restore both typed text and hand strokes from an
+      // imported file. #25: a file with no `notes` property at all
+      // (pre-0.22.4) falls through sanitizeNotes(undefined) to a blank
+      // default, never a failed import.
+      notes: sanitizeNotes(parsed.notes)
     };
     idbPutInspection(meta)
       .then(function () { return idbPutInspectionData(data); })
@@ -2965,6 +3087,7 @@
     '.pdf-photo-caption{font-size:8pt;color:#4a5660;margin-top:3px}' +
     '.pdf-footprint-image{width:100%;max-height:8.5in;object-fit:contain;display:block;' +
       'border:1px solid #d9e0e6;border-radius:4px}' +
+    '.pdf-notes-text{font-size:9.5pt;white-space:pre-wrap;word-wrap:break-word}' +
     '.pdf-empty-note{font-size:10pt;color:#66727e;font-style:italic}' +
     '.pdf-footer-note{margin-top:16px;padding-top:6px;border-top:1px solid #d9e0e6;font-size:7pt;color:#9aa5ad}';
 
@@ -3044,6 +3167,35 @@
       '</div>';
   }
 
+  // Milestone 22.4 #22/#23: NOTES section -- typed text (line breaks
+  // preserved via esc() then a literal <br> insertion, never raw
+  // unescaped text) and/or a raster of the hand-note strokes, generated
+  // fresh at export time from the same vector data the app itself draws
+  // from (never a screenshot of the live canvas), so no toolbar/UI/
+  // canvas chrome can ever leak into the PDF. Omitted entirely when
+  // there's nothing to show, same "no empty section" convention
+  // pdfBuildFootprintSectionHtml() already uses.
+  function pdfBuildNotesSectionHtml(notesText, handImageUrl) {
+    var hasText = !!(notesText && notesText.trim());
+    if (!hasText && !handImageUrl) return '';
+    var textHtml = hasText
+      ? '<div class="pdf-subsection">' +
+          '<div class="pdf-subsection-heading">Inspection Notes</div>' +
+          '<div class="pdf-notes-text">' + esc(notesText).replace(/\n/g, '<br>') + '</div>' +
+        '</div>'
+      : '';
+    var handHtml = handImageUrl
+      ? '<div class="pdf-subsection">' +
+          '<div class="pdf-subsection-heading">Handwritten Notes</div>' +
+          '<img class="pdf-footprint-image" src="' + esc(handImageUrl) + '" alt="">' +
+        '</div>'
+      : '';
+    return '<div class="pdf-section pdf-notes-section">' +
+      '<div class="pdf-section-heading">NOTES</div>' +
+      textHtml + handHtml +
+      '</div>';
+  }
+
   function buildPdfFilenameBase(meta) {
     var base = sanitizeForFilename(meta.propertyAddress) || sanitizeForFilename(meta.inspectionId) || 'inspection';
     var now = new Date();
@@ -3051,7 +3203,7 @@
     return base + '_' + stamp + '_Inspection';
   }
 
-  function buildPrintDocumentHtml(meta, data, photosWithUrls, footprintImageUrl) {
+  function buildPrintDocumentHtml(meta, data, photosWithUrls, footprintImageUrl, notesHandImageUrl) {
     var values = data.values || {};
     var disregarded = data.disregarded || {};
     var otherText = data.otherText || {};
@@ -3079,7 +3231,8 @@
     var photosHtml = pdfBuildPhotosSectionHtml(fieldPhotos, values, disregarded);
     var generalPhotosHtml = pdfBuildGeneralPhotosSectionHtml(generalPhotosForPdf);
     var footprintHtml = pdfBuildFootprintSectionHtml(footprintImageUrl);
-    var bodyHtml = mainHtml + eiHtml + photosHtml + generalPhotosHtml + footprintHtml;
+    var notesHtml = pdfBuildNotesSectionHtml(data.notes && data.notes.text, notesHandImageUrl);
+    var bodyHtml = mainHtml + eiHtml + photosHtml + generalPhotosHtml + footprintHtml + notesHtml;
     if (!bodyHtml) {
       bodyHtml = '<div class="pdf-empty-note">No inspection content has been entered yet.</div>';
     }
@@ -3130,7 +3283,7 @@
   // like the print-content-load safety net below it -- not the primary
   // mechanism either way, so this isn't "blindly adding a delay" as the
   // fix itself.
-  function printViaHiddenIframe(html, photosWithUrls, footprintImageUrl) {
+  function printViaHiddenIframe(html, photosWithUrls, footprintImageUrl, notesHandImageUrl) {
     cleanupPdfPrintIframe();
     var iframe = document.createElement('iframe');
     iframe.style.position = 'fixed';
@@ -3144,8 +3297,11 @@
     // rides along in the exact same cleanup array as every photo's --
     // one list, one revoke pass, so a Footprint export can never leak an
     // object URL any more than a photo-heavy export already couldn't.
+    // Milestone 22.4: the hand-notes export image's object URL joins the
+    // same list, same reasoning.
     iframe.__objectUrls = photosWithUrls.map(function (p) { return p.objectUrl; });
     if (footprintImageUrl) iframe.__objectUrls.push(footprintImageUrl);
+    if (notesHandImageUrl) iframe.__objectUrls.push(notesHandImageUrl);
     document.body.appendChild(iframe);
     pdfPrintIframe = iframe;
 
@@ -3205,10 +3361,19 @@
       // itself async (canvas.toBlob()), so it's resolved here before
       // building the printable document -- buildPrintDocumentHtml()
       // stays synchronous otherwise, same as every other section.
-      return footprintExportImageBlob(sanitizeFootprint(data.footprint)).then(function (blob) {
-        var footprintImageUrl = blob ? URL.createObjectURL(blob) : null;
-        var html = buildPrintDocumentHtml(meta, data, photosWithUrls, footprintImageUrl);
-        printViaHiddenIframe(html, photosWithUrls, footprintImageUrl);
+      // Milestone 22.4: the hand-notes image is the exact same kind of
+      // async rasterization, resolved alongside it via Promise.all
+      // rather than chained serially -- the two exports are independent
+      // of each other, so there's no reason to wait on one before
+      // starting the other.
+      return Promise.all([
+        footprintExportImageBlob(sanitizeFootprint(data.footprint)),
+        notesHandExportImageBlob(sanitizeNotes(data.notes).hand)
+      ]).then(function (blobs) {
+        var footprintImageUrl = blobs[0] ? URL.createObjectURL(blobs[0]) : null;
+        var notesHandImageUrl = blobs[1] ? URL.createObjectURL(blobs[1]) : null;
+        var html = buildPrintDocumentHtml(meta, data, photosWithUrls, footprintImageUrl, notesHandImageUrl);
+        printViaHiddenIframe(html, photosWithUrls, footprintImageUrl, notesHandImageUrl);
       });
     }).catch(function (e) {
       window.console && console.error && console.error('Clipboard-Flux: PDF export failed', e);
@@ -4872,6 +5037,440 @@
     if (resetTransformBtn) resetTransformBtn.onclick = handleReferenceResetTransformClick;
   }
 
+  // ---- Notes tab (Milestone 22.4) ----
+  //
+  // Two independent per-inspection workspaces -- one plain multiline text
+  // area, one small handwriting scratchpad -- for capturing a thought
+  // immediately without choosing a category or destination first (#1/#26).
+  // This is deliberately NOT a second Footprint engine (#7): no line-
+  // assist (classifyStroke() is never called anywhere in this section),
+  // no pan/zoom, no reference underlay, one fixed stroke thickness, and a
+  // four-button toolbar (Pencil/Eraser/Undo/Clear) instead of Footprint's
+  // six-plus-two-popovers surface.
+  //
+  // Viewport/orientation stability (#13/#21) without replicating
+  // Footprint's pan/zoom system: a hand-note stroke's points are stored
+  // in a small fixed logical coordinate space (notes.hand.logicalWidth/
+  // logicalHeight -- just two numbers, established once from the canvas's
+  // own CSS size the first time a stroke is ever drawn, then persisted
+  // alongside the strokes). Every draw/redraw computes a fresh *uniform*
+  // (never per-axis) "contain" fit of that logical rectangle into the
+  // canvas's current CSS size (notesHandFitTransform()) -- uniform
+  // scaling is what keeps every stroke's own shape undistorted across a
+  // portrait<->landscape rotation, where independently scaling x and y
+  // would visibly stretch every mark. The trade-off is a small,
+  // deliberate letterbox margin on one axis when the current canvas's
+  // aspect ratio doesn't exactly match the logical one -- never
+  // stretching, clipping, or losing content, which is what #21 actually
+  // requires. There is no persisted "view" the user can pan/zoom -- this
+  // fit is a pure function of (logical size, current canvas size),
+  // recomputed automatically on every resize, so it can never drift from
+  // user action the way a stateful view transform could.
+  //
+  // Isolation from Footprint (#29): every piece of mutable state here
+  // (notesHandPointers/notesHandDraft/notesHandUndoStack/notesHandTool/
+  // notesHandCanvasEl/notesHandCtx) is its own variable, never shared
+  // with footprint's equivalents -- switching tabs mid-gesture in either
+  // direction cannot continue, cancel, or otherwise touch the other
+  // drawing surface's state.
+
+  function notesHandFitTransform() {
+    var dpr = window.devicePixelRatio || 1;
+    var cssW = notesHandCanvasEl.width / dpr;
+    var cssH = notesHandCanvasEl.height / dpr;
+    var lw = notes.hand.logicalWidth || cssW;
+    var lh = notes.hand.logicalHeight || cssH;
+    var scale = Math.min(cssW / lw, cssH / lh) || 1;
+    return { scale: scale, offsetX: (cssW - lw * scale) / 2, offsetY: (cssH - lh * scale) / 2 };
+  }
+
+  function notesHandScreenToLogical(clientX, clientY) {
+    var rect = notesHandCanvasEl.getBoundingClientRect();
+    var fit = notesHandFitTransform();
+    return { x: (clientX - rect.left - fit.offsetX) / fit.scale, y: (clientY - rect.top - fit.offsetY) / fit.scale };
+  }
+
+  function setupNotesHandCanvasBackingStore() {
+    var dpr = window.devicePixelRatio || 1;
+    var rect = notesHandCanvasEl.getBoundingClientRect();
+    var w = Math.max(1, Math.round(rect.width * dpr));
+    var h = Math.max(1, Math.round(rect.height * dpr));
+    if (notesHandCanvasEl.width !== w) notesHandCanvasEl.width = w;
+    if (notesHandCanvasEl.height !== h) notesHandCanvasEl.height = h;
+    notesHandCtx = notesHandCanvasEl.getContext('2d');
+    notesHandCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  }
+
+  function notesHandDrawOneStroke(ctx, points, fit) {
+    if (points.length < 2) return;
+    ctx.beginPath();
+    ctx.moveTo(points[0].x * fit.scale + fit.offsetX, points[0].y * fit.scale + fit.offsetY);
+    for (var i = 1; i < points.length; i++) {
+      ctx.lineTo(points[i].x * fit.scale + fit.offsetX, points[i].y * fit.scale + fit.offsetY);
+    }
+    ctx.stroke();
+  }
+
+  function drawNotesHandCanvas() {
+    if (!notesHandCtx || !notesHandCanvasEl) return;
+    var dpr = window.devicePixelRatio || 1;
+    var cssW = notesHandCanvasEl.width / dpr;
+    var cssH = notesHandCanvasEl.height / dpr;
+    var ctx = notesHandCtx;
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.clearRect(0, 0, cssW, cssH);
+    var fit = notesHandFitTransform();
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+    ctx.strokeStyle = '#1c3a52';
+    ctx.lineWidth = NOTES_HAND_STROKE_WIDTH;
+    notes.hand.strokes.forEach(function (s) { notesHandDrawOneStroke(ctx, s.points, fit); });
+    if (notesHandDraft && notesHandDraft.mode === 'draw' && notesHandDraft.points.length > 1) {
+      notesHandDrawOneStroke(ctx, notesHandDraft.points, fit);
+    }
+  }
+
+  function notesHandPushUndoSnapshot() {
+    notesHandUndoStack.push(notes.hand.strokes.slice());
+    if (notesHandUndoStack.length > NOTES_HAND_UNDO_LIMIT) notesHandUndoStack.shift();
+  }
+
+  function notesHandUndo() {
+    if (!notesHandUndoStack.length) return;
+    notes.hand.strokes = notesHandUndoStack.pop();
+    scheduleAutoSave();
+    render();
+  }
+
+  // Mild input smoothing (#8/#9): reuses classifyStroke()'s sibling
+  // smoothFreehandPoints() exactly as-is -- it's already a generic pure
+  // function over any points array, not Footprint-specific -- and never
+  // calls classifyStroke() itself, so a hand note is never straightened
+  // into a clean line no matter how line-like it looks (#8's explicit
+  // requirement).
+  function notesHandCommitDraft(draft) {
+    var pts = draft.points;
+    if (pts.length < 2) return;
+    var fit = notesHandFitTransform();
+    var pathLenPx = 0;
+    for (var i = 1; i < pts.length; i++) {
+      pathLenPx += Math.hypot(pts[i].x - pts[i - 1].x, pts[i].y - pts[i - 1].y) * fit.scale;
+    }
+    if (pathLenPx < NOTES_HAND_NOISE_SCREEN_PX) return;
+    notesHandPushUndoSnapshot();
+    notes.hand.strokes.push({ id: generateNotesStrokeId(), points: smoothFreehandPoints(pts) });
+    scheduleAutoSave();
+  }
+
+  function notesHandStrokeHit(s, p, radius) {
+    var pts = s.points;
+    if (pts.length === 1) return Math.hypot(p.x - pts[0].x, p.y - pts[0].y) <= radius;
+    for (var i = 1; i < pts.length; i++) {
+      if (footprintDistToSegment(p, pts[i - 1], pts[i]) <= radius) return true;
+    }
+    return false;
+  }
+
+  // Same lazy-snapshot-on-first-hit convention as footprintEraseAt() --
+  // one erase gesture, however many strokes it actually removes, is one
+  // undo step (#10/#11).
+  function notesHandEraseAt(clientX, clientY) {
+    var lp = notesHandScreenToLogical(clientX, clientY);
+    var fit = notesHandFitTransform();
+    var r = Math.max(14, NOTES_HAND_STROKE_WIDTH * 4) / fit.scale;
+    var changedAny = false;
+    var kept = [];
+    notes.hand.strokes.forEach(function (s) {
+      if (notesHandStrokeHit(s, lp, r)) {
+        if (!notesHandDraft.snapshotTaken) {
+          notesHandPushUndoSnapshot();
+          notesHandDraft.snapshotTaken = true;
+        }
+        changedAny = true;
+      } else {
+        kept.push(s);
+      }
+    });
+    if (changedAny) {
+      notes.hand.strokes = kept;
+      drawNotesHandCanvas();
+    }
+  }
+
+  // #12: confirmation required, cancel leaves everything untouched
+  // (window.confirm()'s own semantics already guarantee that -- nothing
+  // runs unless the user picks OK). Also pushes an undo snapshot before
+  // clearing, so a confirmed-but-regretted Clear can still be recovered
+  // by Undo, same safety margin every other destructive action in this
+  // file gets. A no-op (no confirm dialog at all) when there's nothing to
+  // clear.
+  function notesHandClear() {
+    if (!notes.hand.strokes.length) return;
+    if (!window.confirm('Clear all handwritten notes?')) return;
+    notesHandPushUndoSnapshot();
+    notes.hand.strokes = [];
+    scheduleAutoSave();
+    render();
+  }
+
+  // #14/#15: a second concurrent pointer is never a supported gesture on
+  // this canvas (there is no pan/zoom mode to fall into, unlike
+  // Footprint) -- whatever single-pointer draft was in progress is
+  // discarded outright the instant a second pointer arrives, and every
+  // pointer stays inert until the whole gesture fully lifts. This is what
+  // keeps a resting palm or an incidental second touch from smearing or
+  // continuing a stroke, without needing any pinch/pan handling at all.
+  function notesHandPointerDown(ev) {
+    try { notesHandCanvasEl.setPointerCapture(ev.pointerId); } catch (e) { /* proceed uncaptured */ }
+    notesHandPointers[ev.pointerId] = true;
+    if (Object.keys(notesHandPointers).length >= 2) {
+      notesHandDraft = null;
+      return;
+    }
+    if (!notes.hand.logicalWidth || !notes.hand.logicalHeight) {
+      var dpr = window.devicePixelRatio || 1;
+      notes.hand.logicalWidth = notesHandCanvasEl.width / dpr;
+      notes.hand.logicalHeight = notesHandCanvasEl.height / dpr;
+    }
+    if (notesHandTool === 'eraser') {
+      notesHandDraft = { mode: 'erase', snapshotTaken: false };
+      notesHandEraseAt(ev.clientX, ev.clientY);
+      return;
+    }
+    var lp = notesHandScreenToLogical(ev.clientX, ev.clientY);
+    notesHandDraft = { mode: 'draw', points: [lp] };
+    drawNotesHandCanvas();
+  }
+
+  function notesHandPointerMove(ev) {
+    if (!(ev.pointerId in notesHandPointers)) return;
+    if (Object.keys(notesHandPointers).length >= 2) return;
+    if (!notesHandDraft) return;
+    if (notesHandDraft.mode === 'erase') {
+      notesHandEraseAt(ev.clientX, ev.clientY);
+      return;
+    }
+    if (notesHandDraft.mode === 'draw') {
+      var lp = notesHandScreenToLogical(ev.clientX, ev.clientY);
+      var fit = notesHandFitTransform();
+      var last = notesHandDraft.points[notesHandDraft.points.length - 1];
+      var minDist = NOTES_HAND_MIN_SAMPLE_SCREEN_PX / fit.scale;
+      if (Math.hypot(lp.x - last.x, lp.y - last.y) >= minDist) {
+        notesHandDraft.points.push(lp);
+        drawNotesHandCanvas();
+      }
+    }
+  }
+
+  function notesHandEndPointer(pointerId, commit) {
+    if (!(pointerId in notesHandPointers)) return;
+    try { notesHandCanvasEl.releasePointerCapture(pointerId); } catch (e) { /* already released/uncaptured */ }
+    delete notesHandPointers[pointerId];
+    if (Object.keys(notesHandPointers).length >= 1) {
+      notesHandDraft = null;
+      return;
+    }
+    var draft = notesHandDraft;
+    notesHandDraft = null;
+    if (draft && draft.mode === 'draw' && commit) {
+      notesHandCommitDraft(draft);
+    } else if (draft && draft.mode === 'erase' && commit && draft.snapshotTaken) {
+      scheduleAutoSave();
+    }
+    render();
+  }
+
+  function notesHandPointerUp(ev) { notesHandEndPointer(ev.pointerId, true); }
+  function notesHandPointerCancel(ev) { notesHandEndPointer(ev.pointerId, false); }
+
+  // Same belt-and-suspenders convention as footprintAbortActiveGesture()
+  // -- called at the top of every toolbar/mode-toggle handler so a stray
+  // canvas gesture state can never compete with a deliberate control tap.
+  function notesHandAbortActiveGesture() {
+    if (notesHandCanvasEl) {
+      Object.keys(notesHandPointers).forEach(function (pid) {
+        try { notesHandCanvasEl.releasePointerCapture(Number(pid)); } catch (e) { /* already released/uncaptured */ }
+      });
+    }
+    notesHandPointers = {};
+    notesHandDraft = null;
+  }
+
+  function notesHandComputeBounds(strokes) {
+    if (!strokes.length) return null;
+    var minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+    strokes.forEach(function (s) {
+      s.points.forEach(function (p) {
+        if (p.x < minX) minX = p.x;
+        if (p.x > maxX) maxX = p.x;
+        if (p.y < minY) minY = p.y;
+        if (p.y > maxY) maxY = p.y;
+      });
+    });
+    return { minX: minX, minY: minY, maxX: maxX, maxY: maxY };
+  }
+
+  // Full-bounds rasterization for PDF export (#22/#23) -- same technique
+  // as footprintRenderExportCanvas(), computed from the strokes' own
+  // logical-space geometry, never the live on-screen fit/canvas (so a
+  // PDF export always shows every mark regardless of what the canvas
+  // happens to be showing/scrolled to). The source of truth stays the
+  // vector strokes; this raster is generated fresh at export time and
+  // never written back to `notes` (#23).
+  function notesHandRenderExportCanvas(notesHand) {
+    var bounds = notesHandComputeBounds(notesHand.strokes);
+    if (!bounds) return null;
+    var w = bounds.maxX - bounds.minX;
+    var h = bounds.maxY - bounds.minY;
+    var longEdge = Math.max(w, h, 1);
+    var pad = Math.max(longEdge * NOTES_HAND_EXPORT_PADDING_RATIO, 10);
+    var totalW = w + pad * 2, totalH = h + pad * 2;
+    var scale = NOTES_HAND_EXPORT_TARGET_LONG_EDGE / Math.max(totalW, totalH);
+    var canvas = document.createElement('canvas');
+    canvas.width = Math.max(1, Math.round(totalW * scale));
+    canvas.height = Math.max(1, Math.round(totalH * scale));
+    var ctx = canvas.getContext('2d');
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.translate((pad - bounds.minX) * scale, (pad - bounds.minY) * scale);
+    ctx.scale(scale, scale);
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+    ctx.strokeStyle = '#1c3a52';
+    ctx.lineWidth = NOTES_HAND_STROKE_WIDTH;
+    notesHand.strokes.forEach(function (s) {
+      if (s.points.length < 2) return;
+      ctx.beginPath();
+      ctx.moveTo(s.points[0].x, s.points[0].y);
+      for (var i = 1; i < s.points.length; i++) ctx.lineTo(s.points[i].x, s.points[i].y);
+      ctx.stroke();
+    });
+    return canvas;
+  }
+
+  function notesHandExportImageBlob(notesHand) {
+    var canvas = notesHandRenderExportCanvas(notesHand);
+    if (!canvas) return Promise.resolve(null);
+    return new Promise(function (resolve) {
+      canvas.toBlob(function (blob) { resolve(blob); }, 'image/png');
+    });
+  }
+
+  function renderNotesTabHtml() {
+    var warningHtml = dbUnavailable
+      ? '<div class="shell-note error">Notes save/load isn\'t available in this browser ' +
+        '(IndexedDB is blocked or unsupported).</div>'
+      : '';
+    var modeToggleHtml =
+      '<div class="notes-mode-toggle">' +
+        '<button type="button" class="notes-mode-btn' + (notesMode === 'text' ? ' active' : '') +
+          '" data-role="notes-mode-text" aria-pressed="' + (notesMode === 'text') + '">Text</button>' +
+        '<button type="button" class="notes-mode-btn' + (notesMode === 'hand' ? ' active' : '') +
+          '" data-role="notes-mode-hand" aria-pressed="' + (notesMode === 'hand') + '">Hand</button>' +
+      '</div>';
+    if (notesMode === 'hand') {
+      return warningHtml + modeToggleHtml +
+        '<div class="footprint-toolbar">' +
+          '<div class="footprint-tool-group">' +
+            '<button type="button" class="footprint-tool-btn' + (notesHandTool === 'pencil' ? ' active' : '') +
+              '" data-role="notes-hand-tool-pencil" aria-pressed="' + (notesHandTool === 'pencil') + '" aria-label="Pencil">Pencil</button>' +
+            '<button type="button" class="footprint-tool-btn' + (notesHandTool === 'eraser' ? ' active' : '') +
+              '" data-role="notes-hand-tool-eraser" aria-pressed="' + (notesHandTool === 'eraser') + '" aria-label="Eraser">Eraser</button>' +
+          '</div>' +
+          '<div class="footprint-tool-group">' +
+            '<button type="button" class="footprint-tool-btn" data-role="notes-hand-undo" aria-label="Undo"' +
+              (notesHandUndoStack.length ? '' : ' disabled') + '>Undo</button>' +
+            '<button type="button" class="footprint-tool-btn footprint-tool-btn-danger" data-role="notes-hand-clear" aria-label="Clear">Clear</button>' +
+          '</div>' +
+        '</div>' +
+        '<div class="footprint-canvas-wrap">' +
+          '<canvas id="notes-hand-canvas" class="footprint-canvas" aria-label="Handwritten notes canvas"></canvas>' +
+        '</div>';
+    }
+    return warningHtml + modeToggleHtml +
+      '<textarea class="notes-text-area" data-role="notes-text" placeholder="Inspection notes…" aria-label="Inspection notes">' +
+        esc(notes.text) + '</textarea>';
+  }
+
+  // Re-wired fresh every render(), same convention as
+  // wireFootprintTabControls() -- the tab's markup (textarea vs. canvas)
+  // is fully replaced on every mode switch, so there is never a stale
+  // handler left over from the other mode to worry about.
+  function wireNotesTabControls() {
+    var textModeBtn = document.querySelector('[data-role="notes-mode-text"]');
+    var handModeBtn = document.querySelector('[data-role="notes-mode-hand"]');
+    if (textModeBtn) {
+      textModeBtn.onclick = function () {
+        notesHandAbortActiveGesture();
+        if (notesMode === 'text') return;
+        notesMode = 'text';
+        render();
+      };
+    }
+    if (handModeBtn) {
+      handModeBtn.onclick = function () {
+        if (notesMode === 'hand') return;
+        notesMode = 'hand';
+        render();
+      };
+    }
+
+    if (notesMode === 'text') {
+      var textarea = document.querySelector('[data-role="notes-text"]');
+      // Milestone 22.4 #5: plain oninput mutation + scheduleAutoSave(),
+      // deliberately never a render() here -- the exact FN-011 double-tap/
+      // lost-focus defect class this file's Text/LongText fields already
+      // avoid the same way (see the "Text/LongText update `values` on
+      // every keystroke without re-rendering" comment below) -- a full
+      // render() mid-type would destroy this very textarea and drop
+      // keyboard focus and cursor position.
+      if (textarea) {
+        textarea.oninput = function () {
+          notes.text = textarea.value;
+          scheduleAutoSave();
+        };
+      }
+      return;
+    }
+
+    notesHandCanvasEl = document.getElementById('notes-hand-canvas');
+    if (notesHandCanvasEl) {
+      setupNotesHandCanvasBackingStore();
+      notesHandPointers = {};
+      drawNotesHandCanvas();
+      notesHandCanvasEl.onpointerdown = notesHandPointerDown;
+      notesHandCanvasEl.onpointermove = notesHandPointerMove;
+      notesHandCanvasEl.onpointerup = notesHandPointerUp;
+      notesHandCanvasEl.onpointercancel = notesHandPointerCancel;
+      notesHandCanvasEl.onlostpointercapture = notesHandPointerCancel;
+    }
+
+    if (!notesHandResizeListenerAdded) {
+      notesHandResizeListenerAdded = true;
+      window.addEventListener('resize', function () {
+        var el = document.getElementById('notes-hand-canvas');
+        if (!el) return;
+        notesHandCanvasEl = el;
+        setupNotesHandCanvasBackingStore();
+        drawNotesHandCanvas();
+      });
+    }
+
+    Array.prototype.forEach.call(document.querySelectorAll('[data-role^="notes-hand-tool-"]'), function (btn) {
+      btn.onclick = function () {
+        notesHandAbortActiveGesture();
+        notesHandTool = btn.dataset.role === 'notes-hand-tool-eraser' ? 'eraser' : 'pencil';
+        render();
+      };
+    });
+
+    var undoBtn = document.querySelector('[data-role="notes-hand-undo"]');
+    if (undoBtn) undoBtn.onclick = function () { notesHandAbortActiveGesture(); notesHandUndo(); };
+
+    var clearBtn = document.querySelector('[data-role="notes-hand-clear"]');
+    if (clearBtn) clearBtn.onclick = function () { notesHandAbortActiveGesture(); notesHandClear(); };
+  }
+
   // The synthetic Inspection tab's content -- every inspection-
   // management and export/import action, grouped per Milestone 18 #11
   // (Inspection actions, then a separate Export/Import group), as large
@@ -5423,7 +6022,7 @@
   }
 
   function navTabs() {
-    return CFG.main.tabs.concat([EXIT_INTERVIEW_TAB, PHOTOS_TAB, FOOTPRINT_TAB, INSPECTION_TAB]);
+    return CFG.main.tabs.concat([EXIT_INTERVIEW_TAB, PHOTOS_TAB, FOOTPRINT_TAB, NOTES_TAB, INSPECTION_TAB]);
   }
 
   function renderTabs() {
@@ -5508,6 +6107,13 @@
     if (activeTab === FOOTPRINT_TAB) {
       $('#screen').innerHTML = renderFootprintTabHtml() + renderBottomNavHtml();
       wireFootprintTabControls();
+      wireBottomNav();
+      return;
+    }
+
+    if (activeTab === NOTES_TAB) {
+      $('#screen').innerHTML = renderNotesTabHtml() + renderBottomNavHtml();
+      wireNotesTabControls();
       wireBottomNav();
       return;
     }
@@ -5795,7 +6401,7 @@
     flushPendingSave().catch(function () {});
   });
 
-  fetch('config.json?v=0.22.3', { cache: 'no-store' })
+  fetch('config.json?v=0.22.4', { cache: 'no-store' })
     .then(function (r) {
       if (!r.ok) throw new Error('HTTP ' + r.status);
       return r.json();
