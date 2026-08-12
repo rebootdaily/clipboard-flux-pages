@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
-<title>Clipboard-Flux 0.22.1</title>
+<title>Clipboard-Flux 0.22.2</title>
 <meta name="theme-color" content="#17324d">
 <style>
 :root{--navy:#17324d;--bg:#eef2f5;--line:#d9e0e6;--muted:#66727e;--paper:#fff}
@@ -105,6 +105,7 @@ main{padding:8px 16px 16px;max-width:640px;margin:auto}
 .footprint-tool-btn.active{background:var(--navy);color:#fff}
 .footprint-tool-btn[disabled]{opacity:.4}
 .footprint-settings-popover{background:#fff;border:1px solid var(--line);border-radius:12px;padding:10px 14px;margin-bottom:10px;display:flex;flex-direction:column;gap:8px;position:relative;z-index:1}
+.footprint-settings-popover[hidden]{display:none}
 .footprint-settings-row{display:flex;align-items:center;justify-content:space-between;gap:10px;font-size:13.5px;font-weight:700;color:var(--navy)}
 .footprint-toggle-btn{min-height:36px;padding:0 16px;border-radius:999px;border:1.5px solid var(--navy);background:#fff;color:var(--navy);font-size:12.5px;font-weight:800;touch-action:manipulation}
 .footprint-toggle-btn.on{background:#2f7a4d;border-color:#2f7a4d;color:#fff}
@@ -131,7 +132,7 @@ main{padding:8px 16px 16px;max-width:640px;margin:auto}
 </style>
 </head>
 <body>
-<header><span class="brand">Clipboard-Flux</span><span class="version" id="version">0.22.1</span></header>
+<header><span class="brand">Clipboard-Flux</span><span class="version" id="version">0.22.2</span></header>
 <div id="inspection-bar"></div>
 <nav class="tabs" id="tabs"></nav>
 <main>
@@ -141,6 +142,6 @@ main{padding:8px 16px 16px;max-width:640px;margin:auto}
 </main>
 <div id="inspection-modal" hidden></div>
 <div id="photo-viewer" hidden></div>
-<script src="app.js?v=0.22.1"></script>
+<script src="app.js?v=0.22.2"></script>
 </body>
 </html>

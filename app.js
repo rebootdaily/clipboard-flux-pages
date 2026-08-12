@@ -1,4 +1,27 @@
-/* Clipboard-Flux -- Milestone 22.1: field-reported corrective fix --
+/* Clipboard-Flux -- Milestone 22.1 follow-up: the field report ("Settings
+   still doesn't open anything") persisted after the pointer-capture fix
+   below, on an iPad where the button visibly reacts to a tap and every
+   other Footprint control already worked correctly -- which pointed away
+   from pointer capture entirely. Confirmed via getComputedStyle() (not
+   just the `hidden` IDL property, which reads correctly regardless of
+   what actually renders): `.footprint-settings-popover`'s own
+   `display:flex` was silently overriding the browser's built-in
+   `[hidden]{display:none}` rule the whole time -- author-stylesheet
+   `display` always outranks the user-agent stylesheet's [hidden] rule in
+   the CSS cascade, regardless of source order. The popover was visually
+   present at every Footprint tab visit from the moment Milestone 22
+   shipped, `hidden` attribute or not; toggling it via JS genuinely never
+   had any visual effect. This exact gotcha was already correctly handled
+   for every *other* hidden-toggled panel in this file (.field-note,
+   .photo-panel, .disregarded-list each carry their own explicit
+   `[hidden]{display:none}` override in index.html) -- Milestone 22 simply
+   didn't extend that established convention to the new popover. Fixed
+   with the identical one-line pattern: `.footprint-settings-popover
+   [hidden]{display:none}`. The pointer-capture/touch-action/layering
+   fixes below are kept -- real, defensible, spec-compliant hardening --
+   they just weren't the actual cause of this particular symptom.
+
+   Milestone 22.1: field-reported corrective fix --
    the Footprint Settings button didn't reliably respond to a first real
    tap on physical touch hardware. Root cause (by code inspection; see
    footprintEndPointer()'s own comment): pointer capture on the drawing
@@ -350,7 +373,7 @@
   var AUTOSAVE_DEBOUNCE_MS = 700;
   var MIGRATED_INSPECTION_ADDRESS = 'Unsaved / Migrated Inspection';
   // The exported-file schema is versioned independently of
-  // 0.22.1 -- app releases and the inspection-file format can
+  // 0.22.2 -- app releases and the inspection-file format can
   // and will drift out of step (a future app version might still need
   // to read a schemaVersion 1 file, or refuse a newer one it doesn't
   // understand yet), so import validation checks schema/schemaVersion
@@ -358,10 +381,10 @@
   var EXPORT_SCHEMA = 'clipboard-flux-inspection';
   var EXPORT_SCHEMA_VERSION = 1;
   var SUPPORTED_SCHEMA_VERSIONS = [1];
-  // Stamped at build time exactly like every other 0.22.1
+  // Stamped at build time exactly like every other 0.22.2
   // token in this file -- informational only in the export, never
   // itself validated on import.
-  var APP_VERSION = '0.22.1';
+  var APP_VERSION = '0.22.2';
   // Same database as Milestone 14's photos -- name kept for continuity
   // even though it now also holds inspection records; renaming it would
   // mean either abandoning existing photo data or writing a whole
@@ -4932,7 +4955,7 @@
     flushPendingSave().catch(function () {});
   });
 
-  fetch('config.json?v=0.22.1', { cache: 'no-store' })
+  fetch('config.json?v=0.22.2', { cache: 'no-store' })
     .then(function (r) {
       if (!r.ok) throw new Error('HTTP ' + r.status);
       return r.json();
