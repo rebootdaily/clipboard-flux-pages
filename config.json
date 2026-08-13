@@ -203,7 +203,7 @@
         "label": "Attachment Type",
         "urar": "Subject",
         "tab": "Property",
-        "type": "MultiSelect",
+        "type": "Button",
         "options": [
           "Detached",
           "Attached",
@@ -235,7 +235,7 @@
         "label": "Construction Method",
         "urar": "Subject",
         "tab": "Property",
-        "type": "MultiSelect",
+        "type": "Button",
         "options": [
           "Site Built",
           "Manufactured",
@@ -253,7 +253,7 @@
         "label": "Location",
         "urar": "Site",
         "tab": "Property",
-        "type": "MultiSelect",
+        "type": "MultiSelect Dropdown",
         "options": [
           "Residential",
           "Busy Road",
@@ -281,7 +281,7 @@
         "label": "Street Surface",
         "urar": "Site",
         "tab": "Off Site",
-        "type": "MultiSelect",
+        "type": "MultiSelect Dropdown",
         "options": [
           "Asphalt",
           "Pavers",
@@ -346,7 +346,7 @@
         "label": "View",
         "urar": "Site",
         "tab": "Site",
-        "type": "MultiSelect",
+        "type": "MultiSelect Dropdown",
         "options": [
           "Residential",
           "City",
