@@ -366,6 +366,51 @@
   function isMultiSelectInputType(type) {
     return type === 'MultiSelect' || type === 'MultiSelect Dropdown';
   }
+
+  // Milestone 22.4.5: single shared value-matching helper for every
+  // trigger-style comparison in the app -- MAIN FOLLOW-UP TRIGGER
+  // (activeSourceFieldsForGroup()/pdfActiveSourceFieldsForGroup()) and
+  // FOLLOW_UP SHOW WHEN (isShowWhenSatisfied()/pdfIsShowWhenSatisfied())
+  // all call this one function now instead of each re-implementing
+  // their own array/scalar branch, which is exactly what let the live
+  // and PDF trigger copies drift apart in 0.22.4.4 (pdfActiveSource
+  // FieldsForGroup() kept the old scalar-only check after the live
+  // version learned to handle MultiSelect arrays). `allowedValues` is
+  // always the plain array of trimmed, non-empty workbook strings
+  // parse_main_fields()/parse_follow_up() already produce (FOLLOW-UP
+  // TRIGGER / SHOW WHEN VALUE, semicolon-split) -- never touched here.
+  //
+  // `currentValue` is whatever's actually sitting in `values[id]`:
+  //   - null/undefined (never answered): never matches.
+  //   - array (MultiSelect/MultiSelect Dropdown): matches if *any*
+  //     selected element matches *any* allowed value -- never whole-
+  //     array equality, never "every selection must match." An empty
+  //     array naturally matches nothing (Array.prototype.some on []).
+  //   - scalar string (Button/Text/LongText/Currency) or number
+  //     (Counter): matches if its value equals one of the allowed
+  //     values. Numbers are compared via String(v) so a Counter's
+  //     numeric runtime value (3) can match its workbook TRIGGER text
+  //     ("3") -- the one and only normalization performed. An empty
+  //     string scalar naturally matches nothing, since the parser never
+  //     lets an empty string into `allowedValues` to begin with.
+  //
+  // Deliberately NOT done here, per this milestone's scope: no
+  // case-folding (existing matching is case-sensitive and stays that
+  // way), no trimming (the parser already trims), no numeric parsing of
+  // arbitrary text, no substring/fuzzy matching.
+  function normalizeTriggerValue(v) {
+    return typeof v === 'number' ? String(v) : v;
+  }
+  function matchesConfiguredValues(currentValue, allowedValues) {
+    if (currentValue === null || currentValue === undefined) return false;
+    if (Array.isArray(currentValue)) {
+      return currentValue.some(function (v) {
+        return allowedValues.indexOf(normalizeTriggerValue(v)) !== -1;
+      });
+    }
+    return allowedValues.indexOf(normalizeTriggerValue(currentValue)) !== -1;
+  }
+
   // Synthetic app-management tabs -- none is a workbook MAIN tab, all
   // appended onto CFG.main.tabs by navTabs(), same pattern Milestone 8
   // used to append Exit Interview itself. Photos (Milestone 21) sits
@@ -388,7 +433,7 @@
   var AUTOSAVE_DEBOUNCE_MS = 700;
   var MIGRATED_INSPECTION_ADDRESS = 'Unsaved / Migrated Inspection';
   // The exported-file schema is versioned independently of
-  // 0.22.4.4 -- app releases and the inspection-file format can
+  // 0.22.4.5 -- app releases and the inspection-file format can
   // and will drift out of step (a future app version might still need
   // to read a schemaVersion 1 file, or refuse a newer one it doesn't
   // understand yet), so import validation checks schema/schemaVersion
@@ -396,10 +441,10 @@
   var EXPORT_SCHEMA = 'clipboard-flux-inspection';
   var EXPORT_SCHEMA_VERSION = 1;
   var SUPPORTED_SCHEMA_VERSIONS = [1];
-  // Stamped at build time exactly like every other 0.22.4.4
+  // Stamped at build time exactly like every other 0.22.4.5
   // token in this file -- informational only in the export, never
   // itself validated on import.
-  var APP_VERSION = '0.22.4.4';
+  var APP_VERSION = '0.22.4.5';
   // Same database as Milestone 14's photos -- name kept for continuity
   // even though it now also holds inspection records; renaming it would
   // mean either abandoning existing photo data or writing a whole
@@ -3061,17 +3106,16 @@
   // version, so a MultiSelect/MultiSelect Dropdown trigger correctly
   // activated its group on screen but the PDF export's own "pure
   // mirror" copy still used the old scalar-only check and silently
-  // omitted that group's content from the printed report. Restored to
-  // match, keeping the two "obviously-equivalent duplicates" equivalent
-  // again.
+  // omitted that group's content from the printed report.
+  //
+  // Milestone 22.4.5: both this and the live version now call the one
+  // shared matchesConfiguredValues() helper instead of each keeping
+  // their own array/scalar branch -- the exact duplication that caused
+  // the 0.22.4.4 drift in the first place. Same helper also fixes
+  // Counter's number-vs-string trigger mismatch here, for free.
   function pdfActiveSourceFieldsForGroup(groupName, values) {
     return CFG.main.fields.filter(function (f) {
-      if (f.followUpGroup !== groupName) return false;
-      var v = values[f.id];
-      if (Array.isArray(v)) {
-        return v.some(function (selected) { return f.followUpTrigger.indexOf(selected) !== -1; });
-      }
-      return f.followUpTrigger.indexOf(v) !== -1;
+      return f.followUpGroup === groupName && matchesConfiguredValues(values[f.id], f.followUpTrigger);
     });
   }
 
@@ -3099,10 +3143,15 @@
     return null;
   }
 
+  // Milestone 22.4.5: was scalar-only (`q.showWhenValue.indexOf(values[...])`),
+  // same bug class as the pdfActiveSourceFieldsForGroup() drift above --
+  // an array-valued (MultiSelect/MultiSelect Dropdown) SHOW WHEN parent
+  // would never satisfy the condition. Now shares matchesConfiguredValues()
+  // with the live isShowWhenSatisfied(), so the two can't drift.
   function pdfIsShowWhenSatisfied(q, values) {
     if (q.showWhenInvalid) return false;
     if (!q.showWhenQuestionId) return true;
-    return q.showWhenValue.indexOf(values[q.showWhenQuestionId]) !== -1;
+    return matchesConfiguredValues(values[q.showWhenQuestionId], q.showWhenValue);
   }
 
   // Packs a flat list of {html, fullWidth} pairs into CSS Grid rows --
@@ -6386,13 +6435,15 @@
   //     more than one sibling): always hidden, never guessed at (see
   //     CFG.followUp.showWhenWarnings for reporting).
   //   - resolved condition: visible only while the sibling's current
-  //     value is one of showWhenValue -- same indexOf-against-`values`
-  //     comparison the MAIN trigger engine already uses, so a
-  //     MultiSelect-valued parent isn't specially handled here either.
+  //     value satisfies showWhenValue, via the same matchesConfiguredValues()
+  //     helper the MAIN trigger engine uses below -- an array-valued
+  //     (MultiSelect/MultiSelect Dropdown) parent is fully supported as
+  //     of Milestone 22.4.5 (previously scalar-only, see
+  //     pdfIsShowWhenSatisfied()'s comment for the bug this fixed).
   function isShowWhenSatisfied(q) {
     if (q.showWhenInvalid) return false;
     if (!q.showWhenQuestionId) return true;
-    return q.showWhenValue.indexOf(values[q.showWhenQuestionId]) !== -1;
+    return matchesConfiguredValues(values[q.showWhenQuestionId], q.showWhenValue);
   }
 
   // DESTINATION is set per FOLLOW_UP row, not per group -- a group
@@ -6509,28 +6560,16 @@
   // isFollowUpGroupActive() (does the group show at all) and
   // fieldHtml()'s Dynamic placement (which one field shows it) build on.
   //
-  // A trigger field's value is a plain string for Button but an array
-  // for MultiSelect (same distinction pdfFieldValueText()/
-  // pdfBuildMainSectionsHtml() already have to make elsewhere) -- every
-  // trigger field in the workbook had been Button-type until a
-  // MultiSelect one was added, which this didn't yet handle:
-  // `f.followUpTrigger.indexOf(values[f.id])` was checking whether the
-  // whole *array* `values[f.id]` was itself one of the listed trigger
-  // strings, which is never true by reference equality, so a MultiSelect
-  // trigger field could never activate its group no matter what was
-  // selected. Now: an array value activates the group if *any* selected
-  // option is one of the field's own trigger values (the same "does the
-  // selection include X" semantics MultiSelect already uses for Other,
-  // e.g. `arr.indexOf(OTHER_OPTION) !== -1`); a scalar value keeps the
-  // exact original Button-field check, unchanged.
+  // A trigger field's value is a plain string for Button, a number for
+  // Counter, or an array for MultiSelect/MultiSelect Dropdown -- all
+  // handled uniformly by matchesConfiguredValues() (Milestone 22.4.5),
+  // which also normalizes a numeric Counter value against its string
+  // FOLLOW-UP TRIGGER text (`3` vs `"3"`) so a Counter can safely act as
+  // a trigger source. See matchesConfiguredValues()'s own comment for
+  // the full matching rules.
   function activeSourceFieldsForGroup(groupName) {
     return CFG.main.fields.filter(function (f) {
-      if (f.followUpGroup !== groupName) return false;
-      var v = values[f.id];
-      if (Array.isArray(v)) {
-        return v.some(function (selected) { return f.followUpTrigger.indexOf(selected) !== -1; });
-      }
-      return f.followUpTrigger.indexOf(v) !== -1;
+      return f.followUpGroup === groupName && matchesConfiguredValues(values[f.id], f.followUpTrigger);
     });
   }
 
@@ -7045,7 +7084,7 @@
     }
   });
 
-  fetch('config.json?v=0.22.4.4', { cache: 'no-store' })
+  fetch('config.json?v=0.22.4.5', { cache: 'no-store' })
     .then(function (r) {
       if (!r.ok) throw new Error('HTTP ' + r.status);
       return r.json();

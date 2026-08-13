@@ -1,5 +1,5 @@
 {
-  "version": "0.22.4.4",
+  "version": "0.22.4.5",
   "inputRules": {
     "sheet": "INPUT RULES",
     "validTypes": [
@@ -132,7 +132,7 @@
         "label": "Inspection Type",
         "urar": "Subject",
         "tab": "Property",
-        "type": "MultiSelect",
+        "type": "MultiSelect Dropdown",
         "options": [
           "Conventional",
           "FHA",
@@ -150,7 +150,7 @@
         "label": "Occupancy",
         "urar": "Subject",
         "tab": "Property",
-        "type": "MultiSelect",
+        "type": "MultiSelect Dropdown",
         "options": [
           "Owner",
           "Tenant",
@@ -476,7 +476,7 @@
         "label": "Car Storage",
         "urar": "Improvements",
         "tab": "Car Storage",
-        "type": "MultiSelect",
+        "type": "MultiSelect Dropdown",
         "options": [
           "Open",
           "Garage",
@@ -570,7 +570,7 @@
         "label": "Design / Style",
         "urar": "Improvements",
         "tab": "Exterior",
-        "type": "MultiSelect",
+        "type": "MultiSelect Dropdown",
         "options": [
           "Ranch",
           "Mediterranean",
@@ -608,7 +608,7 @@
         "label": "Foundation",
         "urar": "Improvements",
         "tab": "Exterior",
-        "type": "MultiSelect",
+        "type": "MultiSelect Dropdown",
         "options": [
           "Concrete",
           "Crawl Space",
@@ -646,7 +646,7 @@
         "label": "Exterior Walls",
         "urar": "Improvements",
         "tab": "Exterior",
-        "type": "MultiSelect",
+        "type": "MultiSelect Dropdown",
         "options": [
           "CBS",
           "Wood",
@@ -681,7 +681,7 @@
         "label": "Roof Surface",
         "urar": "Improvements",
         "tab": "Exterior",
-        "type": "MultiSelect",
+        "type": "MultiSelect Dropdown",
         "options": [
           "S-Tile",
           "Flat Tile",
@@ -751,7 +751,7 @@
         "label": "Windows Type",
         "urar": "Improvements",
         "tab": "Exterior",
-        "type": "MultiSelect",
+        "type": "MultiSelect Dropdown",
         "options": [
           "Sliding",
           "S-Hung",
@@ -884,7 +884,7 @@
         "label": "Fence",
         "urar": "Improvements",
         "tab": "Exterior",
-        "type": "MultiSelect",
+        "type": "MultiSelect Dropdown",
         "options": [
           "None",
           "Wood",
@@ -904,7 +904,7 @@
         "label": "Patio",
         "urar": "Improvements",
         "tab": "Exterior",
-        "type": "MultiSelect",
+        "type": "MultiSelect Dropdown",
         "options": [
           "None",
           "Open",
@@ -936,7 +936,7 @@
         "label": "Deck",
         "urar": "Improvements",
         "tab": "Exterior",
-        "type": "MultiSelect",
+        "type": "MultiSelect Dropdown",
         "options": [
           "None",
           "Concrete",
@@ -1076,7 +1076,7 @@
         "label": "Floors",
         "urar": "Improvements",
         "tab": "Interior",
-        "type": "MultiSelect",
+        "type": "MultiSelect Dropdown",
         "options": [
           "Ceramic Tile",
           "Porcelain Tile",
@@ -1116,7 +1116,7 @@
         "label": "Walls",
         "urar": "Improvements",
         "tab": "Interior",
-        "type": "MultiSelect",
+        "type": "MultiSelect Dropdown",
         "options": [
           "Drywall",
           "Plaster",
@@ -1188,7 +1188,7 @@
         "label": "Bath Floor",
         "urar": "Improvements",
         "tab": "Interior",
-        "type": "MultiSelect",
+        "type": "MultiSelect Dropdown",
         "options": [
           "Ceramic Tile",
           "Porcelain Tile",
@@ -1228,7 +1228,7 @@
         "label": "Bath Wainscot",
         "urar": "Improvements",
         "tab": "Interior",
-        "type": "MultiSelect",
+        "type": "MultiSelect Dropdown",
         "options": [
           "Ceramic Tile",
           "Porcelain Tile",
