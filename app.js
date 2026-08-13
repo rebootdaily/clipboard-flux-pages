@@ -355,6 +355,17 @@
   var ACTIVE_INSPECTION_KEY = 'clipboard-flux-active-inspection';
   var OTHER_OPTION = 'Other';
   var EXIT_INTERVIEW_TAB = 'Exit Interview';
+  // Milestone 22.4.4: MultiSelect Dropdown is a second INPUT TYPE with
+  // the exact same canonical answer shape as MultiSelect (an array of
+  // selected option strings) -- only its on-screen control differs
+  // (always-visible buttons vs. a compact popover). This helper is the
+  // single place that equates the two, used only where behavior is
+  // genuinely semantic (Other detection, trigger/PDF/JSON value
+  // handling) -- never for anything purely visual, where the two types
+  // must keep rendering differently (see controlHtml()).
+  function isMultiSelectInputType(type) {
+    return type === 'MultiSelect' || type === 'MultiSelect Dropdown';
+  }
   // Synthetic app-management tabs -- none is a workbook MAIN tab, all
   // appended onto CFG.main.tabs by navTabs(), same pattern Milestone 8
   // used to append Exit Interview itself. Photos (Milestone 21) sits
@@ -377,7 +388,7 @@
   var AUTOSAVE_DEBOUNCE_MS = 700;
   var MIGRATED_INSPECTION_ADDRESS = 'Unsaved / Migrated Inspection';
   // The exported-file schema is versioned independently of
-  // 0.22.4.3 -- app releases and the inspection-file format can
+  // 0.22.4.4 -- app releases and the inspection-file format can
   // and will drift out of step (a future app version might still need
   // to read a schemaVersion 1 file, or refuse a newer one it doesn't
   // understand yet), so import validation checks schema/schemaVersion
@@ -385,10 +396,10 @@
   var EXPORT_SCHEMA = 'clipboard-flux-inspection';
   var EXPORT_SCHEMA_VERSION = 1;
   var SUPPORTED_SCHEMA_VERSIONS = [1];
-  // Stamped at build time exactly like every other 0.22.4.3
+  // Stamped at build time exactly like every other 0.22.4.4
   // token in this file -- informational only in the export, never
   // itself validated on import.
-  var APP_VERSION = '0.22.4.3';
+  var APP_VERSION = '0.22.4.4';
   // Same database as Milestone 14's photos -- name kept for continuity
   // even though it now also holds inspection records; renaming it would
   // mean either abandoning existing photo data or writing a whole
@@ -439,6 +450,13 @@
   // management both then show a plain note instead of controls that
   // would silently fail, since both depend on the same database.
   var photoOpenFieldId = null;
+  // Milestone 22.4.4: which field's MultiSelect Dropdown selector sheet
+  // (if any) is currently open. Lives outside #screen (see
+  // renderMsdSheet()), same "persistent overlay, own render function"
+  // pattern as fullViewerState/renderPhotoViewer() below -- so a full
+  // render() from an option toggle (needed for live Dynamic follow-up
+  // reactivity) never tears the open sheet down mid-interaction.
+  var msdOpenFieldId = null;
   var photosByField = {};
   // Milestone 21: general inspection photos (fieldId null) -- report/
   // documentation photos that don't belong to any single questionnaire
@@ -1728,6 +1746,93 @@
     el.querySelector('.photo-viewer-close-btn').onclick = closeFullPhotoViewer;
   }
 
+  // ---- MultiSelect Dropdown selector sheet (Milestone 22.4.4) ----
+  //
+  // A persistent overlay living outside #screen, same "own render
+  // function, untouched by the tab-scoped render()" pattern as
+  // fullViewerState/renderPhotoViewer() just above -- necessary because
+  // an option toggle needs a full render() (to update the trigger's own
+  // collapsed summary text and, when this field is a FOLLOW_UP trigger,
+  // any Dynamic content beneath it) without also tearing down and
+  // losing the sheet the user still has open. Built from scratch (never
+  // a native <select multiple>) so whole-row taps, an always-visible
+  // checked state per option, and a reachable Done button are all
+  // reliable on touch regardless of how many options there are or where
+  // the triggering field sits on the page.
+  function openMsdSheet(id) {
+    setActiveField(id);
+    msdOpenFieldId = id;
+    render();
+    renderMsdSheet();
+  }
+
+  function closeMsdSheet() {
+    msdOpenFieldId = null;
+    render();
+    renderMsdSheet();
+  }
+
+  // Toggles one option in place, then keeps both surfaces in sync:
+  // render() rebuilds #screen (so the trigger's summary text and any
+  // live Dynamic follow-up content beneath it react immediately, same
+  // as every other option control), then renderMsdSheet() refreshes
+  // just the sheet's own checked states -- the sheet is outside #screen
+  // so render() alone never closes it, and the sheet stays open across
+  // any number of taps until Done or tap-outside.
+  function toggleMsdOption(fieldId, value) {
+    var arr = Array.isArray(values[fieldId]) ? values[fieldId].slice() : [];
+    var i = arr.indexOf(value);
+    if (i === -1) arr.push(value); else arr.splice(i, 1);
+    values[fieldId] = arr;
+    saveValues();
+    render();
+    renderMsdSheet();
+  }
+
+  function renderMsdSheet() {
+    var el = document.getElementById('msd-sheet');
+    if (!msdOpenFieldId) {
+      el.hidden = true;
+      el.innerHTML = '';
+      return;
+    }
+    var f = findFieldOrQuestionById(msdOpenFieldId);
+    if (!f) {
+      msdOpenFieldId = null;
+      el.hidden = true;
+      el.innerHTML = '';
+      return;
+    }
+    var current = Array.isArray(values[f.id]) ? values[f.id] : [];
+    el.hidden = false;
+    el.innerHTML = '<div class="msd-backdrop">' +
+      '<div class="msd-sheet-body">' +
+        '<div class="msd-sheet-header">' +
+          '<div class="msd-sheet-title">' + esc(f.label) + '</div>' +
+          '<button type="button" class="msd-done-btn" data-role="msd-done">Done</button>' +
+        '</div>' +
+        '<div class="msd-option-list">' +
+          (f.options || []).map(function (o) {
+            var checked = current.indexOf(o) !== -1;
+            return '<button type="button" class="msd-option-row' + (checked ? ' checked' : '') +
+              '" data-role="msd-option" data-value="' + esc(o) + '">' +
+              '<span class="msd-checkbox' + (checked ? ' checked' : '') + '" aria-hidden="true"></span>' +
+              '<span class="msd-option-label">' + esc(o) + '</span>' +
+              '</button>';
+          }).join('') +
+        '</div>' +
+      '</div>' +
+    '</div>';
+    var backdrop = el.querySelector('.msd-backdrop');
+    backdrop.onclick = function (ev) {
+      if (ev.target === backdrop) closeMsdSheet();
+    };
+    el.querySelector('[data-role="msd-done"]').onclick = closeMsdSheet;
+    Array.prototype.forEach.call(el.querySelectorAll('[data-role="msd-option"]'), function (btn) {
+      btn.onclick = function () { toggleMsdOption(f.id, btn.dataset.value); };
+    });
+  }
+
   // ---- Inspection identity + Save/Load/Reset (Milestone 15) ----
 
   var FOOTPRINT_SCHEMA_VERSION = 1;
@@ -2903,11 +3008,14 @@
   // "Exterior Walls: Other — Precast panels" -- the Other option's own
   // supplemental text is folded into the same value string (never
   // printed as if it were its own unrelated field), for both Button
-  // (single Other answer) and MultiSelect (Other coexisting with other
-  // selections).
+  // (single Other answer) and MultiSelect/MultiSelect Dropdown (Other
+  // coexisting with other selections). Always prints the full selected
+  // set as plain text, joined by commas -- never the Dropdown's
+  // collapsed "+N" screen summary, since that's purely a compact-UI
+  // affordance with no bearing on the printed report.
   function pdfFieldValueText(f, values, otherText) {
     var v = values[f.id];
-    if (f.type === 'MultiSelect') {
+    if (isMultiSelectInputType(f.type)) {
       var arr = Array.isArray(v) ? v : [];
       var text = arr.join(', ');
       if (arr.indexOf(OTHER_OPTION) !== -1 && otherText[f.id]) {
@@ -2945,9 +3053,25 @@
   // activeFollowUpGroups()/findFollowUpGroup()/isShowWhenSatisfied() --
   // see this section's header comment for why these are separate,
   // parameterized copies rather than reusing the live versions directly.
+  // Milestone 22.4.4: this had drifted out of sync with the live
+  // activeSourceFieldsForGroup() -- the Milestone 22.4.3 fix for
+  // MultiSelect-typed trigger fields (an array value activates the
+  // group if *any* selected option matches a trigger value, not by
+  // reference-equality against the whole array) only touched the live
+  // version, so a MultiSelect/MultiSelect Dropdown trigger correctly
+  // activated its group on screen but the PDF export's own "pure
+  // mirror" copy still used the old scalar-only check and silently
+  // omitted that group's content from the printed report. Restored to
+  // match, keeping the two "obviously-equivalent duplicates" equivalent
+  // again.
   function pdfActiveSourceFieldsForGroup(groupName, values) {
     return CFG.main.fields.filter(function (f) {
-      return f.followUpGroup === groupName && f.followUpTrigger.indexOf(values[f.id]) !== -1;
+      if (f.followUpGroup !== groupName) return false;
+      var v = values[f.id];
+      if (Array.isArray(v)) {
+        return v.some(function (selected) { return f.followUpTrigger.indexOf(selected) !== -1; });
+      }
+      return f.followUpTrigger.indexOf(v) !== -1;
     });
   }
 
@@ -3098,20 +3222,27 @@
 
   // Looks a field/question id up by id across both MAIN fields and every
   // FOLLOW_UP question -- a photo's fieldId is always one or the other.
-  // Shared by the PDF's field-photo captions (Milestone 17) and the
-  // Photos tab's "From: <field>" source note (Milestone 21.1) -- one
-  // resolver, so both surfaces always agree on a field's display name
-  // and an orphaned/legacy fieldId degrades the same safe way (null,
-  // never a thrown error) in either place.
-  function fieldLabelById(fieldId) {
+  // Shared by the PDF's field-photo captions (Milestone 17), the Photos
+  // tab's "From: <field>" source note (Milestone 21.1), and the
+  // MultiSelect Dropdown sheet (Milestone 22.4.4, which can be opened
+  // from a Dynamic or Exit Interview FOLLOW_UP question just as easily
+  // as a MAIN field) -- one resolver, so every surface agrees on a
+  // field's identity and an orphaned/legacy fieldId degrades the same
+  // safe way (null, never a thrown error) everywhere.
+  function findFieldOrQuestionById(fieldId) {
     var f = CFG.main.fields.filter(function (x) { return x.id === fieldId; })[0];
-    if (f) return f.label;
+    if (f) return f;
     var groups = (CFG.followUp && CFG.followUp.groups) || [];
     for (var i = 0; i < groups.length; i++) {
       var q = groups[i].questions.filter(function (x) { return x.id === fieldId; })[0];
-      if (q) return q.label;
+      if (q) return q;
     }
     return null;
+  }
+
+  function fieldLabelById(fieldId) {
+    var f = findFieldOrQuestionById(fieldId);
+    return f ? f.label : null;
   }
 
   // Caption priority per this milestone's spec: (1) a user-entered photo
@@ -5995,17 +6126,34 @@
 
   // Exact, case-sensitive match only -- "Other Material" or
   // "Other/Unknown" are different strings and must not qualify. Applies
-  // to Button and MultiSelect only, per this milestone's scope; other
-  // input types never call this.
+  // to Button, MultiSelect, and MultiSelect Dropdown only; other input
+  // types never call this.
   function hasOtherOption(f) {
     return Array.isArray(f.options) && f.options.indexOf(OTHER_OPTION) !== -1;
   }
 
   function isOtherSelected(f) {
     var current = values[f.id];
-    return f.type === 'MultiSelect'
+    return isMultiSelectInputType(f.type)
       ? Array.isArray(current) && current.indexOf(OTHER_OPTION) !== -1
       : current === OTHER_OPTION;
+  }
+
+  // Deterministic collapsed-trigger summary for MultiSelect Dropdown --
+  // 0 selections: "Select…"; 1: the full label; 2: both, joined; 3+: the
+  // first two plus a "+N" count of the rest. No selections stays sorted
+  // in the order the user picked them (same order stored in `values`,
+  // never re-sorted to match option order) so "+N" always genuinely
+  // means "N more you don't see here" rather than an arbitrary subset.
+  // Long labels are left to CSS (.msd-trigger-text's ellipsis) rather
+  // than measured/truncated here -- a fixed-width JS truncation would
+  // still need a font-metrics guess, and would be wrong the moment the
+  // trigger's own width changes (narrow phone vs. wide tablet).
+  function msdSummaryText(arr) {
+    if (!arr.length) return 'Select…';
+    if (arr.length === 1) return arr[0];
+    if (arr.length === 2) return arr[0] + ', ' + arr[1];
+    return arr[0] + ', ' + arr[1] + ' +' + (arr.length - 2);
   }
 
   // Rendered directly beneath a Button/MultiSelect's option list
@@ -6148,6 +6296,22 @@
           '" data-role="option" data-multi="' + (multi ? '1' : '0') +
           '" data-value="' + esc(o) + '">' + esc(o) + '</button>';
       }).join('') + '</div>' + otherInputHtml(f);
+    }
+
+    // Milestone 22.4.4: compact presentation variant of MultiSelect --
+    // same canonical answer (an array of selected option strings,
+    // toggled independently), but the always-visible button list is
+    // replaced with a single collapsed trigger showing a short summary;
+    // the actual option rows only exist in the popover sheet rendered
+    // by renderMsdSheet() (see openMsdSheet()/wireFields()). Never a
+    // native <select multiple> -- see renderMsdSheet() for why.
+    if (f.type === 'MultiSelect Dropdown') {
+      var msdArr = Array.isArray(current) ? current : [];
+      return '<button type="button" class="msd-trigger" data-role="msd-trigger" data-field-id="' +
+        esc(id) + '" aria-haspopup="true" aria-expanded="' + (msdOpenFieldId === id ? 'true' : 'false') + '">' +
+        '<span class="msd-trigger-text">' + esc(msdSummaryText(msdArr)) + '</span>' +
+        '<span class="msd-trigger-caret" aria-hidden="true">&#9662;</span>' +
+        '</button>' + otherInputHtml(f);
     }
 
     if (f.type === 'Counter') {
@@ -6761,6 +6925,16 @@
         };
       });
 
+      var msdTrigger = el.querySelector('[data-role="msd-trigger"]');
+      if (msdTrigger) {
+        // One tap opens the sheet -- setActiveField()/render() happen
+        // inside openMsdSheet() itself, same "the control's own action
+        // always runs, activation just piggybacks on it" convention the
+        // option-button handler below already uses. No double-tap: this
+        // is the button's only handler and its only job.
+        msdTrigger.onclick = function () { openMsdSheet(id); };
+      }
+
       Array.prototype.forEach.call(el.querySelectorAll('[data-role="counter-delta"]'), function (btn) {
         btn.onclick = function () {
           values[id] = Math.max(0, Number(values[id] || 0) + Number(btn.dataset.delta));
@@ -6871,7 +7045,7 @@
     }
   });
 
-  fetch('config.json?v=0.22.4.3', { cache: 'no-store' })
+  fetch('config.json?v=0.22.4.4', { cache: 'no-store' })
     .then(function (r) {
       if (!r.ok) throw new Error('HTTP ' + r.status);
       return r.json();

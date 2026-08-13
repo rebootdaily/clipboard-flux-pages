@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
-<title>Clipboard-Flux 0.22.4.3</title>
+<title>Clipboard-Flux 0.22.4.4</title>
 <meta name="theme-color" content="#17324d">
 <style>
 :root{--navy:#17324d;--bg:#eef2f5;--line:#d9e0e6;--muted:#66727e;--paper:#fff}
@@ -70,6 +70,44 @@ main{padding:8px 16px 16px;max-width:640px;margin:auto}
 .other-input label{display:block;font-weight:700;font-size:13px;color:var(--muted);margin-bottom:4px}
 .opt-btn{border:1.5px solid #8fa1b2;background:#fff;color:var(--navy);border-radius:999px;padding:7px 12px;font-size:14px;font-weight:700}
 .opt-btn.active{background:var(--navy);color:#fff;border-color:var(--navy)}
+/* Milestone 22.4.4: MultiSelect Dropdown's collapsed trigger -- one
+   compact row, roughly the height of a Button/Text control, replacing
+   MultiSelect's always-visible wrapped button row. Ellipsis on the
+   summary text (not JS measurement) is what keeps a long "+N" summary
+   from ever wrapping to a second line or overflowing the field card. */
+.msd-trigger{width:100%;display:flex;align-items:center;justify-content:space-between;gap:10px;border:1.5px solid #8fa1b2;background:#fff;color:var(--navy);border-radius:10px;padding:9px 12px;font-size:15px;font-family:inherit;text-align:left;min-height:44px;touch-action:manipulation}
+.msd-trigger[aria-expanded="true"]{border-color:var(--navy)}
+.msd-trigger-text{flex:1 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.msd-trigger-caret{flex:none;color:var(--muted);font-size:12px}
+/* The selector sheet itself -- a bottom sheet (not a floating,
+   trigger-anchored popover) specifically because the sheet is rebuilt
+   by a full page render() on every option toggle (see toggleMsdOption())
+   for live Dynamic follow-up reactivity; anchoring to the trigger's own
+   on-screen position would require re-measuring/repositioning after
+   every one of those re-renders, and a fixed viewport-bottom sheet
+   sidesteps that entirely regardless of scroll position or where the
+   field sits on the page. z-index:70 sits above the inspection modal
+   (60) and photo viewer (50) since this can be opened from a FOLLOW_UP
+   question nested inside another field's card. No competing `display`
+   rule is set directly on #msd-sheet itself (only on its .msd-backdrop
+   child), so the UA [hidden]{display:none} rule always wins when
+   closed -- same reasoning as #photo-viewer, avoiding the
+   [hidden]-vs-author-display conflict class Footprint Settings hit. */
+.msd-backdrop{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.5);display:flex;align-items:flex-end;justify-content:center;z-index:70}
+.msd-sheet-body{position:relative;background:#fff;width:100%;max-width:640px;max-height:80vh;border-radius:16px 16px 0 0;display:flex;flex-direction:column;padding-bottom:env(safe-area-inset-bottom);box-shadow:0 -4px 24px rgba(0,0,0,.25)}
+.msd-sheet-header{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:14px 16px;border-bottom:1px solid var(--line);flex:none}
+.msd-sheet-title{font-weight:800;font-size:16px;color:var(--navy);flex:1 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.msd-done-btn{flex:none;min-height:38px;padding:0 18px;border-radius:999px;border:0;background:var(--navy);color:#fff;font-size:14px;font-weight:800;touch-action:manipulation}
+/* overflow-y:auto is the internal scroll for long option lists (15-20+
+   options) -- the sheet's own max-height keeps Done always reachable
+   above the fold regardless of list length. */
+.msd-option-list{overflow-y:auto;-webkit-overflow-scrolling:touch;padding:6px 0}
+.msd-option-row{display:flex;align-items:center;gap:12px;width:100%;border:0;background:transparent;text-align:left;padding:12px 16px;font-size:15px;color:var(--navy);min-height:48px;touch-action:manipulation}
+.msd-option-row.checked{background:#eaf3fc}
+.msd-checkbox{flex:none;width:20px;height:20px;border-radius:5px;border:1.5px solid #8fa1b2;background:#fff;position:relative}
+.msd-checkbox.checked{background:var(--navy);border-color:var(--navy)}
+.msd-checkbox.checked::after{content:'';position:absolute;left:6px;top:2px;width:5px;height:10px;border:solid #fff;border-width:0 2px 2px 0;transform:rotate(45deg)}
+.msd-option-label{flex:1 1 auto;min-width:0}
 .ctrl-counter{display:flex;align-items:center;gap:14px}
 .counter-btn{width:38px;height:38px;border-radius:10px;border:1.5px solid var(--navy);background:#fff;color:var(--navy);font-size:20px;font-weight:800;line-height:1}
 .counter-value{font-size:20px;font-weight:800;min-width:24px;text-align:center}
@@ -190,7 +228,7 @@ main{padding:8px 16px 16px;max-width:640px;margin:auto}
 </style>
 </head>
 <body>
-<header><span class="brand">Clipboard-Flux</span><span class="version" id="version">0.22.4.3</span></header>
+<header><span class="brand">Clipboard-Flux</span><span class="version" id="version">0.22.4.4</span></header>
 <div id="inspection-bar"></div>
 <nav class="tabs" id="tabs"></nav>
 <main>
@@ -200,6 +238,7 @@ main{padding:8px 16px 16px;max-width:640px;margin:auto}
 </main>
 <div id="inspection-modal" hidden></div>
 <div id="photo-viewer" hidden></div>
-<script src="app.js?v=0.22.4.3"></script>
+<div id="msd-sheet" hidden></div>
+<script src="app.js?v=0.22.4.4"></script>
 </body>
 </html>

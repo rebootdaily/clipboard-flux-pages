@@ -1,5 +1,5 @@
 {
-  "version": "0.22.4.3",
+  "version": "0.22.4.4",
   "inputRules": {
     "sheet": "INPUT RULES",
     "validTypes": [
@@ -16,7 +16,8 @@
       "Camera",
       "Sketch",
       "Rating",
-      "Currency"
+      "Currency",
+      "MultiSelect Dropdown"
     ],
     "rules": [
       {
@@ -74,6 +75,10 @@
       {
         "type": "Currency",
         "description": "Currency input"
+      },
+      {
+        "type": "MultiSelect Dropdown",
+        "description": "Compact popover presentation of MultiSelect -- same answer semantics, less vertical space"
       }
     ]
   },
