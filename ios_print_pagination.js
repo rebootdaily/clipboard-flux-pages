@@ -15,7 +15,6 @@
   var PRINTING_CLASS = 'clipboard-flux-ios-printing';
   var cleanupTimer = null;
   var priorTitle = null;
-  var parentAfterPrint = null;
 
   function isAppleTouchDevice() {
     var ua = navigator.userAgent || '';
@@ -26,6 +25,12 @@
 
   if (!isAppleTouchDevice() || typeof MutationObserver === 'undefined') return;
 
+  // Install the isolation stylesheet once, during normal app startup.
+  // Physical iOS testing showed WebKit could snapshot the old screen tree
+  // before brand-new print rules were committed, producing one page that
+  // contained the Clipboard-Flux Inspection screen instead of the report.
+  // Keeping the rules resident from startup removes that race; the body
+  // class merely activates rules WebKit already knows about.
   function ensureBasePrintStyle() {
     if (document.getElementById(BASE_STYLE_ID)) return;
     var base = document.createElement('style');
@@ -50,10 +55,6 @@
     if (cleanupTimer) {
       clearTimeout(cleanupTimer);
       cleanupTimer = null;
-    }
-    if (parentAfterPrint) {
-      window.removeEventListener('afterprint', parentAfterPrint);
-      parentAfterPrint = null;
     }
     document.body.classList.remove(PRINTING_CLASS);
     var host = document.getElementById(HOST_ID);
@@ -107,6 +108,9 @@
     });
   }
 
+  // WebKit can defer style/layout work until the next rendering update.
+  // Wait for two frames after the report is populated and the printing
+  // class is active, then force one layout read before invoking print().
   function afterPrintLayoutCommitted(host, done) {
     var raf = window.requestAnimationFrame || function (cb) { return setTimeout(cb, 16); };
     raf(function () {
@@ -130,6 +134,9 @@
     var host = document.createElement('div');
     host.id = HOST_ID;
     host.innerHTML = frameDoc.body.innerHTML;
+    // Keep the cloned report laid out off-screen while its object-URL
+    // images finish loading. The resident @media print stylesheet above
+    // overrides every one of these screen-only properties with !important.
     host.style.position = 'fixed';
     host.style.left = '-10000px';
     host.style.top = '0';
@@ -138,6 +145,9 @@
     host.style.pointerEvents = 'none';
     document.body.appendChild(host);
 
+    // The report's own PDF CSS is copied from the already-built iframe.
+    // Isolation is NOT defined here; that critical rule was installed at
+    // startup above, before any Export PDF interaction can occur.
     var style = document.createElement('style');
     style.id = STYLE_ID;
     style.media = 'print';
@@ -151,10 +161,19 @@
       document.body.classList.add(PRINTING_CLASS);
 
       afterPrintLayoutCommitted(host, function () {
-        parentAfterPrint = function () { cleanupTopLevelPrintHost(); };
-        window.addEventListener('afterprint', parentAfterPrint);
         window.focus();
         window.print();
+
+        // Important on iOS: do NOT tear the print host down from
+        // `afterprint`. WebKit can emit afterprint as the native print
+        // sheet is opening, before that sheet has finished snapshotting the
+        // paged document. Cleaning up there restores the live app DOM just
+        // in time for preview to capture the Inspection screen as Page 1 of
+        // 1. The isolation rules are print-media-only and the host remains
+        // off-screen during normal screen rendering, so leaving it alive
+        // briefly does not obscure or alter the app after the sheet closes.
+        // A bounded fallback removes the host and restores the title/object
+        // references after WebKit has had ample time to consume the report.
         cleanupTimer = setTimeout(cleanupTopLevelPrintHost, 60000);
       });
     });
@@ -184,10 +203,14 @@
 
     if (!iframe.__clipboardFluxIosPrintBridgeListener) {
       iframe.__clipboardFluxIosPrintBridgeListener = true;
+      // Capture-phase load patching runs before the app's iframe.onload
+      // handler calls print(), even if WebKit refreshes the Window method
+      // while document.open()/document.write() replaces about:blank.
       iframe.addEventListener('load', patchWindowPrint, true);
     }
 
     if (!patchWindowPrint()) {
+      // Defensive fallback if an engine makes Window.print non-overridable.
       iframe.style.position = 'fixed';
       iframe.style.left = '-10000px';
       iframe.style.right = 'auto';
