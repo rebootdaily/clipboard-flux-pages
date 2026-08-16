@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
-<title>Clipboard-Flux 0.22.4.5</title>
+<title>Clipboard-Flux 0.22.4.6</title>
 <meta name="theme-color" content="#17324d">
 <style>
 :root{--navy:#17324d;--bg:#eef2f5;--line:#d9e0e6;--muted:#66727e;--paper:#fff}
@@ -189,22 +189,17 @@ main{padding:8px 16px 16px;max-width:640px;margin:auto}
    resize:none since manual dragging would just be overridden by the
    next keystroke's auto-size anyway. */
 .notes-text-area{width:100%;min-height:240px;border:1px solid var(--line);border-radius:14px;padding:14px;font-size:16px;font-family:inherit;line-height:1.4;background:#fff;color:var(--navy);overflow-y:hidden;resize:none}
-/* Milestone 22.4.2 (#4/#5/#12): the continuous handwriting notebook --
-   no wrapping box (contrast .footprint-canvas-wrap's fixed vh height
-   above), no inner scrollbar of its own; the canvas lives in normal
-   page flow and its CSS height is driven directly by JS
-   (setupNotesHandCanvasBackingStore()) from notes.hand.docHeight, so
-   the *page* scrolling this canvas is the app's own ordinary native
-   scroll -- the exact same mechanism a long Property tab already uses,
-   not a new paradigm. touch-action:pan-y (deliberately not Footprint's
-   touch-action:none) is what lets a one-finger vertical drag scroll the
-   page natively while pointer events still fire for drawing (#8) --
-   Apple Pencil input is exempt from this panning heuristic on iPadOS
-   regardless, so Pencil drawing stays reliable at any scroll position
-   (#9); a touch drag the browser resolves as a scroll instead fires
-   pointercancel, which the existing pointer-cancel handling already
-   discards cleanly with no stray mark ever committed. */
-.notes-hand-canvas{display:block;width:100%;touch-action:pan-y;background:#fff;border:1px solid var(--line);border-radius:14px}
+/* Milestone 22.4.6 field fix: on iPhone Safari, touch-action:pan-y lets
+   the browser promote a vertical-ish finger stroke into native page
+   scrolling after drawing has already started. Safari then emits
+   pointercancel, which is exactly the reported "writes for a second,
+   then the whole screen moves" failure. The Hand canvas now owns the
+   complete one-finger gesture (matching Footprint's proven behavior),
+   so a handwriting stroke cannot be stolen mid-gesture. Page scrolling
+   is still available from the surrounding page margins/chrome and the
+   sticky toolbar; gestures that begin on the white canvas are reserved
+   for Pencil/Eraser input. */
+.notes-hand-canvas{display:block;width:100%;touch-action:none;background:#fff;border:1px solid var(--line);border-radius:14px}
 /* #12: stays visible while scrolling the long canvas without consuming
    much space -- `top` docks it directly under the sticky tab ribbon
    (nav.tabs's own rendered height); adjust together if either one's
@@ -228,7 +223,7 @@ main{padding:8px 16px 16px;max-width:640px;margin:auto}
 </style>
 </head>
 <body>
-<header><span class="brand">Clipboard-Flux</span><span class="version" id="version">0.22.4.5</span></header>
+<header><span class="brand">Clipboard-Flux</span><span class="version" id="version">0.22.4.6</span></header>
 <div id="inspection-bar"></div>
 <nav class="tabs" id="tabs"></nav>
 <main>
@@ -239,6 +234,6 @@ main{padding:8px 16px 16px;max-width:640px;margin:auto}
 <div id="inspection-modal" hidden></div>
 <div id="photo-viewer" hidden></div>
 <div id="msd-sheet" hidden></div>
-<script src="app.js?v=0.22.4.5"></script>
+<script src="app.js?v=0.22.4.6"></script>
 </body>
 </html>
