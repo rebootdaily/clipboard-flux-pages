@@ -1,11 +1,11 @@
 /* Clipboard-Flux deployment loader.
-   This is a one-build bridge for the current generated output: load the
-   iOS print-pagination guard, then the Footprint reference-print helper,
-   before the unchanged generated app core. The normal local build path
-   links both helpers directly into output/index.html. */
+   One-build bridge for the checked-in generated output: load the proven
+   iOS pagination guard, then Milestone 23's multi-sheet Footprint helper,
+   before the unchanged generated app core. Normal local builds link the
+   same helpers directly into output/index.html. */
 (function () {
   'use strict';
-  var RELEASE_VERSION = '0.22.5';
+  var RELEASE_VERSION = '0.23.0';
   var current = document.currentScript;
   var query = '';
   if (current && current.src) {
@@ -19,21 +19,21 @@
 
   function loadCore() {
     var core = document.createElement('script');
-    core.src = 'app-core.js' + query;
+    core.src = 'app-core.js?v=' + encodeURIComponent(RELEASE_VERSION);
     document.body.appendChild(core);
   }
 
-  function loadReferencePrintBridge() {
-    var ref = document.createElement('script');
-    ref.src = 'footprint_reference_print.js?v=' + encodeURIComponent(RELEASE_VERSION);
-    ref.onload = loadCore;
-    ref.onerror = loadCore;
-    document.body.appendChild(ref);
+  function loadMultiSheet() {
+    var helper = document.createElement('script');
+    helper.src = 'footprint_multisheet.js?v=' + encodeURIComponent(RELEASE_VERSION);
+    helper.onload = loadCore;
+    helper.onerror = loadCore;
+    document.body.appendChild(helper);
   }
 
   var guard = document.createElement('script');
-  guard.src = 'ios_print_pagination.js' + query;
-  guard.onload = loadReferencePrintBridge;
-  guard.onerror = loadReferencePrintBridge;
+  guard.src = 'ios_print_pagination.js?v=' + encodeURIComponent(RELEASE_VERSION);
+  guard.onload = loadMultiSheet;
+  guard.onerror = loadMultiSheet;
   document.body.appendChild(guard);
 })();
