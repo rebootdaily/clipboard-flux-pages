@@ -1,10 +1,10 @@
 /* Clipboard-Flux deployment loader.
-   Corrective rollback for Milestone 23: keep the proven iOS print-pagination
-   guard and Footprint reference-print helper, but do not load the multi-sheet
-   bridge while its touch/tool interaction regression is being reworked. */
+   Corrective Footprint build: keep the proven iOS print-pagination and
+   reference-print helpers, keep Milestone 23 multi-sheet disabled, and load
+   the Footprint tool-recovery guard before the unchanged generated app core. */
 (function () {
   'use strict';
-  var RELEASE_VERSION = '0.23.0.1';
+  var RELEASE_VERSION = '0.23.0.2';
 
   var badge = document.getElementById('version');
   if (badge) badge.textContent = RELEASE_VERSION;
@@ -16,11 +16,19 @@
     document.body.appendChild(core);
   }
 
+  function loadToolRecovery() {
+    var recovery = document.createElement('script');
+    recovery.src = 'footprint_tool_recovery.js?v=' + encodeURIComponent(RELEASE_VERSION);
+    recovery.onload = loadCore;
+    recovery.onerror = loadCore;
+    document.body.appendChild(recovery);
+  }
+
   function loadReferencePrintBridge() {
     var ref = document.createElement('script');
     ref.src = 'footprint_reference_print.js?v=' + encodeURIComponent(RELEASE_VERSION);
-    ref.onload = loadCore;
-    ref.onerror = loadCore;
+    ref.onload = loadToolRecovery;
+    ref.onerror = loadToolRecovery;
     document.body.appendChild(ref);
   }
 
