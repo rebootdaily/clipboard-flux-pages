@@ -4,8 +4,12 @@
    instead collapse a zero-size print iframe into a single scaled page, so
    Apple touch devices print an off-screen clone through the top-level
    document. That preserves normal browser pagination without navigating
-   away from Clipboard-Flux. Asset readiness is still bounded and all
-   temporary print DOM is removed after the native print sheet closes. */
+   away from Clipboard-Flux. Asset readiness is still bounded. On Apple
+   touch devices the temporary top-level print DOM intentionally survives
+   the native `afterprint` event because WebKit can fire that event while
+   the print preview is opening, before its page snapshot is complete.
+   Cleanup is therefore bounded by a timer and also happens before the next
+   export, so the printable report cannot disappear mid-pagination. */
 (function () {
   'use strict';
   var MAX_WAIT_MS = 15000;
@@ -128,7 +132,6 @@
     function cleanup() {
       if (cleaned) return;
       cleaned = true;
-      window.removeEventListener('afterprint', cleanup);
       if (cleanupTimer) window.clearTimeout(cleanupTimer);
       removePrintBridgeNodes();
       document.title = previousTitle;
@@ -138,7 +141,13 @@
     }
 
     activeTopLevelCleanup = cleanup;
-    window.addEventListener('afterprint', cleanup);
+
+    /* Do NOT bind cleanup to the top-level afterprint event here. This
+       function is only used on Apple touch devices, where WebKit may emit
+       afterprint as soon as the native print sheet opens. Removing the host
+       at that moment races the preview renderer and produces a one-page
+       snapshot of Clipboard-Flux itself. The host is off-screen outside
+       print media, so keeping it alive for this bounded interval is safe. */
     cleanupTimer = window.setTimeout(cleanup, TOP_LEVEL_CLEANUP_MS);
 
     var assetsReady = waitForImages(host.querySelectorAll('img'));
