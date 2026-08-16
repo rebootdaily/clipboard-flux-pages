@@ -1,25 +1,18 @@
 /* Clipboard-Flux deployment loader.
-   0.23.1 keeps the proven Footprint core untouched. Print helpers and the
-   Pencil/Pan recovery guard load before core; the isolated sheet manager loads
-   only after core has finished loading and never attaches to the canvas. */
+   0.23.1.1 corrective rollback: restore the field-stable Footprint runtime
+   from 0.23.0.2. Multi-sheet UI/print companions remain in the repository
+   for rework but are not loaded in the live app. */
 (function () {
   'use strict';
-  var RELEASE_VERSION = '0.23.1';
+  var RELEASE_VERSION = '0.23.1.1';
 
   var badge = document.getElementById('version');
   if (badge) badge.textContent = RELEASE_VERSION;
   if (/^Clipboard-Flux\b/.test(document.title || '')) document.title = 'Clipboard-Flux ' + RELEASE_VERSION;
 
-  function loadSheetManager() {
-    var manager = document.createElement('script');
-    manager.src = 'footprint_sheet_manager.js?v=' + encodeURIComponent(RELEASE_VERSION);
-    document.body.appendChild(manager);
-  }
-
   function loadCore() {
     var core = document.createElement('script');
     core.src = 'app-core.js?v=' + encodeURIComponent(RELEASE_VERSION);
-    core.onload = loadSheetManager;
     document.body.appendChild(core);
   }
 
@@ -39,17 +32,9 @@
     document.body.appendChild(ref);
   }
 
-  function loadSheetsPrintBridge() {
-    var sheets = document.createElement('script');
-    sheets.src = 'footprint_sheets_print.js?v=' + encodeURIComponent(RELEASE_VERSION);
-    sheets.onload = loadReferencePrintBridge;
-    sheets.onerror = loadReferencePrintBridge;
-    document.body.appendChild(sheets);
-  }
-
   var guard = document.createElement('script');
   guard.src = 'ios_print_pagination.js?v=' + encodeURIComponent(RELEASE_VERSION);
-  guard.onload = loadSheetsPrintBridge;
-  guard.onerror = loadSheetsPrintBridge;
+  guard.onload = loadReferencePrintBridge;
+  guard.onerror = loadReferencePrintBridge;
   document.body.appendChild(guard);
 })();
