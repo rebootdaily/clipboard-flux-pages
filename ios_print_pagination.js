@@ -1,18 +1,18 @@
 /* Clipboard-Flux iOS print bridge.
    iPhone/iPad WebKit does not reliably honor iframe.contentWindow.print()
    as a distinct paged print target. A 0x0 print iframe can collapse a long
-   report to one page, and moving a Letter-sized iframe off-screen can make
-   Safari print a blank top-level page. On Apple touch devices, intercept
-   only Clipboard-Flux's transient PDF iframe, mirror its already-built
-   report into a temporary top-level print host, and invoke window.print().
-   This follows the same current-page print model that has proven reliable
-   in Clipboard-test while leaving Clipboard-Flux's normal screen DOM and
-   inspection state untouched. */
+   report to one page. On Apple touch devices, intercept only Clipboard-
+   Flux's transient PDF iframe, mirror its already-built report into the
+   top-level document, and print that host. The print-isolation rules are
+   installed when the app loads (not at the instant print() is called), so
+   WebKit has them in its stylesheet before it snapshots the print tree. */
 (function () {
   'use strict';
 
   var HOST_ID = 'clipboard-flux-ios-print-host';
-  var STYLE_ID = 'clipboard-flux-ios-print-style';
+  var STYLE_ID = 'clipboard-flux-ios-report-style';
+  var BASE_STYLE_ID = 'clipboard-flux-ios-print-base-style';
+  var PRINTING_CLASS = 'clipboard-flux-ios-printing';
   var cleanupTimer = null;
   var priorTitle = null;
   var parentAfterPrint = null;
@@ -26,6 +26,26 @@
 
   if (!isAppleTouchDevice() || typeof MutationObserver === 'undefined') return;
 
+  function ensureBasePrintStyle() {
+    if (document.getElementById(BASE_STYLE_ID)) return;
+    var base = document.createElement('style');
+    base.id = BASE_STYLE_ID;
+    base.textContent =
+      '@media print{' +
+        'body.' + PRINTING_CLASS + ' > *:not(#' + HOST_ID + '){display:none!important}' +
+        'body.' + PRINTING_CLASS + ' #' + HOST_ID + '{display:block!important;position:static!important;' +
+          'left:auto!important;right:auto!important;top:auto!important;bottom:auto!important;' +
+          'width:auto!important;height:auto!important;max-width:none!important;' +
+          'visibility:visible!important;opacity:1!important;overflow:visible!important;' +
+          'pointer-events:auto!important;transform:none!important}' +
+        'body.' + PRINTING_CLASS + ' #' + HOST_ID + ' *{visibility:visible!important;opacity:1!important}' +
+        'body.' + PRINTING_CLASS + '{-webkit-print-color-adjust:exact;print-color-adjust:exact}' +
+      '}';
+    document.head.appendChild(base);
+  }
+
+  ensureBasePrintStyle();
+
   function cleanupTopLevelPrintHost() {
     if (cleanupTimer) {
       clearTimeout(cleanupTimer);
@@ -35,6 +55,7 @@
       window.removeEventListener('afterprint', parentAfterPrint);
       parentAfterPrint = null;
     }
+    document.body.classList.remove(PRINTING_CLASS);
     var host = document.getElementById(HOST_ID);
     if (host && host.parentNode) host.parentNode.removeChild(host);
     var style = document.getElementById(STYLE_ID);
@@ -62,7 +83,7 @@
 
     var remaining = images.length;
     var finished = false;
-    var fallback = setTimeout(finish, 2500);
+    var fallback = setTimeout(finish, 3000);
 
     function finishOne() {
       remaining -= 1;
@@ -86,20 +107,29 @@
     });
   }
 
+  function afterPrintLayoutCommitted(host, done) {
+    var raf = window.requestAnimationFrame || function (cb) { return setTimeout(cb, 16); };
+    raf(function () {
+      raf(function () {
+        void host.offsetHeight;
+        done();
+      });
+    });
+  }
+
   function printTopLevelFromIframe(iframe) {
     var frameWin = iframe && iframe.contentWindow;
     var frameDoc = frameWin && frameWin.document;
     if (!frameDoc || !frameDoc.body) return;
 
     cleanupTopLevelPrintHost();
+    ensureBasePrintStyle();
     priorTitle = document.title;
     if (frameDoc.title) document.title = frameDoc.title;
 
     var host = document.createElement('div');
     host.id = HOST_ID;
     host.innerHTML = frameDoc.body.innerHTML;
-    // Keep the cloned report fully laid out so object-URL images load, but
-    // place it outside the visible screen until the print media query wins.
     host.style.position = 'fixed';
     host.style.left = '-10000px';
     host.style.top = '0';
@@ -111,27 +141,22 @@
     var style = document.createElement('style');
     style.id = STYLE_ID;
     style.media = 'print';
-    style.textContent = framePrintCss(frameDoc) + '\n' +
-      'body > *:not(#' + HOST_ID + '){display:none!important}' +
-      '#' + HOST_ID + '{display:block!important;position:static!important;' +
-        'left:auto!important;top:auto!important;width:auto!important;height:auto!important;' +
-        'visibility:visible!important;overflow:visible!important;pointer-events:auto!important}' +
-      '#' + HOST_ID + ' *{visibility:visible}' +
-      'body{-webkit-print-color-adjust:exact;print-color-adjust:exact}';
+    style.textContent = framePrintCss(frameDoc);
     document.head.appendChild(style);
 
     var printed = false;
     waitForImages(host, function () {
       if (printed) return;
       printed = true;
-      parentAfterPrint = function () { cleanupTopLevelPrintHost(); };
-      window.addEventListener('afterprint', parentAfterPrint);
-      window.focus();
-      window.print();
-      // iOS WebKit has historically been inconsistent about afterprint.
-      // Keep the off-screen host alive long enough for the native sheet to
-      // finish consuming it, then clean up as a safety net.
-      cleanupTimer = setTimeout(cleanupTopLevelPrintHost, 60000);
+      document.body.classList.add(PRINTING_CLASS);
+
+      afterPrintLayoutCommitted(host, function () {
+        parentAfterPrint = function () { cleanupTopLevelPrintHost(); };
+        window.addEventListener('afterprint', parentAfterPrint);
+        window.focus();
+        window.print();
+        cleanupTimer = setTimeout(cleanupTopLevelPrintHost, 60000);
+      });
     });
   }
 
@@ -159,15 +184,10 @@
 
     if (!iframe.__clipboardFluxIosPrintBridgeListener) {
       iframe.__clipboardFluxIosPrintBridgeListener = true;
-      // Capture-phase load patching runs before the app's iframe.onload
-      // handler calls print(), even if WebKit refreshes the Window method
-      // while document.open()/document.write() replaces about:blank.
       iframe.addEventListener('load', patchWindowPrint, true);
     }
 
     if (!patchWindowPrint()) {
-      // Defensive fallback to the previous pagination guard if an engine
-      // makes Window.print non-overridable.
       iframe.style.position = 'fixed';
       iframe.style.left = '-10000px';
       iframe.style.right = 'auto';
