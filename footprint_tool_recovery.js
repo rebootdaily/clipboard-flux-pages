@@ -26,6 +26,8 @@
     var lock = document.querySelector('[data-role="footprint-reference-lock-toggle"]');
     if (!lock || lock.getAttribute('aria-pressed') !== 'false') return;
 
+    // Stop the click from reaching the now-stale toolbar node. The core Lock
+    // handler re-renders Footprint, so replay the requested tool on the new DOM.
     ev.preventDefault();
     ev.stopImmediatePropagation();
     lock.click();
