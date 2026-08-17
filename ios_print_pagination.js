@@ -9,6 +9,8 @@
 (function () {
   'use strict';
 
+  if (window.__clipboardFluxIosPrintBridgeLoaded) return;
+
   var HOST_ID = 'clipboard-flux-ios-print-host';
   var STYLE_ID = 'clipboard-flux-ios-report-style';
   var BASE_STYLE_ID = 'clipboard-flux-ios-print-base-style';
@@ -24,6 +26,7 @@
   }
 
   if (!isAppleTouchDevice() || typeof MutationObserver === 'undefined') return;
+  window.__clipboardFluxIosPrintBridgeLoaded = true;
 
   // Install the isolation stylesheet once, during normal app startup.
   // Physical iOS testing showed WebKit could snapshot the old screen tree
