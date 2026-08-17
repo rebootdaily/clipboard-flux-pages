@@ -84,7 +84,7 @@
   },
   "main": {
     "sheet": "MAIN",
-    "fieldCount": 97,
+    "fieldCount": 95,
     "tabs": [
       "Property",
       "Off Site",
@@ -485,35 +485,12 @@
           "Street",
           "Other"
         ],
-        "followUpTrigger": [],
-        "followUpGroup": "",
-        "reminder": ""
-      },
-      {
-        "id": "car_storage_capacity",
-        "label": "Car Storage Capacity",
-        "urar": "Improvements",
-        "tab": "Car Storage",
-        "type": "Counter",
-        "options": [],
-        "followUpTrigger": [],
-        "followUpGroup": "",
-        "reminder": ""
-      },
-      {
-        "id": "car_storage_attachment",
-        "label": "Car Storage Attachment",
-        "urar": "Improvements",
-        "tab": "Car Storage",
-        "type": "MultiSelect",
-        "options": [
-          "Attached",
-          "Detached",
-          "Built-In",
-          "Other"
+        "followUpTrigger": [
+          "Garage",
+          "Carport",
+          "Covered"
         ],
-        "followUpTrigger": [],
-        "followUpGroup": "",
+        "followUpGroup": "car_storage",
         "reminder": ""
       },
       {
@@ -1578,7 +1555,7 @@
   },
   "followUp": {
     "sheet": "FOLLOW_UP",
-    "questionCount": 56,
+    "questionCount": 60,
     "groups": [
       {
         "group": "occupancy_vacant",
@@ -1899,12 +1876,70 @@
         ]
       },
       {
+        "group": "car_storage",
+        "questions": [
+          {
+            "id": "car_storage__garage_spaces",
+            "group": "car_storage",
+            "label": "# Garage Spaces",
+            "type": "Counter",
+            "options": [],
+            "destination": "Dynamic",
+            "showWhenQuestion": "",
+            "showWhenValue": [],
+            "showWhenQuestionId": null,
+            "showWhenInvalid": false
+          },
+          {
+            "id": "car_storage__carport_spaces",
+            "group": "car_storage",
+            "label": "# Carport Spaces",
+            "type": "Counter",
+            "options": [],
+            "destination": "Dynamic",
+            "showWhenQuestion": "",
+            "showWhenValue": [],
+            "showWhenQuestionId": null,
+            "showWhenInvalid": false
+          },
+          {
+            "id": "car_storage__covered_spaces",
+            "group": "car_storage",
+            "label": "# Covered Spaces",
+            "type": "Counter",
+            "options": [],
+            "destination": "Dynamic",
+            "showWhenQuestion": "",
+            "showWhenValue": [],
+            "showWhenQuestionId": null,
+            "showWhenInvalid": false
+          },
+          {
+            "id": "car_storage__car_storage_attachment",
+            "group": "car_storage",
+            "label": "Car Storage Attachment",
+            "type": "MultiSelect",
+            "options": [
+              "Attached",
+              "Detached",
+              "Built-In",
+              "Other"
+            ],
+            "destination": "Dynamic",
+            "showWhenQuestion": "",
+            "showWhenValue": [],
+            "showWhenQuestionId": null,
+            "showWhenInvalid": false
+          }
+        ]
+      },
+      {
         "group": "adu",
         "questions": [
           {
             "id": "adu__rented",
             "group": "adu",
-            "label": "Rented?",
+            "label": "Rented",
             "type": "Button",
             "options": [
               "Yes",
@@ -1919,7 +1954,7 @@
           {
             "id": "adu__certified",
             "group": "adu",
-            "label": "Certified?",
+            "label": "Certified",
             "type": "Button",
             "options": [
               "Yes",
@@ -1934,7 +1969,7 @@
           {
             "id": "adu__permits",
             "group": "adu",
-            "label": "Permits?",
+            "label": "Permits",
             "type": "Button",
             "options": [
               "Yes",
@@ -2541,7 +2576,7 @@
       },
       {
         "category": "Interior",
-        "label": "Living Area"
+        "label": "Living"
       },
       {
         "category": "Interior",
@@ -2581,7 +2616,7 @@
       },
       {
         "category": "Interior",
-        "label": "Additional Interior"
+        "label": "Interior View"
       },
       {
         "category": "Other",
