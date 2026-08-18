@@ -84,20 +84,19 @@
   },
   "main": {
     "sheet": "MAIN",
-    "fieldCount": 114,
+    "fieldCount": 113,
     "tabs": [
       "Property",
-      "Off Site",
-      "On Site",
+      "Site",
       "Utilities",
       "Car Storage",
       "Exterior",
-      "Outdoor / Patio",
+      "HVAC / Mechanical",
+      "Amenities",
       "Rooms",
       "Interior",
-      "Bathrooms",
-      "HVAC / Mechanical",
-      "Kitchen"
+      "Kitchen",
+      "Bathrooms"
     ],
     "fields": [
       {
@@ -270,7 +269,7 @@
         "id": "street_surface",
         "label": "Street Surface",
         "urar": "Site",
-        "tab": "Off Site",
+        "tab": "Site",
         "type": "MultiSelect Dropdown",
         "options": [
           "Asphalt",
@@ -288,7 +287,7 @@
         "id": "street_access",
         "label": "Street Access",
         "urar": "Site",
-        "tab": "Off Site",
+        "tab": "Site",
         "type": "Button",
         "options": [
           "Public",
@@ -302,7 +301,7 @@
         "id": "alley",
         "label": "Alley",
         "urar": "Site",
-        "tab": "Off Site",
+        "tab": "Site",
         "type": "Button",
         "options": [
           "Yes",
@@ -315,21 +314,10 @@
         "reminder": "Take photo"
       },
       {
-        "id": "off_site_notes",
-        "label": "Off Site Notes",
-        "urar": "Site",
-        "tab": "Off Site",
-        "type": "Text",
-        "options": [],
-        "followUpTrigger": [],
-        "followUpGroup": "",
-        "reminder": ""
-      },
-      {
         "id": "lot_shape",
         "label": "Lot Shape",
         "urar": "Site",
-        "tab": "On Site",
+        "tab": "Site",
         "type": "MultiSelect",
         "options": [
           "Rectangular",
@@ -346,7 +334,7 @@
         "id": "view",
         "label": "View",
         "urar": "Site",
-        "tab": "On Site",
+        "tab": "Site",
         "type": "MultiSelect Dropdown",
         "options": [
           "Residential",
@@ -369,7 +357,7 @@
         "id": "location",
         "label": "Location",
         "urar": "Site",
-        "tab": "On Site",
+        "tab": "Site",
         "type": "MultiSelect Dropdown",
         "options": [
           "Urban",
@@ -386,10 +374,10 @@
         "reminder": ""
       },
       {
-        "id": "on_site_notes",
-        "label": "On Site Notes",
+        "id": "site_notes",
+        "label": "Site Notes",
         "urar": "Site",
-        "tab": "On Site",
+        "tab": "Site",
         "type": "Text",
         "options": [],
         "followUpTrigger": [],
@@ -461,8 +449,8 @@
         "reminder": "FHA: Septic tank needs to be located on lot"
       },
       {
-        "id": "site_notes",
-        "label": "Site Notes",
+        "id": "utilities_notes",
+        "label": "Utilities Notes",
         "urar": "Site",
         "tab": "Utilities",
         "type": "LongText",
@@ -1003,10 +991,60 @@
         "reminder": ""
       },
       {
+        "id": "heating",
+        "label": "Heating",
+        "urar": "Improvements",
+        "tab": "HVAC / Mechanical",
+        "type": "MultiSelect",
+        "options": [
+          "FWA",
+          "Radiant",
+          "None",
+          "Other"
+        ],
+        "followUpTrigger": [],
+        "followUpGroup": "",
+        "reminder": ""
+      },
+      {
+        "id": "cooling",
+        "label": "Cooling",
+        "urar": "Improvements",
+        "tab": "HVAC / Mechanical",
+        "type": "MultiSelect",
+        "options": [
+          "Central",
+          "Individual",
+          "Ductless",
+          "Other"
+        ],
+        "followUpTrigger": [],
+        "followUpGroup": "",
+        "reminder": ""
+      },
+      {
+        "id": "cooling_updated",
+        "label": "Cooling Updated",
+        "urar": "Improvements",
+        "tab": "HVAC / Mechanical",
+        "type": "Button",
+        "options": [
+          "Yes",
+          "No",
+          "Partial"
+        ],
+        "followUpTrigger": [
+          "Yes",
+          "Partial"
+        ],
+        "followUpGroup": "cooling_updated",
+        "reminder": ""
+      },
+      {
         "id": "fence",
         "label": "Fence",
         "urar": "Improvements",
-        "tab": "Outdoor / Patio",
+        "tab": "Amenities",
         "type": "MultiSelect Dropdown",
         "options": [
           "None",
@@ -1026,7 +1064,7 @@
         "id": "fence_condition",
         "label": "Fence Condition",
         "urar": "Improvements",
-        "tab": "Outdoor / Patio",
+        "tab": "Amenities",
         "type": "Button",
         "options": [
           "Excellent",
@@ -1043,7 +1081,7 @@
         "id": "patio",
         "label": "Patio",
         "urar": "Improvements",
-        "tab": "Outdoor / Patio",
+        "tab": "Amenities",
         "type": "MultiSelect Dropdown",
         "options": [
           "None",
@@ -1061,7 +1099,7 @@
         "id": "patio_condition",
         "label": "Patio Condition",
         "urar": "Improvements",
-        "tab": "Outdoor / Patio",
+        "tab": "Amenities",
         "type": "Button",
         "options": [
           "Excellent",
@@ -1078,7 +1116,7 @@
         "id": "patio_attachment",
         "label": "Patio Attachment",
         "urar": "Improvements",
-        "tab": "Outdoor / Patio",
+        "tab": "Amenities",
         "type": "MultiSelect",
         "options": [
           "Attached",
@@ -1092,7 +1130,7 @@
         "id": "deck",
         "label": "Deck",
         "urar": "Improvements",
-        "tab": "Outdoor / Patio",
+        "tab": "Amenities",
         "type": "MultiSelect Dropdown",
         "options": [
           "None",
@@ -1113,7 +1151,7 @@
         "id": "deck_condition",
         "label": "Deck Condition",
         "urar": "Improvements",
-        "tab": "Outdoor / Patio",
+        "tab": "Amenities",
         "type": "Button",
         "options": [
           "Excellent",
@@ -1130,7 +1168,7 @@
         "id": "balcony",
         "label": "Balcony",
         "urar": "Improvements",
-        "tab": "Outdoor / Patio",
+        "tab": "Amenities",
         "type": "Button",
         "options": [
           "Yes",
@@ -1146,7 +1184,7 @@
         "id": "porch",
         "label": "Porch",
         "urar": "Improvements",
-        "tab": "Outdoor / Patio",
+        "tab": "Amenities",
         "type": "MultiSelect",
         "options": [
           "None",
@@ -1164,7 +1202,7 @@
         "id": "porch_condition",
         "label": "Porch Condition",
         "urar": "Improvements",
-        "tab": "Outdoor / Patio",
+        "tab": "Amenities",
         "type": "Button",
         "options": [
           "Excellent",
@@ -1181,7 +1219,7 @@
         "id": "pool",
         "label": "Pool",
         "urar": "Improvements",
-        "tab": "Outdoor / Patio",
+        "tab": "Amenities",
         "type": "Button",
         "options": [
           "Yes",
@@ -1197,7 +1235,7 @@
         "id": "other_amenities",
         "label": "Other Amenities",
         "urar": "Improvements",
-        "tab": "Outdoor / Patio",
+        "tab": "Amenities",
         "type": "Text",
         "options": [],
         "followUpTrigger": [],
@@ -1208,7 +1246,7 @@
         "id": "outdoor_patio_notes",
         "label": "Outdoor /Patio Notes",
         "urar": "Improvements",
-        "tab": "Outdoor / Patio",
+        "tab": "Amenities",
         "type": "LongText",
         "options": [],
         "followUpTrigger": [],
@@ -1538,188 +1576,6 @@
         "reminder": ""
       },
       {
-        "id": "bathrooms_updated",
-        "label": "Bathrooms Updated",
-        "urar": "Improvements",
-        "tab": "Bathrooms",
-        "type": "Button",
-        "options": [
-          "Yes",
-          "No",
-          "Partial"
-        ],
-        "followUpTrigger": [
-          "Yes",
-          "Partial"
-        ],
-        "followUpGroup": "bathrooms_updated",
-        "reminder": ""
-      },
-      {
-        "id": "bath_floor",
-        "label": "Bath Floor",
-        "urar": "Improvements",
-        "tab": "Bathrooms",
-        "type": "MultiSelect Dropdown",
-        "options": [
-          "Ceramic Tile",
-          "Porcelain Tile",
-          "Stone",
-          "Travertine",
-          "Wood",
-          "Laminate",
-          "Vinyl",
-          "Terrazzo",
-          "Concrete",
-          "Other"
-        ],
-        "followUpTrigger": [],
-        "followUpGroup": "",
-        "reminder": ""
-      },
-      {
-        "id": "bath_floor_condition",
-        "label": "Bath Floor Condition",
-        "urar": "Improvements",
-        "tab": "Bathrooms",
-        "type": "Button",
-        "options": [
-          "Excellent",
-          "Good",
-          "Typical",
-          "Fair",
-          "Poor"
-        ],
-        "followUpTrigger": [],
-        "followUpGroup": "",
-        "reminder": ""
-      },
-      {
-        "id": "bath_floor_updated",
-        "label": "Bath Floor Updated",
-        "urar": "Improvements",
-        "tab": "Bathrooms",
-        "type": "Button",
-        "options": [
-          "Yes",
-          "No",
-          "Partial"
-        ],
-        "followUpTrigger": [
-          "Yes",
-          "Partial"
-        ],
-        "followUpGroup": "bathrooms_updated",
-        "reminder": ""
-      },
-      {
-        "id": "bath_wainscot",
-        "label": "Bath Wainscot",
-        "urar": "Improvements",
-        "tab": "Bathrooms",
-        "type": "MultiSelect Dropdown",
-        "options": [
-          "Ceramic Tile",
-          "Porcelain Tile",
-          "Stone",
-          "Travertine",
-          "Wood",
-          "Laminate",
-          "Vinyl",
-          "Terrazzo",
-          "Concrete",
-          "Other"
-        ],
-        "followUpTrigger": [],
-        "followUpGroup": "",
-        "reminder": ""
-      },
-      {
-        "id": "bath_wainscot_condition",
-        "label": "Bath Wainscot Condition",
-        "urar": "Improvements",
-        "tab": "Bathrooms",
-        "type": "Button",
-        "options": [
-          "Excellent",
-          "Good",
-          "Typical",
-          "Fair",
-          "Poor"
-        ],
-        "followUpTrigger": [],
-        "followUpGroup": "",
-        "reminder": ""
-      },
-      {
-        "id": "bath_wainscot_updated",
-        "label": "Bath Wainscot Updated",
-        "urar": "Improvements",
-        "tab": "Bathrooms",
-        "type": "Button",
-        "options": [
-          "Yes",
-          "No",
-          "Partial"
-        ],
-        "followUpTrigger": [
-          "Yes",
-          "Partial"
-        ],
-        "followUpGroup": "bathrooms_updated",
-        "reminder": ""
-      },
-      {
-        "id": "heating",
-        "label": "Heating",
-        "urar": "Improvements",
-        "tab": "HVAC / Mechanical",
-        "type": "MultiSelect",
-        "options": [
-          "FWA",
-          "Radiant",
-          "None",
-          "Other"
-        ],
-        "followUpTrigger": [],
-        "followUpGroup": "",
-        "reminder": ""
-      },
-      {
-        "id": "cooling",
-        "label": "Cooling",
-        "urar": "Improvements",
-        "tab": "HVAC / Mechanical",
-        "type": "MultiSelect",
-        "options": [
-          "Central",
-          "Individual",
-          "Ductless",
-          "Other"
-        ],
-        "followUpTrigger": [],
-        "followUpGroup": "",
-        "reminder": ""
-      },
-      {
-        "id": "cooling_updated",
-        "label": "Cooling Updated",
-        "urar": "Improvements",
-        "tab": "HVAC / Mechanical",
-        "type": "Button",
-        "options": [
-          "Yes",
-          "No",
-          "Partial"
-        ],
-        "followUpTrigger": [
-          "Yes",
-          "Partial"
-        ],
-        "followUpGroup": "cooling_updated",
-        "reminder": ""
-      },
-      {
         "id": "kitchen_updated",
         "label": "Kitchen Updated",
         "urar": "Improvements",
@@ -1856,6 +1712,138 @@
         "options": [],
         "followUpTrigger": [],
         "followUpGroup": "",
+        "reminder": ""
+      },
+      {
+        "id": "bathrooms_updated",
+        "label": "Bathrooms Updated",
+        "urar": "Improvements",
+        "tab": "Bathrooms",
+        "type": "Button",
+        "options": [
+          "Yes",
+          "No",
+          "Partial"
+        ],
+        "followUpTrigger": [
+          "Yes",
+          "Partial"
+        ],
+        "followUpGroup": "bathrooms_updated",
+        "reminder": ""
+      },
+      {
+        "id": "bath_floor",
+        "label": "Bath Floor",
+        "urar": "Improvements",
+        "tab": "Bathrooms",
+        "type": "MultiSelect Dropdown",
+        "options": [
+          "Ceramic Tile",
+          "Porcelain Tile",
+          "Stone",
+          "Travertine",
+          "Wood",
+          "Laminate",
+          "Vinyl",
+          "Terrazzo",
+          "Concrete",
+          "Other"
+        ],
+        "followUpTrigger": [],
+        "followUpGroup": "",
+        "reminder": ""
+      },
+      {
+        "id": "bath_floor_condition",
+        "label": "Bath Floor Condition",
+        "urar": "Improvements",
+        "tab": "Bathrooms",
+        "type": "Button",
+        "options": [
+          "Excellent",
+          "Good",
+          "Typical",
+          "Fair",
+          "Poor"
+        ],
+        "followUpTrigger": [],
+        "followUpGroup": "",
+        "reminder": ""
+      },
+      {
+        "id": "bath_floor_updated",
+        "label": "Bath Floor Updated",
+        "urar": "Improvements",
+        "tab": "Bathrooms",
+        "type": "Button",
+        "options": [
+          "Yes",
+          "No",
+          "Partial"
+        ],
+        "followUpTrigger": [
+          "Yes",
+          "Partial"
+        ],
+        "followUpGroup": "bathrooms_updated",
+        "reminder": ""
+      },
+      {
+        "id": "bath_wainscot",
+        "label": "Bath Wainscot",
+        "urar": "Improvements",
+        "tab": "Bathrooms",
+        "type": "MultiSelect Dropdown",
+        "options": [
+          "Ceramic Tile",
+          "Porcelain Tile",
+          "Stone",
+          "Travertine",
+          "Wood",
+          "Laminate",
+          "Vinyl",
+          "Terrazzo",
+          "Concrete",
+          "Other"
+        ],
+        "followUpTrigger": [],
+        "followUpGroup": "",
+        "reminder": ""
+      },
+      {
+        "id": "bath_wainscot_condition",
+        "label": "Bath Wainscot Condition",
+        "urar": "Improvements",
+        "tab": "Bathrooms",
+        "type": "Button",
+        "options": [
+          "Excellent",
+          "Good",
+          "Typical",
+          "Fair",
+          "Poor"
+        ],
+        "followUpTrigger": [],
+        "followUpGroup": "",
+        "reminder": ""
+      },
+      {
+        "id": "bath_wainscot_updated",
+        "label": "Bath Wainscot Updated",
+        "urar": "Improvements",
+        "tab": "Bathrooms",
+        "type": "Button",
+        "options": [
+          "Yes",
+          "No",
+          "Partial"
+        ],
+        "followUpTrigger": [
+          "Yes",
+          "Partial"
+        ],
+        "followUpGroup": "bathrooms_updated",
         "reminder": ""
       }
     ],
