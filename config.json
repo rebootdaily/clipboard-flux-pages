@@ -84,14 +84,20 @@
   },
   "main": {
     "sheet": "MAIN",
-    "fieldCount": 95,
+    "fieldCount": 114,
     "tabs": [
       "Property",
       "Off Site",
-      "Site",
+      "On Site",
+      "Utilities",
       "Car Storage",
       "Exterior",
-      "Interior"
+      "Outdoor / Patio",
+      "Rooms",
+      "Interior",
+      "Bathrooms",
+      "HVAC / Mechanical",
+      "Kitchen"
     ],
     "fields": [
       {
@@ -250,26 +256,6 @@
         "reminder": "If manufactured take photos of HUD lables and cert."
       },
       {
-        "id": "location",
-        "label": "Location",
-        "urar": "Site",
-        "tab": "Property",
-        "type": "MultiSelect Dropdown",
-        "options": [
-          "Urban",
-          "Suburban",
-          "Rural",
-          "Residential",
-          "Waterfront",
-          "Busy Road/Traffic",
-          "Commercial Influence",
-          "Other"
-        ],
-        "followUpTrigger": [],
-        "followUpGroup": "",
-        "reminder": ""
-      },
-      {
         "id": "property_notes",
         "label": "Property Notes",
         "urar": "Subject",
@@ -329,10 +315,21 @@
         "reminder": "Take photo"
       },
       {
+        "id": "off_site_notes",
+        "label": "Off Site Notes",
+        "urar": "Site",
+        "tab": "Off Site",
+        "type": "Text",
+        "options": [],
+        "followUpTrigger": [],
+        "followUpGroup": "",
+        "reminder": ""
+      },
+      {
         "id": "lot_shape",
         "label": "Lot Shape",
         "urar": "Site",
-        "tab": "Site",
+        "tab": "On Site",
         "type": "MultiSelect",
         "options": [
           "Rectangular",
@@ -349,7 +346,7 @@
         "id": "view",
         "label": "View",
         "urar": "Site",
-        "tab": "Site",
+        "tab": "On Site",
         "type": "MultiSelect Dropdown",
         "options": [
           "Residential",
@@ -369,10 +366,41 @@
         "reminder": ""
       },
       {
+        "id": "location",
+        "label": "Location",
+        "urar": "Site",
+        "tab": "On Site",
+        "type": "MultiSelect Dropdown",
+        "options": [
+          "Urban",
+          "Suburban",
+          "Rural",
+          "Residential",
+          "Waterfront",
+          "Busy Road/Traffic",
+          "Commercial Influence",
+          "Other"
+        ],
+        "followUpTrigger": [],
+        "followUpGroup": "",
+        "reminder": ""
+      },
+      {
+        "id": "on_site_notes",
+        "label": "On Site Notes",
+        "urar": "Site",
+        "tab": "On Site",
+        "type": "Text",
+        "options": [],
+        "followUpTrigger": [],
+        "followUpGroup": "",
+        "reminder": ""
+      },
+      {
         "id": "electricity",
         "label": "Electricity",
         "urar": "Site",
-        "tab": "Site",
+        "tab": "Utilities",
         "type": "Button",
         "options": [
           "Public",
@@ -386,7 +414,7 @@
         "id": "water",
         "label": "Water",
         "urar": "Site",
-        "tab": "Site",
+        "tab": "Utilities",
         "type": "Button",
         "options": [
           "Public",
@@ -403,13 +431,11 @@
         "id": "gas_available",
         "label": "Gas Available",
         "urar": "Site",
-        "tab": "Site",
+        "tab": "Utilities",
         "type": "Button",
         "options": [
-          "Public/Natural Gas",
-          "Bottled/Propane",
-          "None",
-          "Other"
+          "Yes",
+          "No"
         ],
         "followUpTrigger": [
           "Yes"
@@ -421,7 +447,7 @@
         "id": "sanitary_sewer",
         "label": "Sanitary Sewer",
         "urar": "Site",
-        "tab": "Site",
+        "tab": "Utilities",
         "type": "Button",
         "options": [
           "City/Public",
@@ -438,7 +464,7 @@
         "id": "site_notes",
         "label": "Site Notes",
         "urar": "Site",
-        "tab": "Site",
+        "tab": "Utilities",
         "type": "LongText",
         "options": [],
         "followUpTrigger": [],
@@ -505,7 +531,7 @@
         "label": "Car Storage Notes",
         "urar": "Improvements",
         "tab": "Car Storage",
-        "type": "Text",
+        "type": "LongText",
         "options": [],
         "followUpTrigger": [],
         "followUpGroup": "",
@@ -560,7 +586,8 @@
           "Mediterranean",
           "Villa",
           "Contemporary",
-          "ColonialBungalow/Cottage",
+          "Colonial",
+          "Bungalow/Cottage",
           "Townhouse",
           "Condo",
           "Twinhome",
@@ -626,6 +653,23 @@
         "reminder": "FNMA/FHA: settlement, water seepage, or cracking \u2192 document & photograph."
       },
       {
+        "id": "foundation_walls_condition",
+        "label": "Foundation Walls Condition",
+        "urar": "Improvements",
+        "tab": "Exterior",
+        "type": "Button",
+        "options": [
+          "Excellent",
+          "Good",
+          "Typical",
+          "Fair",
+          "Poor"
+        ],
+        "followUpTrigger": [],
+        "followUpGroup": "",
+        "reminder": ""
+      },
+      {
         "id": "exterior_walls",
         "label": "Exterior Walls",
         "urar": "Improvements",
@@ -639,6 +683,23 @@
           "Aluminum/Vinyl",
           "Stone",
           "Other"
+        ],
+        "followUpTrigger": [],
+        "followUpGroup": "",
+        "reminder": ""
+      },
+      {
+        "id": "exterior_walls_condition",
+        "label": "Exterior Walls Condition",
+        "urar": "Improvements",
+        "tab": "Exterior",
+        "type": "Button",
+        "options": [
+          "Excellent",
+          "Good",
+          "Typical",
+          "Fair",
+          "Poor"
         ],
         "followUpTrigger": [],
         "followUpGroup": "",
@@ -679,6 +740,23 @@
         "reminder": ""
       },
       {
+        "id": "roof_surface_condition",
+        "label": "Roof Surface Condition",
+        "urar": "Improvements",
+        "tab": "Exterior",
+        "type": "Button",
+        "options": [
+          "Excellent",
+          "Good",
+          "Typical",
+          "Fair",
+          "Poor"
+        ],
+        "followUpTrigger": [],
+        "followUpGroup": "",
+        "reminder": ""
+      },
+      {
         "id": "roof_updated",
         "label": "Roof Updated",
         "urar": "Improvements",
@@ -706,6 +784,23 @@
           "None",
           "Yes",
           "Partial"
+        ],
+        "followUpTrigger": [],
+        "followUpGroup": "",
+        "reminder": ""
+      },
+      {
+        "id": "gutters_downspouts_condition",
+        "label": "Gutters / Downspouts Condition",
+        "urar": "Improvements",
+        "tab": "Exterior",
+        "type": "Button",
+        "options": [
+          "Excellent",
+          "Good",
+          "Typical",
+          "Fair",
+          "Poor"
         ],
         "followUpTrigger": [],
         "followUpGroup": "",
@@ -743,6 +838,23 @@
           "Jalousie",
           "Bay",
           "Other"
+        ],
+        "followUpTrigger": [],
+        "followUpGroup": "",
+        "reminder": ""
+      },
+      {
+        "id": "windows_type_condition",
+        "label": "Windows Type Condition",
+        "urar": "Improvements",
+        "tab": "Exterior",
+        "type": "Button",
+        "options": [
+          "Excellent",
+          "Good",
+          "Typical",
+          "Fair",
+          "Poor"
         ],
         "followUpTrigger": [],
         "followUpGroup": "",
@@ -792,6 +904,23 @@
           "Nylon",
           "Aluminum",
           "Other"
+        ],
+        "followUpTrigger": [],
+        "followUpGroup": "",
+        "reminder": ""
+      },
+      {
+        "id": "screens_condition",
+        "label": "Screens Condition",
+        "urar": "Improvements",
+        "tab": "Exterior",
+        "type": "Button",
+        "options": [
+          "Excellent",
+          "Good",
+          "Typical",
+          "Fair",
+          "Poor"
         ],
         "followUpTrigger": [],
         "followUpGroup": "",
@@ -863,10 +992,21 @@
         "reminder": ""
       },
       {
+        "id": "exterior_notes",
+        "label": "Exterior Notes",
+        "urar": "Improvements",
+        "tab": "Exterior",
+        "type": "LongText",
+        "options": [],
+        "followUpTrigger": [],
+        "followUpGroup": "",
+        "reminder": ""
+      },
+      {
         "id": "fence",
         "label": "Fence",
         "urar": "Improvements",
-        "tab": "Exterior",
+        "tab": "Outdoor / Patio",
         "type": "MultiSelect Dropdown",
         "options": [
           "None",
@@ -883,10 +1023,27 @@
         "reminder": ""
       },
       {
+        "id": "fence_condition",
+        "label": "Fence Condition",
+        "urar": "Improvements",
+        "tab": "Outdoor / Patio",
+        "type": "Button",
+        "options": [
+          "Excellent",
+          "Good",
+          "Typical",
+          "Fair",
+          "Poor"
+        ],
+        "followUpTrigger": [],
+        "followUpGroup": "",
+        "reminder": ""
+      },
+      {
         "id": "patio",
         "label": "Patio",
         "urar": "Improvements",
-        "tab": "Exterior",
+        "tab": "Outdoor / Patio",
         "type": "MultiSelect Dropdown",
         "options": [
           "None",
@@ -901,10 +1058,27 @@
         "reminder": ""
       },
       {
+        "id": "patio_condition",
+        "label": "Patio Condition",
+        "urar": "Improvements",
+        "tab": "Outdoor / Patio",
+        "type": "Button",
+        "options": [
+          "Excellent",
+          "Good",
+          "Typical",
+          "Fair",
+          "Poor"
+        ],
+        "followUpTrigger": [],
+        "followUpGroup": "",
+        "reminder": ""
+      },
+      {
         "id": "patio_attachment",
         "label": "Patio Attachment",
         "urar": "Improvements",
-        "tab": "Exterior",
+        "tab": "Outdoor / Patio",
         "type": "MultiSelect",
         "options": [
           "Attached",
@@ -918,7 +1092,7 @@
         "id": "deck",
         "label": "Deck",
         "urar": "Improvements",
-        "tab": "Exterior",
+        "tab": "Outdoor / Patio",
         "type": "MultiSelect Dropdown",
         "options": [
           "None",
@@ -936,10 +1110,27 @@
         "reminder": ""
       },
       {
+        "id": "deck_condition",
+        "label": "Deck Condition",
+        "urar": "Improvements",
+        "tab": "Outdoor / Patio",
+        "type": "Button",
+        "options": [
+          "Excellent",
+          "Good",
+          "Typical",
+          "Fair",
+          "Poor"
+        ],
+        "followUpTrigger": [],
+        "followUpGroup": "",
+        "reminder": ""
+      },
+      {
         "id": "balcony",
         "label": "Balcony",
         "urar": "Improvements",
-        "tab": "Exterior",
+        "tab": "Outdoor / Patio",
         "type": "Button",
         "options": [
           "Yes",
@@ -955,7 +1146,7 @@
         "id": "porch",
         "label": "Porch",
         "urar": "Improvements",
-        "tab": "Exterior",
+        "tab": "Outdoor / Patio",
         "type": "MultiSelect",
         "options": [
           "None",
@@ -970,10 +1161,27 @@
         "reminder": ""
       },
       {
+        "id": "porch_condition",
+        "label": "Porch Condition",
+        "urar": "Improvements",
+        "tab": "Outdoor / Patio",
+        "type": "Button",
+        "options": [
+          "Excellent",
+          "Good",
+          "Typical",
+          "Fair",
+          "Poor"
+        ],
+        "followUpTrigger": [],
+        "followUpGroup": "",
+        "reminder": ""
+      },
+      {
         "id": "pool",
         "label": "Pool",
         "urar": "Improvements",
-        "tab": "Exterior",
+        "tab": "Outdoor / Patio",
         "type": "Button",
         "options": [
           "Yes",
@@ -989,18 +1197,18 @@
         "id": "other_amenities",
         "label": "Other Amenities",
         "urar": "Improvements",
-        "tab": "Exterior",
+        "tab": "Outdoor / Patio",
         "type": "Text",
         "options": [],
         "followUpTrigger": [],
         "followUpGroup": "",
-        "reminder": ""
+        "reminder": "Irrigation, Cabana, BBQ, Etc."
       },
       {
-        "id": "exterior_notes",
-        "label": "Exterior Notes",
+        "id": "outdoor_patio_notes",
+        "label": "Outdoor /Patio Notes",
         "urar": "Improvements",
-        "tab": "Exterior",
+        "tab": "Outdoor / Patio",
         "type": "LongText",
         "options": [],
         "followUpTrigger": [],
@@ -1008,46 +1216,120 @@
         "reminder": "Extras/Adverse conditions?"
       },
       {
-        "id": "kitchen_updated",
-        "label": "Kitchen Updated",
+        "id": "living_room",
+        "label": "Living Room",
         "urar": "Improvements",
-        "tab": "Interior",
-        "type": "Button",
-        "options": [
-          "Yes",
-          "No",
-          "Partial"
-        ],
-        "followUpTrigger": [
-          "Yes",
-          "Partial"
-        ],
-        "followUpGroup": "kitchen_updated",
+        "tab": "Rooms",
+        "type": "Counter",
+        "options": [],
+        "followUpTrigger": [],
+        "followUpGroup": "",
         "reminder": ""
       },
       {
-        "id": "bathrooms_updated",
-        "label": "Bathrooms Updated",
+        "id": "dining_room",
+        "label": "Dining Room",
         "urar": "Improvements",
-        "tab": "Interior",
-        "type": "Button",
-        "options": [
-          "Yes",
-          "No",
-          "Partial"
-        ],
-        "followUpTrigger": [
-          "Yes",
-          "Partial"
-        ],
-        "followUpGroup": "bathrooms_updated",
+        "tab": "Rooms",
+        "type": "Counter",
+        "options": [],
+        "followUpTrigger": [],
+        "followUpGroup": "",
+        "reminder": ""
+      },
+      {
+        "id": "dining_area",
+        "label": "Dining Area",
+        "urar": "Improvements",
+        "tab": "Rooms",
+        "type": "Counter",
+        "options": [],
+        "followUpTrigger": [],
+        "followUpGroup": "",
+        "reminder": ""
+      },
+      {
+        "id": "family_room",
+        "label": "Family Room",
+        "urar": "Improvements",
+        "tab": "Rooms",
+        "type": "Counter",
+        "options": [],
+        "followUpTrigger": [],
+        "followUpGroup": "",
+        "reminder": ""
+      },
+      {
+        "id": "breakfast_area",
+        "label": "Breakfast Area",
+        "urar": "Improvements",
+        "tab": "Rooms",
+        "type": "Counter",
+        "options": [],
+        "followUpTrigger": [],
+        "followUpGroup": "",
+        "reminder": ""
+      },
+      {
+        "id": "kitchen",
+        "label": "Kitchen",
+        "urar": "Improvements",
+        "tab": "Rooms",
+        "type": "Counter",
+        "options": [],
+        "followUpTrigger": [],
+        "followUpGroup": "",
+        "reminder": ""
+      },
+      {
+        "id": "den",
+        "label": "Den",
+        "urar": "Improvements",
+        "tab": "Rooms",
+        "type": "Counter",
+        "options": [],
+        "followUpTrigger": [],
+        "followUpGroup": "",
+        "reminder": ""
+      },
+      {
+        "id": "bedrooms",
+        "label": "Bedrooms",
+        "urar": "Improvements",
+        "tab": "Rooms",
+        "type": "Counter",
+        "options": [],
+        "followUpTrigger": [],
+        "followUpGroup": "",
+        "reminder": "FBC: Habitable room \u226570 sf \u00b7 \u22657 ft min horizontal dimension. MDC rental sleeping room: \u22658 ft width."
+      },
+      {
+        "id": "bathrooms",
+        "label": "Bathrooms",
+        "urar": "Improvements",
+        "tab": "Rooms",
+        "type": "Counter",
+        "options": [],
+        "followUpTrigger": [],
+        "followUpGroup": "",
+        "reminder": ""
+      },
+      {
+        "id": "half_bath",
+        "label": "Half Bath",
+        "urar": "Improvements",
+        "tab": "Rooms",
+        "type": "Counter",
+        "options": [],
+        "followUpTrigger": [],
+        "followUpGroup": "",
         "reminder": ""
       },
       {
         "id": "smoke_detectors",
         "label": "Smoke Detectors",
         "urar": "Improvements",
-        "tab": "Interior",
+        "tab": "Rooms",
         "type": "Counter",
         "options": [],
         "followUpTrigger": [],
@@ -1077,6 +1359,23 @@
         "reminder": ""
       },
       {
+        "id": "floors_condition",
+        "label": "Floors Condition",
+        "urar": "Improvements",
+        "tab": "Interior",
+        "type": "Button",
+        "options": [
+          "Excellent",
+          "Good",
+          "Typical",
+          "Fair",
+          "Poor"
+        ],
+        "followUpTrigger": [],
+        "followUpGroup": "",
+        "reminder": ""
+      },
+      {
         "id": "floors_updated",
         "label": "Floors Updated",
         "urar": "Improvements",
@@ -1095,6 +1394,17 @@
         "reminder": ""
       },
       {
+        "id": "ceiling_height",
+        "label": "Ceiling Height",
+        "urar": "Improvements",
+        "tab": "Interior",
+        "type": "Text",
+        "options": [],
+        "followUpTrigger": [],
+        "followUpGroup": "",
+        "reminder": "ANSI: \u22657 ft ceiling (finished area). Sloped: \u226550% of room \u22657 ft; under 5 ft excluded."
+      },
+      {
         "id": "walls",
         "label": "Walls",
         "urar": "Improvements",
@@ -1109,6 +1419,23 @@
           "Stone/Brick",
           "Concrete",
           "Other"
+        ],
+        "followUpTrigger": [],
+        "followUpGroup": "",
+        "reminder": ""
+      },
+      {
+        "id": "walls_condition",
+        "label": "Walls Condition",
+        "urar": "Improvements",
+        "tab": "Interior",
+        "type": "Button",
+        "options": [
+          "Excellent",
+          "Good",
+          "Typical",
+          "Fair",
+          "Poor"
         ],
         "followUpTrigger": [],
         "followUpGroup": "",
@@ -1149,6 +1476,23 @@
         "reminder": ""
       },
       {
+        "id": "trim_finish_condition",
+        "label": "Trim / Finish Condition",
+        "urar": "Improvements",
+        "tab": "Interior",
+        "type": "Button",
+        "options": [
+          "Excellent",
+          "Good",
+          "Typical",
+          "Fair",
+          "Poor"
+        ],
+        "followUpTrigger": [],
+        "followUpGroup": "",
+        "reminder": ""
+      },
+      {
         "id": "trim_finish_updated",
         "label": "Trim / Finish Updated",
         "urar": "Improvements",
@@ -1164,86 +1508,6 @@
           "Partial"
         ],
         "followUpGroup": "trim_updated",
-        "reminder": ""
-      },
-      {
-        "id": "bath_floor",
-        "label": "Bath Floor",
-        "urar": "Improvements",
-        "tab": "Interior",
-        "type": "MultiSelect Dropdown",
-        "options": [
-          "Ceramic Tile",
-          "Porcelain Tile",
-          "Stone",
-          "Travertine",
-          "Wood",
-          "Laminate",
-          "Vinyl",
-          "Terrazzo",
-          "Concrete",
-          "Other"
-        ],
-        "followUpTrigger": [],
-        "followUpGroup": "",
-        "reminder": ""
-      },
-      {
-        "id": "bath_floor_updated",
-        "label": "Bath Floor Updated",
-        "urar": "Improvements",
-        "tab": "Interior",
-        "type": "Button",
-        "options": [
-          "Yes",
-          "No",
-          "Partial"
-        ],
-        "followUpTrigger": [
-          "Yes",
-          "Partial"
-        ],
-        "followUpGroup": "bathrooms_updated",
-        "reminder": ""
-      },
-      {
-        "id": "bath_wainscot",
-        "label": "Bath Wainscot",
-        "urar": "Improvements",
-        "tab": "Interior",
-        "type": "MultiSelect Dropdown",
-        "options": [
-          "Ceramic Tile",
-          "Porcelain Tile",
-          "Stone",
-          "Travertine",
-          "Wood",
-          "Laminate",
-          "Vinyl",
-          "Terrazzo",
-          "Concrete",
-          "Other"
-        ],
-        "followUpTrigger": [],
-        "followUpGroup": "",
-        "reminder": ""
-      },
-      {
-        "id": "bath_wainscot_updated",
-        "label": "Bath Wainscot Updated",
-        "urar": "Improvements",
-        "tab": "Interior",
-        "type": "Button",
-        "options": [
-          "Yes",
-          "No",
-          "Partial"
-        ],
-        "followUpTrigger": [
-          "Yes",
-          "Partial"
-        ],
-        "followUpGroup": "bathrooms_updated",
         "reminder": ""
       },
       {
@@ -1263,10 +1527,153 @@
         "reminder": "FHA: Take pictures in attic. Note water stains, mold smell, or poor ventilation."
       },
       {
+        "id": "interior_other",
+        "label": "Interior Other",
+        "urar": "Improvements",
+        "tab": "Interior",
+        "type": "Text",
+        "options": [],
+        "followUpTrigger": [],
+        "followUpGroup": "",
+        "reminder": ""
+      },
+      {
+        "id": "bathrooms_updated",
+        "label": "Bathrooms Updated",
+        "urar": "Improvements",
+        "tab": "Bathrooms",
+        "type": "Button",
+        "options": [
+          "Yes",
+          "No",
+          "Partial"
+        ],
+        "followUpTrigger": [
+          "Yes",
+          "Partial"
+        ],
+        "followUpGroup": "bathrooms_updated",
+        "reminder": ""
+      },
+      {
+        "id": "bath_floor",
+        "label": "Bath Floor",
+        "urar": "Improvements",
+        "tab": "Bathrooms",
+        "type": "MultiSelect Dropdown",
+        "options": [
+          "Ceramic Tile",
+          "Porcelain Tile",
+          "Stone",
+          "Travertine",
+          "Wood",
+          "Laminate",
+          "Vinyl",
+          "Terrazzo",
+          "Concrete",
+          "Other"
+        ],
+        "followUpTrigger": [],
+        "followUpGroup": "",
+        "reminder": ""
+      },
+      {
+        "id": "bath_floor_condition",
+        "label": "Bath Floor Condition",
+        "urar": "Improvements",
+        "tab": "Bathrooms",
+        "type": "Button",
+        "options": [
+          "Excellent",
+          "Good",
+          "Typical",
+          "Fair",
+          "Poor"
+        ],
+        "followUpTrigger": [],
+        "followUpGroup": "",
+        "reminder": ""
+      },
+      {
+        "id": "bath_floor_updated",
+        "label": "Bath Floor Updated",
+        "urar": "Improvements",
+        "tab": "Bathrooms",
+        "type": "Button",
+        "options": [
+          "Yes",
+          "No",
+          "Partial"
+        ],
+        "followUpTrigger": [
+          "Yes",
+          "Partial"
+        ],
+        "followUpGroup": "bathrooms_updated",
+        "reminder": ""
+      },
+      {
+        "id": "bath_wainscot",
+        "label": "Bath Wainscot",
+        "urar": "Improvements",
+        "tab": "Bathrooms",
+        "type": "MultiSelect Dropdown",
+        "options": [
+          "Ceramic Tile",
+          "Porcelain Tile",
+          "Stone",
+          "Travertine",
+          "Wood",
+          "Laminate",
+          "Vinyl",
+          "Terrazzo",
+          "Concrete",
+          "Other"
+        ],
+        "followUpTrigger": [],
+        "followUpGroup": "",
+        "reminder": ""
+      },
+      {
+        "id": "bath_wainscot_condition",
+        "label": "Bath Wainscot Condition",
+        "urar": "Improvements",
+        "tab": "Bathrooms",
+        "type": "Button",
+        "options": [
+          "Excellent",
+          "Good",
+          "Typical",
+          "Fair",
+          "Poor"
+        ],
+        "followUpTrigger": [],
+        "followUpGroup": "",
+        "reminder": ""
+      },
+      {
+        "id": "bath_wainscot_updated",
+        "label": "Bath Wainscot Updated",
+        "urar": "Improvements",
+        "tab": "Bathrooms",
+        "type": "Button",
+        "options": [
+          "Yes",
+          "No",
+          "Partial"
+        ],
+        "followUpTrigger": [
+          "Yes",
+          "Partial"
+        ],
+        "followUpGroup": "bathrooms_updated",
+        "reminder": ""
+      },
+      {
         "id": "heating",
         "label": "Heating",
         "urar": "Improvements",
-        "tab": "Interior",
+        "tab": "HVAC / Mechanical",
         "type": "MultiSelect",
         "options": [
           "FWA",
@@ -1282,7 +1689,7 @@
         "id": "cooling",
         "label": "Cooling",
         "urar": "Improvements",
-        "tab": "Interior",
+        "tab": "HVAC / Mechanical",
         "type": "MultiSelect",
         "options": [
           "Central",
@@ -1298,7 +1705,7 @@
         "id": "cooling_updated",
         "label": "Cooling Updated",
         "urar": "Improvements",
-        "tab": "Interior",
+        "tab": "HVAC / Mechanical",
         "type": "Button",
         "options": [
           "Yes",
@@ -1313,21 +1720,28 @@
         "reminder": ""
       },
       {
-        "id": "ceiling_height",
-        "label": "Ceiling Height",
+        "id": "kitchen_updated",
+        "label": "Kitchen Updated",
         "urar": "Improvements",
-        "tab": "Interior",
-        "type": "Text",
-        "options": [],
-        "followUpTrigger": [],
-        "followUpGroup": "",
-        "reminder": "ANSI: \u22657 ft ceiling (finished area). Sloped: \u226550% of room \u22657 ft; under 5 ft excluded."
+        "tab": "Kitchen",
+        "type": "Button",
+        "options": [
+          "Yes",
+          "No",
+          "Partial"
+        ],
+        "followUpTrigger": [
+          "Yes",
+          "Partial"
+        ],
+        "followUpGroup": "kitchen_updated",
+        "reminder": ""
       },
       {
         "id": "refrigerator",
         "label": "Refrigerator",
         "urar": "Improvements",
-        "tab": "Interior",
+        "tab": "Kitchen",
         "type": "Counter",
         "options": [],
         "followUpTrigger": [],
@@ -1338,7 +1752,7 @@
         "id": "range",
         "label": "Range",
         "urar": "Improvements",
-        "tab": "Interior",
+        "tab": "Kitchen",
         "type": "Counter",
         "options": [],
         "followUpTrigger": [],
@@ -1349,7 +1763,7 @@
         "id": "oven",
         "label": "Oven",
         "urar": "Improvements",
-        "tab": "Interior",
+        "tab": "Kitchen",
         "type": "Counter",
         "options": [],
         "followUpTrigger": [],
@@ -1360,7 +1774,7 @@
         "id": "dishwasher",
         "label": "Dishwasher",
         "urar": "Improvements",
-        "tab": "Interior",
+        "tab": "Kitchen",
         "type": "Counter",
         "options": [],
         "followUpTrigger": [],
@@ -1371,7 +1785,7 @@
         "id": "disposal",
         "label": "Disposal",
         "urar": "Improvements",
-        "tab": "Interior",
+        "tab": "Kitchen",
         "type": "Counter",
         "options": [],
         "followUpTrigger": [],
@@ -1382,7 +1796,7 @@
         "id": "microwave",
         "label": "Microwave",
         "urar": "Improvements",
-        "tab": "Interior",
+        "tab": "Kitchen",
         "type": "Counter",
         "options": [],
         "followUpTrigger": [],
@@ -1393,7 +1807,7 @@
         "id": "clothes_washer",
         "label": "Clothes Washer",
         "urar": "Improvements",
-        "tab": "Interior",
+        "tab": "Kitchen",
         "type": "Counter",
         "options": [],
         "followUpTrigger": [],
@@ -1404,7 +1818,7 @@
         "id": "clothes_dryer",
         "label": "Clothes Dryer",
         "urar": "Improvements",
-        "tab": "Interior",
+        "tab": "Kitchen",
         "type": "Counter",
         "options": [],
         "followUpTrigger": [],
@@ -1415,7 +1829,7 @@
         "id": "range_hood",
         "label": "Range Hood",
         "urar": "Improvements",
-        "tab": "Interior",
+        "tab": "Kitchen",
         "type": "Counter",
         "options": [],
         "followUpTrigger": [],
@@ -1426,7 +1840,7 @@
         "id": "beverage_cooler",
         "label": "Beverage Cooler",
         "urar": "Improvements",
-        "tab": "Interior",
+        "tab": "Kitchen",
         "type": "Counter",
         "options": [],
         "followUpTrigger": [],
@@ -1437,118 +1851,8 @@
         "id": "appliances_other",
         "label": "Appliances Other",
         "urar": "Improvements",
-        "tab": "Interior",
+        "tab": "Kitchen",
         "type": "Text",
-        "options": [],
-        "followUpTrigger": [],
-        "followUpGroup": "",
-        "reminder": ""
-      },
-      {
-        "id": "living_room",
-        "label": "Living Room",
-        "urar": "Improvements",
-        "tab": "Interior",
-        "type": "Counter",
-        "options": [],
-        "followUpTrigger": [],
-        "followUpGroup": "",
-        "reminder": ""
-      },
-      {
-        "id": "dining_room",
-        "label": "Dining Room",
-        "urar": "Improvements",
-        "tab": "Interior",
-        "type": "Counter",
-        "options": [],
-        "followUpTrigger": [],
-        "followUpGroup": "",
-        "reminder": ""
-      },
-      {
-        "id": "dining_area",
-        "label": "Dining Area",
-        "urar": "Improvements",
-        "tab": "Interior",
-        "type": "Counter",
-        "options": [],
-        "followUpTrigger": [],
-        "followUpGroup": "",
-        "reminder": ""
-      },
-      {
-        "id": "family_room",
-        "label": "Family Room",
-        "urar": "Improvements",
-        "tab": "Interior",
-        "type": "Counter",
-        "options": [],
-        "followUpTrigger": [],
-        "followUpGroup": "",
-        "reminder": ""
-      },
-      {
-        "id": "breakfast_area",
-        "label": "Breakfast Area",
-        "urar": "Improvements",
-        "tab": "Interior",
-        "type": "Counter",
-        "options": [],
-        "followUpTrigger": [],
-        "followUpGroup": "",
-        "reminder": ""
-      },
-      {
-        "id": "kitchen",
-        "label": "Kitchen",
-        "urar": "Improvements",
-        "tab": "Interior",
-        "type": "Counter",
-        "options": [],
-        "followUpTrigger": [],
-        "followUpGroup": "",
-        "reminder": ""
-      },
-      {
-        "id": "den",
-        "label": "Den",
-        "urar": "Improvements",
-        "tab": "Interior",
-        "type": "Counter",
-        "options": [],
-        "followUpTrigger": [],
-        "followUpGroup": "",
-        "reminder": ""
-      },
-      {
-        "id": "bedrooms",
-        "label": "Bedrooms",
-        "urar": "Improvements",
-        "tab": "Interior",
-        "type": "Counter",
-        "options": [],
-        "followUpTrigger": [],
-        "followUpGroup": "",
-        "reminder": "FBC: Habitable room \u226570 sf \u00b7 \u22657 ft min horizontal dimension. MDC rental sleeping room: \u22658 ft width."
-      },
-      {
-        "id": "bathrooms",
-        "label": "Bathrooms",
-        "urar": "Improvements",
-        "tab": "Interior",
-        "type": "Counter",
-        "options": [],
-        "followUpTrigger": [],
-        "followUpGroup": "",
-        "reminder": ""
-      },
-      {
-        "id": "half_bath",
-        "label": "Half Bath",
-        "urar": "Improvements",
-        "tab": "Interior",
-        "type": "Counter",
         "options": [],
         "followUpTrigger": [],
         "followUpGroup": "",
@@ -1869,8 +2173,8 @@
             "label": "Gas Service",
             "type": "Button",
             "options": [
-              "Public",
-              "Private",
+              "Public/Natural Gas",
+              "Bottled/Propane",
               "Other"
             ],
             "destination": "Dynamic",
@@ -2594,11 +2898,11 @@
       },
       {
         "category": "Interior",
-        "label": "Dinning"
+        "label": "Dining"
       },
       {
         "category": "Interior",
-        "label": "Dinning Area"
+        "label": "Dining Area"
       },
       {
         "category": "Interior",
