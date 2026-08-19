@@ -1660,28 +1660,6 @@
         "reminder": ""
       },
       {
-        "id": "clothes_washer",
-        "label": "Clothes Washer",
-        "urar": "Improvements",
-        "tab": "Kitchen",
-        "type": "Counter",
-        "options": [],
-        "followUpTrigger": [],
-        "followUpGroup": "",
-        "reminder": ""
-      },
-      {
-        "id": "clothes_dryer",
-        "label": "Clothes Dryer",
-        "urar": "Improvements",
-        "tab": "Kitchen",
-        "type": "Counter",
-        "options": [],
-        "followUpTrigger": [],
-        "followUpGroup": "",
-        "reminder": ""
-      },
-      {
         "id": "range_hood",
         "label": "Range Hood",
         "urar": "Improvements",
@@ -1709,6 +1687,28 @@
         "urar": "Improvements",
         "tab": "Kitchen",
         "type": "Text",
+        "options": [],
+        "followUpTrigger": [],
+        "followUpGroup": "",
+        "reminder": ""
+      },
+      {
+        "id": "clothes_washer",
+        "label": "Clothes Washer",
+        "urar": "Improvements",
+        "tab": "Kitchen",
+        "type": "Counter",
+        "options": [],
+        "followUpTrigger": [],
+        "followUpGroup": "",
+        "reminder": ""
+      },
+      {
+        "id": "clothes_dryer",
+        "label": "Clothes Dryer",
+        "urar": "Improvements",
+        "tab": "Kitchen",
+        "type": "Counter",
         "options": [],
         "followUpTrigger": [],
         "followUpGroup": "",
