@@ -433,7 +433,7 @@
   var AUTOSAVE_DEBOUNCE_MS = 700;
   var MIGRATED_INSPECTION_ADDRESS = 'Unsaved / Migrated Inspection';
   // The exported-file schema is versioned independently of
-  // 0.23.2.2 -- app releases and the inspection-file format can
+  // 0.23.4 -- app releases and the inspection-file format can
   // and will drift out of step (a future app version might still need
   // to read a schemaVersion 1 file, or refuse a newer one it doesn't
   // understand yet), so import validation checks schema/schemaVersion
@@ -441,10 +441,10 @@
   var EXPORT_SCHEMA = 'clipboard-flux-inspection';
   var EXPORT_SCHEMA_VERSION = 1;
   var SUPPORTED_SCHEMA_VERSIONS = [1];
-  // Stamped at build time exactly like every other 0.23.2.2
+  // Stamped at build time exactly like every other 0.23.4
   // token in this file -- informational only in the export, never
   // itself validated on import.
-  var APP_VERSION = '0.23.2.2';
+  var APP_VERSION = '0.23.4';
   // Same database as Milestone 14's photos -- name kept for continuity
   // even though it now also holds inspection records; renaming it would
   // mean either abandoning existing photo data or writing a whole
@@ -520,6 +520,9 @@
   // Only one at a time; a fresh export always tears down a stale one
   // first via cleanupPdfPrintIframe().
   var pdfPrintIframe = null;
+  // Transient preparation owned by the open PDF chooser only. It is
+  // never persisted and never changes inspection data or photo records.
+  var pdfSharePreparation = null;
   // The currently open inspection's metadata record ({inspectionId,
   // propertyAddress, createdAt, updatedAt}) -- what the inspection bar
   // displays and what Save/Reset write back to.
@@ -2636,9 +2639,10 @@
   function renderChoiceModal(opts) {
     var el = document.getElementById('inspection-modal');
     var buttonsHtml = opts.choices.map(function (c, i) {
-      return '<button type="button" class="modal-choice-btn" data-choice-index="' + i + '">' +
-        esc(c.label) + '</button>';
+      return '<button type="button" class="modal-choice-btn" data-choice-index="' + i + '"' +
+        (c.disabled ? ' disabled aria-disabled="true"' : '') + '>' + esc(c.label) + '</button>';
     }).join('');
+    var closeAction = opts.onClose || closeInspectionModal;
     el.hidden = false;
     el.innerHTML = '<div class="inspection-modal-backdrop">' +
       '<div class="inspection-modal-body">' +
@@ -2651,15 +2655,15 @@
       '</div>' +
     '</div>';
     var backdrop = el.querySelector('.inspection-modal-backdrop');
-    backdrop.onclick = function (ev) { if (ev.target === backdrop) closeInspectionModal(); };
-    el.querySelector('.inspection-modal-close-btn').onclick = closeInspectionModal;
+    backdrop.onclick = function (ev) { if (ev.target === backdrop) closeAction(); };
+    el.querySelector('.inspection-modal-close-btn').onclick = closeAction;
     Array.prototype.forEach.call(el.querySelectorAll('.modal-choice-btn'), function (btn) {
       btn.onclick = function () {
-        opts.choices[Number(btn.dataset.choiceIndex)].action();
+        var choice = opts.choices[Number(btn.dataset.choiceIndex)];
+        if (!choice.disabled) choice.action();
       };
     });
   }
-
   // ---- JSON export/import (Milestone 16) ----
 
   function pad2(n) {
@@ -3647,6 +3651,129 @@
     return base + '_' + stamp + '_Inspection';
   }
 
+  function pdfExportFileName(meta) {
+    var base = sanitizeForFilename(meta.propertyAddress) || sanitizeForFilename(meta.inspectionId) || 'inspection';
+    return base + '_Inspection.pdf';
+  }
+
+  function canNativeSharePdfFile(file) {
+    if (typeof navigator === 'undefined' || typeof navigator.share !== 'function' ||
+        typeof navigator.canShare !== 'function') return false;
+    try {
+      return navigator.canShare({ files: [file] });
+    } catch (e) {
+      return false;
+    }
+  }
+
+  function isShareCancellation(error) {
+    return !!(error && error.name === 'AbortError');
+  }
+
+  // html2pdf.js v0.14.0 is bundled under app_template/vendor (MIT;
+  // upstream bundle and dependency notices are retained beside it).
+  // The iframe receives the exact same complete HTML document as the
+  // print path, so report ordering, photo grouping, Footprint, notes,
+  // and print CSS continue to have one source of truth.
+  var PDF_SHARE_PREPARATION_TIMEOUT_MS = 60000;
+
+  function renderReportPdfBlob(html, preparation) {
+    var sourceScript = document.querySelector('script[src*="vendor/html2pdf.bundle.min.js"]');
+    var iframe = null;
+    var win;
+    try {
+      iframe = document.createElement('iframe');
+      iframe.style.position = 'fixed';
+      iframe.style.left = '-10000px';
+      iframe.style.top = '0';
+      iframe.style.width = '816px';
+      iframe.style.height = '1056px';
+      iframe.style.border = '0';
+      iframe.setAttribute('aria-hidden', 'true');
+      document.body.appendChild(iframe);
+      if (preparation) preparation.renderIframe = iframe;
+
+      win = iframe.contentWindow;
+      win.document.open();
+      win.document.write(html);
+      win.document.close();
+    } catch (e) {
+      if (iframe && iframe.parentNode) iframe.parentNode.removeChild(iframe);
+      if (preparation && preparation.renderIframe === iframe) preparation.renderIframe = null;
+      return Promise.reject(e);
+    }
+
+    var rendererReady = new Promise(function (resolve, reject) {
+      if (!sourceScript || !sourceScript.src) {
+        reject(new Error('The bundled PDF renderer is unavailable.'));
+        return;
+      }
+      if (!win.document.head || !win.document.head.querySelector('style')) {
+        reject(new Error('The PDF report stylesheet is unavailable.'));
+        return;
+      }
+      var rendererScript = win.document.createElement('script');
+      rendererScript.src = sourceScript.src;
+      rendererScript.onload = function () {
+        if (typeof win.html2pdf === 'function') resolve();
+        else reject(new Error('The bundled PDF renderer did not initialize.'));
+      };
+      rendererScript.onerror = function () {
+        reject(new Error('The bundled PDF renderer could not be loaded.'));
+      };
+      win.document.head.appendChild(rendererScript);
+    });
+
+    var contentReady = new Promise(function (resolve) {
+      var imagePromises = Array.prototype.map.call(win.document.images || [], function (img) {
+        if (img.complete) return Promise.resolve();
+        return new Promise(function (imageDone) {
+          img.onload = imageDone;
+          img.onerror = imageDone;
+        });
+      });
+      var fontsReady = win.document.fonts && win.document.fonts.ready
+        ? win.document.fonts.ready.catch(function () {})
+        : Promise.resolve();
+      Promise.all(imagePromises.concat([fontsReady])).then(resolve);
+    });
+
+    var renderWork = Promise.all([rendererReady, contentReady]).then(function () {
+      return win.html2pdf()
+        .set({
+          margin: win.Array.of(0.5, 0.6, 0.5, 0.6),
+          image: { type: 'jpeg', quality: 0.94 },
+          html2canvas: {
+            scale: 2,
+            useCORS: false,
+            logging: false,
+            backgroundColor: '#ffffff'
+          },
+          jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait', compress: true },
+          pagebreak: { mode: win.Array.of('css', 'legacy') }
+        })
+        .from(win.document.body)
+        .outputPdf('blob');
+    }).then(function (blob) {
+      if (!(blob instanceof win.Blob) || blob.type !== 'application/pdf') {
+        throw new Error('The PDF renderer did not return a PDF file.');
+      }
+      return blob;
+    });
+
+    var renderTimeoutId;
+    var renderTimeout = new Promise(function (resolve, reject) {
+      renderTimeoutId = setTimeout(function () {
+        reject(new Error('PDF rendering timed out.'));
+      }, PDF_SHARE_PREPARATION_TIMEOUT_MS);
+    });
+
+    return Promise.race([renderWork, renderTimeout]).finally(function () {
+      clearTimeout(renderTimeoutId);
+      if (iframe.parentNode) iframe.parentNode.removeChild(iframe);
+      if (preparation && preparation.renderIframe === iframe) preparation.renderIframe = null;
+    });
+  }
   function buildPrintDocumentHtml(meta, data, photosWithUrls, footprintImageUrl, notesHandImageUrls) {
     var values = data.values || {};
     var disregarded = data.disregarded || {};
@@ -3747,39 +3874,116 @@
     iframe.__objectUrls = photosWithUrls.map(function (p) { return p.objectUrl; });
     if (footprintImageUrl) iframe.__objectUrls.push(footprintImageUrl);
     if (notesHandImageUrls) iframe.__objectUrls = iframe.__objectUrls.concat(notesHandImageUrls);
-    document.body.appendChild(iframe);
+    // Ownership begins before DOM insertion so cleanupPdfPrintIframe()
+    // can revoke every URL even if append/document setup throws.
     pdfPrintIframe = iframe;
 
-    var win = iframe.contentWindow;
-    win.document.open();
-    win.document.write(html);
-    win.document.close();
+    try {
+      document.body.appendChild(iframe);
+      var win = iframe.contentWindow;
+      win.document.open();
+      win.document.write(html);
+      win.document.close();
 
-    var printed = false;
-    var doPrint = function () {
-      if (printed) return;
-      printed = true;
-      win.focus();
-      win.print();
-      win.addEventListener('afterprint', function () { cleanupPdfPrintIframe(); });
-      setTimeout(function () {
-        // Fallback only -- if afterprint already ran, pdfPrintIframe is
-        // already null and cleanupPdfPrintIframe() is a no-op.
-        cleanupPdfPrintIframe();
-      }, 60000);
-    };
-    iframe.onload = doPrint;
-    setTimeout(doPrint, 2000);
+      var printed = false;
+      var doPrint = function () {
+        if (printed) return;
+        printed = true;
+        try {
+          win.addEventListener('afterprint', function () { cleanupPdfPrintIframe(); });
+          win.focus();
+          win.print();
+          setTimeout(function () {
+            // Fallback only -- if afterprint already ran, pdfPrintIframe is
+            // already null and cleanupPdfPrintIframe() is a no-op.
+            cleanupPdfPrintIframe();
+          }, 60000);
+        } catch (e) {
+          cleanupPdfPrintIframe();
+          window.console && console.error && console.error('Clipboard-Flux: print failed', e);
+          window.alert('Could not open Print / Save PDF: ' + e.message);
+        }
+      };
+      iframe.onload = doPrint;
+      setTimeout(doPrint, 2000);
+    } catch (e) {
+      cleanupPdfPrintIframe();
+      throw e;
+    }
+  }
+  function cleanupPdfReportObjectUrls(report) {
+    if (!report || !report.objectUrls) return;
+    report.objectUrls.splice(0).forEach(function (url) {
+      URL.revokeObjectURL(url);
+    });
   }
 
-  // Builds and prints the PDF for `inspectionId` -- always reads fresh
-  // from IndexedDB, same convention as exportInspectionJson(). Callers
-  // are expected to have already flushed any pending autosave (see
-  // handleExportPdfClick()) since there's no popup-timing constraint
-  // left to work around -- printViaHiddenIframe() never needs to be
-  // reached synchronously from the click the way window.open() once did.
-  function generatePdfExport(inspectionId) {
-    Promise.all([
+  function cleanupPdfSharePreparation(preparation) {
+    if (!preparation) return;
+    cleanupPdfReportObjectUrls(preparation.report);
+    if (preparation.renderIframe && preparation.renderIframe.parentNode) {
+      preparation.renderIframe.parentNode.removeChild(preparation.renderIframe);
+    }
+    preparation.renderIframe = null;
+    if (preparation.timeoutId) clearTimeout(preparation.timeoutId);
+    preparation.timeoutId = null;
+  }
+
+  // PDF-export-only photo optimization (see the size-driven follow-up to
+  // Milestone 0.23.4's native Share PDF: a photo-heavy real inspection
+  // produced a ~21.7MB PDF attachment on-device, too large for a
+  // practical email/share workflow). Stored photo Blobs are never
+  // touched -- this only ever produces a *new*, temporary Blob for PDF
+  // embedding; the original full-resolution Blob in IndexedDB is neither
+  // read back into nor overwritten by this path.
+  var PDF_PHOTO_MAX_DIM = 1800;
+  var PDF_PHOTO_JPEG_QUALITY = 0.8;
+
+  // Resize-if-needed + re-encode one photo Blob for PDF embedding only.
+  // Reuses readImageMeta()'s <img>+object-URL decode -- the same decode
+  // makeThumbnailBlob() already relies on at ingestion time for correct
+  // EXIF orientation on Safari/iOS, so a photo that already displays
+  // right-side-up in the app displays right-side-up in the PDF too.
+  // Math.min(1, target/max) only ever shrinks: a photo already at or
+  // under the cap keeps its native pixel dimensions (never upscaled),
+  // though it's still re-encoded as JPEG at PDF_PHOTO_JPEG_QUALITY for a
+  // consistent embedded format. Rejects (never resolves with a broken
+  // Blob) on decode/encode failure -- buildPdfReportSnapshot()'s caller
+  // is the one place that decides to fall back to the original Blob
+  // rather than fail the whole report over one bad photo.
+  function optimizePhotoBlobForPdf(blob) {
+    return readImageMeta(blob).then(function (meta) {
+      var scale = Math.min(1, PDF_PHOTO_MAX_DIM / Math.max(meta.width, meta.height));
+      var w = Math.max(1, Math.round(meta.width * scale));
+      var h = Math.max(1, Math.round(meta.height * scale));
+      var canvas = document.createElement('canvas');
+      canvas.width = w;
+      canvas.height = h;
+      canvas.getContext('2d').drawImage(meta.img, 0, 0, w, h);
+      return new Promise(function (resolve, reject) {
+        canvas.toBlob(function (optimized) {
+          URL.revokeObjectURL(meta.url);
+          if (!optimized) { reject(new Error('Could not encode optimized photo')); return; }
+          resolve(optimized);
+        }, 'image/jpeg', PDF_PHOTO_JPEG_QUALITY);
+      });
+    });
+  }
+
+  // Reads one fresh, saved inspection snapshot and builds the report once
+  // for both export paths. Full-resolution photo Blobs are exposed only
+  // through temporary object URLs; no stored photo record is rewritten.
+  // Each photo is run through optimizePhotoBlobForPdf() -- a temporary,
+  // resized/re-encoded copy for embedding, never the stored Blob itself
+  // -- with a per-photo fallback to that photo's original Blob so one
+  // corrupt/undecodable photo degrades gracefully instead of failing the
+  // whole PDF. Footprint/handwritten-notes export is untouched by this:
+  // those are already-rasterized line art/text, not camera photos, and
+  // stay on their existing (lossless-leaning) export path.
+  function buildPdfReportSnapshot(inspectionId, preparation) {
+    var report = { objectUrls: [] };
+    if (preparation) preparation.report = report;
+    return Promise.all([
       idbGetInspection(inspectionId),
       idbGetInspectionData(inspectionId),
       idbGetAllPhotosForInspection(inspectionId)
@@ -3787,46 +3991,120 @@
       var meta = results[0];
       var data = results[1];
       var photoRecords = results[2];
+      if (preparation && (preparation.cancelled || preparation.expired)) {
+        throw new Error('PDF preparation stopped.');
+      }
       if (!meta || !data) throw new Error('Inspection not found in storage.');
-      // Full-resolution blob, never the thumbnail, per Milestone 17's
-      // explicit instruction -- the thumbnail exists only for the fast
-      // in-app photo strip.
-      var photosWithUrls = photoRecords.map(function (p) {
-        return {
-          id: p.id,
-          fieldId: p.fieldId,
-          category: p.category || null,
-          label: p.label || null,
-          originalFileName: p.originalFileName || '',
-          order: p.order,
-          objectUrl: URL.createObjectURL(p.blob)
-        };
-      });
-      // Milestone 22: rasterizing the full-bounds Footprint image is
-      // itself async (canvas.toBlob()), so it's resolved here before
-      // building the printable document -- buildPrintDocumentHtml()
-      // stays synchronous otherwise, same as every other section.
-      // Milestone 22.4/22.4.2: the hand-notes pages are the exact same
-      // kind of async rasterization (now possibly several images, one
-      // per paginated slice), resolved alongside the Footprint image via
-      // Promise.all rather than chained serially -- the two exports are
-      // independent of each other, so there's no reason to wait on one
-      // before starting the other.
+
+      report.meta = meta;
+      report.data = data;
+      return Promise.all(photoRecords.map(function (p) {
+        return optimizePhotoBlobForPdf(p.blob).catch(function (e) {
+          window.console && console.error && console.error(
+            'Clipboard-Flux: PDF photo optimization failed, using original photo', e
+          );
+          return p.blob;
+        }).then(function (photoBlobForPdf) {
+          var objectUrl = URL.createObjectURL(photoBlobForPdf);
+          report.objectUrls.push(objectUrl);
+          return {
+            id: p.id,
+            fieldId: p.fieldId,
+            category: p.category || null,
+            label: p.label || null,
+            originalFileName: p.originalFileName || '',
+            order: p.order,
+            objectUrl: objectUrl
+          };
+        });
+      }));
+    }).then(function (photosWithUrls) {
+      report.photosWithUrls = photosWithUrls;
+      if (preparation && (preparation.cancelled || preparation.expired)) {
+        throw new Error('PDF preparation stopped.');
+      }
       return Promise.all([
-        footprintExportImageBlob(sanitizeFootprint(data.footprint)),
-        notesHandExportImagePages(sanitizeNotes(data.notes).hand)
-      ]).then(function (results) {
-        var footprintImageUrl = results[0] ? URL.createObjectURL(results[0]) : null;
-        var notesHandImageUrls = results[1].map(function (blob) { return URL.createObjectURL(blob); });
-        var html = buildPrintDocumentHtml(meta, data, photosWithUrls, footprintImageUrl, notesHandImageUrls);
-        printViaHiddenIframe(html, photosWithUrls, footprintImageUrl, notesHandImageUrls);
+        footprintExportImageBlob(sanitizeFootprint(report.data.footprint)),
+        notesHandExportImagePages(sanitizeNotes(report.data.notes).hand)
+      ]);
+    }).then(function (rendered) {
+      if (preparation && (preparation.cancelled || preparation.expired)) {
+        throw new Error('PDF preparation stopped.');
+      }
+      report.footprintImageUrl = rendered[0] ? URL.createObjectURL(rendered[0]) : null;
+      if (report.footprintImageUrl) report.objectUrls.push(report.footprintImageUrl);
+      report.notesHandImageUrls = rendered[1].map(function (blob) {
+        var objectUrl = URL.createObjectURL(blob);
+        report.objectUrls.push(objectUrl);
+        return objectUrl;
       });
+      report.html = buildPrintDocumentHtml(
+        report.meta,
+        report.data,
+        report.photosWithUrls,
+        report.footprintImageUrl,
+        report.notesHandImageUrls
+      );
+      return report;
+    }).catch(function (e) {
+      cleanupPdfReportObjectUrls(report);
+      throw e;
+    });
+  }
+
+  // Existing Print / Save PDF workflow. The print iframe takes ownership
+  // of the report's temporary URLs and revokes them after printing.
+  function generatePdfExport(inspectionId) {
+    return buildPdfReportSnapshot(inspectionId).then(function (report) {
+      try {
+        printViaHiddenIframe(
+          report.html,
+          report.photosWithUrls,
+          report.footprintImageUrl,
+          report.notesHandImageUrls
+        );
+      } catch (e) {
+        cleanupPdfReportObjectUrls(report);
+        throw e;
+      }
     }).catch(function (e) {
       window.console && console.error && console.error('Clipboard-Flux: PDF export failed', e);
       window.alert('Could not generate the PDF: ' + e.message);
     });
   }
 
+  // Performs every asynchronous step before the final Share tap. The
+  // returned File is complete and capability-checked, so the tap handler
+  // can call navigator.share() immediately while transient activation is
+  // still present.
+  function sharePdfExport(inspectionId, preparation) {
+    var report = null;
+    return buildPdfReportSnapshot(inspectionId, preparation).then(function (builtReport) {
+      report = builtReport;
+      return renderReportPdfBlob(report.html, preparation).then(function (blob) {
+        var file;
+        try {
+          file = new File([blob], pdfExportFileName(report.meta), {
+            type: 'application/pdf',
+            lastModified: Date.now()
+          });
+        } catch (e) {
+          return { report: report, file: null, supported: false, error: e };
+        }
+        return {
+          report: report,
+          file: file,
+          supported: canNativeSharePdfFile(file),
+          error: null
+        };
+      }, function (e) {
+        return { report: report, file: null, supported: false, error: e };
+      });
+    }).catch(function (e) {
+      cleanupPdfReportObjectUrls(report);
+      throw e;
+    });
+  }
   // Symmetric with handleExportInspectionClick() now that PDF export no
   // longer needs to open anything synchronously with the click (see
   // printViaHiddenIframe()) -- flush any pending autosave first, then
@@ -3849,6 +4127,159 @@
     });
   }
 
+  function handleSharePdfClick() {
+    var preparation = pdfSharePreparation;
+    if (!preparation || preparation.status === 'preparing') return;
+
+    var report = preparation.report;
+    var file = preparation.file;
+    pdfSharePreparation = null;
+    closeInspectionModal();
+
+    if (preparation.status !== 'ready' || !file) {
+      window.alert('Direct PDF sharing is unavailable in this browser. Opening Print / Save PDF instead.');
+      if (report) {
+        try {
+          printViaHiddenIframe(report.html, report.photosWithUrls, report.footprintImageUrl, report.notesHandImageUrls);
+        } catch (e) {
+          cleanupPdfReportObjectUrls(report);
+          window.console && console.error && console.error('Clipboard-Flux: print fallback failed', e);
+          window.alert('Could not open Print / Save PDF: ' + e.message);
+        }
+      } else {
+        handleExportPdfClick();
+      }
+      return;
+    }
+
+    var shareResult;
+    try {
+      shareResult = navigator.share({
+        files: [file],
+        title: report.meta.propertyAddress || 'Clipboard-Flux Inspection'
+      });
+    } catch (e) {
+      if (!isShareCancellation(e)) {
+        window.console && console.error && console.error('Clipboard-Flux: PDF share failed', e);
+        window.alert('Could not share the PDF: ' + e.message);
+      }
+      cleanupPdfReportObjectUrls(report);
+      return;
+    }
+
+    return Promise.resolve(shareResult).catch(function (e) {
+      if (isShareCancellation(e)) return;
+      window.console && console.error && console.error('Clipboard-Flux: PDF share failed', e);
+      window.alert('Could not share the PDF: ' + e.message);
+    }).finally(function () {
+      cleanupPdfReportObjectUrls(report);
+    });
+  }
+
+  function closePdfActionMenu() {
+    var preparation = pdfSharePreparation;
+    pdfSharePreparation = null;
+    if (preparation) {
+      preparation.cancelled = true;
+      cleanupPdfSharePreparation(preparation);
+    }
+    closeInspectionModal();
+  }
+
+  function handlePrintSavePdfClick() {
+    closePdfActionMenu();
+    handleExportPdfClick();
+  }
+
+  function renderPdfActionMenu() {
+    var preparation = pdfSharePreparation;
+    var preparing = !!(preparation && preparation.status === 'preparing');
+    var message = preparing
+      ? 'Preparing the shareable PDF…'
+      : (preparation && preparation.status === 'ready')
+        ? 'The PDF is ready to share.'
+        : 'Direct sharing is unavailable. Share PDF will open Print / Save PDF instead.';
+    renderChoiceModal({
+      title: 'PDF',
+      message: message,
+      onClose: closePdfActionMenu,
+      choices: [
+        { label: 'Share PDF', action: handleSharePdfClick, disabled: preparing },
+        { label: 'Print / Save PDF', action: handlePrintSavePdfClick }
+      ]
+    });
+  }
+
+  function openPdfActionMenu() {
+    if (dbUnavailable) {
+      window.alert('PDF export isn\'t available in this browser (IndexedDB is blocked or unsupported).');
+      return;
+    }
+    if (!ensureBootReadyForAction('export')) return;
+
+    if (pdfSharePreparation) {
+      pdfSharePreparation.cancelled = true;
+      cleanupPdfSharePreparation(pdfSharePreparation);
+    }
+
+    var id = activeInspection.inspectionId;
+    var preparation = {
+      inspectionId: id,
+      status: 'preparing',
+      report: null,
+      file: null,
+      error: null,
+      cancelled: false,
+      expired: false,
+      renderIframe: null,
+      timeoutId: null
+    };
+    pdfSharePreparation = preparation;
+    renderPdfActionMenu();
+
+    var prepareLastSaved = function () { return sharePdfExport(id, preparation); };
+    var preparationWork = flushPendingSave().then(prepareLastSaved, function (e) {
+      window.console && console.error && console.error('Clipboard-Flux: could not save latest changes before PDF share', e);
+      window.alert('Could not save your latest changes (' + e.message + '). Preparing the last successfully saved version instead.');
+      return prepareLastSaved();
+    });
+    var preparationTimeout = new Promise(function (resolve, reject) {
+      preparation.timeoutId = setTimeout(function () {
+        preparation.expired = true;
+        cleanupPdfSharePreparation(preparation);
+        preparation.report = null;
+        var timeoutError = new Error('PDF preparation timed out.');
+        timeoutError.name = 'PdfPreparationTimeoutError';
+        reject(timeoutError);
+      }, PDF_SHARE_PREPARATION_TIMEOUT_MS);
+    });
+
+    Promise.race([preparationWork, preparationTimeout]).then(function (result) {
+      if (preparation.cancelled || preparation.expired || pdfSharePreparation !== preparation) {
+        if (result.report) cleanupPdfReportObjectUrls(result.report);
+        return;
+      }
+      preparation.report = result.report;
+      preparation.file = result.file;
+      preparation.error = result.error;
+      preparation.status = result.supported ? 'ready' : 'unsupported';
+      renderPdfActionMenu();
+    }).catch(function (e) {
+      if (preparation.cancelled || pdfSharePreparation !== preparation) return;
+      preparation.error = e;
+      if (e && e.name === 'PdfPreparationTimeoutError') {
+        preparation.status = 'timeout';
+        renderPdfActionMenu();
+        return;
+      }
+      preparation.status = 'error';
+      window.console && console.error && console.error('Clipboard-Flux: PDF preparation failed', e);
+      renderPdfActionMenu();
+    }).finally(function () {
+      if (preparation.timeoutId) clearTimeout(preparation.timeoutId);
+      preparation.timeoutId = null;
+    });
+  }
   // Compact, always-visible strip showing which inspection is active
   // (address, truncated by CSS rather than JS) and the current save
   // status word -- no buttons here any more (Milestone 18 #5 moved all
@@ -6091,7 +6522,7 @@
       '</div>' +
       '<div class="insp-tab-heading">Export / Import</div>' +
       '<div class="insp-tab-group">' +
-        '<button type="button" class="insp-tab-btn" data-role="insp-export-pdf"' + disabledAttr + '>Export PDF</button>' +
+        '<button type="button" class="insp-tab-btn" data-role="insp-pdf"' + disabledAttr + '>PDF</button>' +
         '<button type="button" class="insp-tab-btn" data-role="insp-export"' + disabledAttr + '>Export JSON</button>' +
         '<button type="button" class="insp-tab-btn" data-role="insp-import">Import JSON</button>' +
       '</div>' +
@@ -6111,8 +6542,8 @@
     if (resetBtn) resetBtn.onclick = handleResetInspectionClick;
     var exportBtn = document.querySelector('[data-role="insp-export"]');
     if (exportBtn) exportBtn.onclick = handleExportInspectionClick;
-    var exportPdfBtn = document.querySelector('[data-role="insp-export-pdf"]');
-    if (exportPdfBtn) exportPdfBtn.onclick = handleExportPdfClick;
+    var pdfBtn = document.querySelector('[data-role="insp-pdf"]');
+    if (pdfBtn) pdfBtn.onclick = openPdfActionMenu;
     var importBtn = document.querySelector('[data-role="insp-import"]');
     var importInput = document.querySelector('[data-role="import-json-input"]');
     if (importBtn && importInput) {
@@ -7084,7 +7515,7 @@
     }
   });
 
-  fetch('config.json?v=0.23.2.2', { cache: 'no-store' })
+  fetch('config.json?v=0.23.4', { cache: 'no-store' })
     .then(function (r) {
       if (!r.ok) throw new Error('HTTP ' + r.status);
       return r.json();
