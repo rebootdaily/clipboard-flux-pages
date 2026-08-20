@@ -84,7 +84,7 @@
   },
   "main": {
     "sheet": "MAIN",
-    "fieldCount": 113,
+    "fieldCount": 119,
     "tabs": [
       "Property",
       "Site",
@@ -449,8 +449,8 @@
         "reminder": "FHA: Septic tank needs to be located on lot"
       },
       {
-        "id": "utilities_notes",
-        "label": "Utilities Notes",
+        "id": "utilities_notes_repairs",
+        "label": "Utilities Notes/Repairs",
         "urar": "Site",
         "tab": "Utilities",
         "type": "LongText",
@@ -515,8 +515,8 @@
         "reminder": ""
       },
       {
-        "id": "car_storage_notes",
-        "label": "Car Storage Notes",
+        "id": "car_storage_notes_repairs",
+        "label": "Car Storage Notes/Repairs",
         "urar": "Improvements",
         "tab": "Car Storage",
         "type": "LongText",
@@ -980,8 +980,8 @@
         "reminder": ""
       },
       {
-        "id": "exterior_notes",
-        "label": "Exterior Notes",
+        "id": "exterior_notes_repairs",
+        "label": "Exterior Notes/Repairs",
         "urar": "Improvements",
         "tab": "Exterior",
         "type": "LongText",
@@ -1232,19 +1232,26 @@
         "reminder": ""
       },
       {
-        "id": "other_amenities",
-        "label": "Other Amenities",
+        "id": "other_amenities_extras",
+        "label": "Other Amenities / Extras",
         "urar": "Improvements",
         "tab": "Amenities",
-        "type": "Text",
-        "options": [],
+        "type": "MultiSelect Dropdown",
+        "options": [
+          "Irrigation",
+          "Ramada",
+          "Storage",
+          "Built-In BBQ",
+          "Aluminum Patio",
+          "Other"
+        ],
         "followUpTrigger": [],
         "followUpGroup": "",
         "reminder": "Irrigation, Cabana, BBQ, Etc."
       },
       {
-        "id": "outdoor_patio_notes",
-        "label": "Outdoor /Patio Notes",
+        "id": "outdoor_patio_notes_repairs",
+        "label": "Outdoor/Patio Notes/Repairs",
         "urar": "Improvements",
         "tab": "Amenities",
         "type": "LongText",
@@ -1375,6 +1382,17 @@
         "reminder": ""
       },
       {
+        "id": "rooms_notes_repairs",
+        "label": "Rooms Notes/Repairs",
+        "urar": "Improvements",
+        "tab": "Rooms",
+        "type": "Text",
+        "options": [],
+        "followUpTrigger": [],
+        "followUpGroup": "",
+        "reminder": ""
+      },
+      {
         "id": "floors",
         "label": "Floors",
         "urar": "Improvements",
@@ -1429,6 +1447,47 @@
           "Partial"
         ],
         "followUpGroup": "floors_updated",
+        "reminder": ""
+      },
+      {
+        "id": "ceiling_style",
+        "label": "Ceiling Style",
+        "urar": "Improvements",
+        "tab": "Interior",
+        "type": "MultiSelect Dropdown",
+        "options": [
+          "Flat",
+          "Vaulted",
+          "Cathedral",
+          "Tray",
+          "Coffered",
+          "Beamed",
+          "Coved",
+          "Barrel",
+          "Cupola",
+          "Low",
+          "Other"
+        ],
+        "followUpTrigger": [],
+        "followUpGroup": "",
+        "reminder": ""
+      },
+      {
+        "id": "ceiling_condition",
+        "label": "Ceiling Condition",
+        "urar": "Improvements",
+        "tab": "Interior",
+        "type": "Button",
+        "options": [
+          "Excellent",
+          "Good",
+          "Typical",
+          "Fair",
+          "Poor",
+          "Other"
+        ],
+        "followUpTrigger": [],
+        "followUpGroup": "",
         "reminder": ""
       },
       {
@@ -1715,6 +1774,28 @@
         "reminder": ""
       },
       {
+        "id": "wet_bar",
+        "label": "Wet Bar",
+        "urar": "Improvements",
+        "tab": "Kitchen",
+        "type": "Counter",
+        "options": [],
+        "followUpTrigger": [],
+        "followUpGroup": "",
+        "reminder": ""
+      },
+      {
+        "id": "kitchen_notes",
+        "label": "Kitchen Notes",
+        "urar": "Improvements",
+        "tab": "Kitchen",
+        "type": "Text",
+        "options": [],
+        "followUpTrigger": [],
+        "followUpGroup": "",
+        "reminder": ""
+      },
+      {
         "id": "bathrooms_updated",
         "label": "Bathrooms Updated",
         "urar": "Improvements",
@@ -1844,6 +1925,17 @@
           "Partial"
         ],
         "followUpGroup": "bathrooms_updated",
+        "reminder": ""
+      },
+      {
+        "id": "bathrooms_notes",
+        "label": "Bathrooms Notes",
+        "urar": "Improvements",
+        "tab": "Bathrooms",
+        "type": "Text",
+        "options": [],
+        "followUpTrigger": [],
+        "followUpGroup": "",
         "reminder": ""
       }
     ],
