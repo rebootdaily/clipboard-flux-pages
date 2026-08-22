@@ -433,7 +433,7 @@
   var AUTOSAVE_DEBOUNCE_MS = 700;
   var MIGRATED_INSPECTION_ADDRESS = 'Unsaved / Migrated Inspection';
   // The exported-file schema is versioned independently of
-  // 0.23.4 -- app releases and the inspection-file format can
+  // 0.23.4.1 -- app releases and the inspection-file format can
   // and will drift out of step (a future app version might still need
   // to read a schemaVersion 1 file, or refuse a newer one it doesn't
   // understand yet), so import validation checks schema/schemaVersion
@@ -441,10 +441,10 @@
   var EXPORT_SCHEMA = 'clipboard-flux-inspection';
   var EXPORT_SCHEMA_VERSION = 1;
   var SUPPORTED_SCHEMA_VERSIONS = [1];
-  // Stamped at build time exactly like every other 0.23.4
+  // Stamped at build time exactly like every other 0.23.4.1
   // token in this file -- informational only in the export, never
   // itself validated on import.
-  var APP_VERSION = '0.23.4';
+  var APP_VERSION = '0.23.4.1';
   // Same database as Milestone 14's photos -- name kept for continuity
   // even though it now also holds inspection records; renaming it would
   // mean either abandoning existing photo data or writing a whole
@@ -1192,9 +1192,19 @@
     return openPhotoDb().then(function (db) {
       return new Promise(function (resolve, reject) {
         var tx = db.transaction(PHOTO_STORE, 'readwrite');
-        tx.objectStore(PHOTO_STORE).add(record);
+        var req = tx.objectStore(PHOTO_STORE).add(record);
         tx.oncomplete = function () { resolve(); };
-        tx.onerror = function () { reject(tx.error); };
+        // req.error (not tx.error) is the rejection reason: tx.error is
+        // not yet populated at the moment tx.onerror fires (confirmed
+        // empirically -- it's only set by the time tx.onabort runs,
+        // after), so rejecting with tx.error here silently rejects with
+        // null on every real failure, which is exactly what masked the
+        // WebKit IndexedDB Blob-storage failure (see
+        // decodeAndStorePhoto()'s own comment) until this was traced with
+        // a physical-device diagnostic.
+        tx.onerror = function () {
+          reject(req.error || tx.error || new Error('IndexedDB write failed'));
+        };
       });
     });
   }
@@ -1226,13 +1236,35 @@
   // its own tiny store, written only at import/replace/remove time
   // (never on the routine autosave cycle that rewrites inspectionData,
   // see footprintReference's own comment for why that split matters).
-  function idbPutReferenceBlob(inspectionId, blob) {
-    return openPhotoDb().then(function (db) {
-      return new Promise(function (resolve, reject) {
-        var tx = db.transaction(FOOTPRINT_REFERENCE_STORE, 'readwrite');
-        tx.objectStore(FOOTPRINT_REFERENCE_STORE).put({ inspectionId: inspectionId, blob: blob });
-        tx.oncomplete = function () { resolve(); };
-        tx.onerror = function () { reject(tx.error); };
+  // WebKit/iOS Safari fix (same root cause and fix as decodeAndStorePhoto()
+  // for General/Field photos): storing a Blob/File value directly as an
+  // IndexedDB record field can fail on-device with "UnknownError: Error
+  // preparing Blob/File data to be stored in object store" -- a documented
+  // WebKit structured-clone bug. Stores the raw bytes as an ArrayBuffer
+  // instead; loadFootprintReferenceBitmap() reconstructs a real Blob from
+  // the ArrayBuffer + the mimeType stored alongside it, so any *existing*
+  // reference record from before this fix (a real stored Blob, no
+  // mimeType field at all) is still read correctly -- see the
+  // `instanceof Blob` check there. No migration, no data loss.
+  function idbPutReferenceBlob(inspectionId, blob, mimeType) {
+    return blob.arrayBuffer().then(function (buffer) {
+      return openPhotoDb().then(function (db) {
+        return new Promise(function (resolve, reject) {
+          var tx = db.transaction(FOOTPRINT_REFERENCE_STORE, 'readwrite');
+          var req = tx.objectStore(FOOTPRINT_REFERENCE_STORE).put({
+            inspectionId: inspectionId,
+            blob: buffer,
+            mimeType: mimeType || 'image/png'
+          });
+          tx.oncomplete = function () { resolve(); };
+          // req.error (not tx.error) is the rejection reason -- tx.error
+          // is not yet populated at the moment tx.onerror fires (same
+          // finding as idbAdd()'s own fix); rejecting with tx.error here
+          // would silently reject with null on every real failure.
+          tx.onerror = function () {
+            reject(req.error || tx.error || new Error('IndexedDB write failed'));
+          };
+        });
       });
     });
   }
@@ -1384,6 +1416,14 @@
   // metadata, never the full-resolution Blob (that's only fetched on
   // demand, when a thumbnail is tapped to view full-size).
   function toCacheEntry(record) {
+    // WebKit fix: a record read back from storage holds its thumbnail as
+    // an ArrayBuffer (see decodeAndStorePhoto()'s own comment); a record
+    // handed straight from a fresh ingest, or any pre-fix record already
+    // on disk, still holds a real Blob. Handle both without caring which.
+    var thumbnailBlob = (record.thumbnailBlob instanceof Blob)
+      ? record.thumbnailBlob
+      : new Blob([record.thumbnailBlob], { type: 'image/jpeg' });
+    var thumbnailUrl = URL.createObjectURL(thumbnailBlob);
     return {
       id: record.id,
       fieldId: record.fieldId,
@@ -1392,7 +1432,7 @@
       // category/label both null, not a separate flag).
       category: record.category || null,
       label: record.label || null,
-      thumbnailUrl: URL.createObjectURL(record.thumbnailBlob),
+      thumbnailUrl: thumbnailUrl,
       mimeType: record.mimeType,
       originalFileName: record.originalFileName || '',
       addedAt: record.addedAt,
@@ -1473,7 +1513,15 @@
     }
     return idbGetReferenceBlob(activeInspection.inspectionId).then(function (rec) {
       if (!rec || !rec.blob) return;
-      return createImageBitmap(rec.blob).then(function (bmp) {
+      // WebKit fix: a record read back from storage holds its image as an
+      // ArrayBuffer + the real mimeType idbPutReferenceBlob() stored
+      // alongside it (see that function's own comment); an existing
+      // pre-fix record still holds a real Blob directly, with its own
+      // correct .type already baked in, so it's used as-is. The
+      // 'image/png' fallback only guards a missing mimeType on an
+      // ArrayBuffer record, which the write path always sets.
+      var refBlob = (rec.blob instanceof Blob) ? rec.blob : new Blob([rec.blob], { type: rec.mimeType || 'image/png' });
+      return createImageBitmap(refBlob).then(function (bmp) {
         footprintReferenceBitmap = bmp;
       });
     }).catch(function (e) {
@@ -1584,22 +1632,63 @@
       decodedMeta = meta;
       return makeThumbnailBlob(meta.img, meta.width, meta.height);
     }).then(function (thumbBlob) {
-      var record = {
-        id: 'photo_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8),
-        fieldId: fieldId,
-        category: category,
-        label: label,
-        inspectionId: activeInspection ? activeInspection.inspectionId : null,
-        blob: file,
-        thumbnailBlob: thumbBlob,
-        mimeType: file.type || 'image/jpeg',
-        originalFileName: file.name || '',
-        addedAt: new Date().toISOString(),
-        width: decodedMeta.width,
-        height: decodedMeta.height,
-        order: order
-      };
-      return idbAdd(record).then(function () { return record; });
+      var id = 'photo_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8);
+      var mimeType = file.type || 'image/jpeg';
+      var originalFileName = file.name || '';
+      var addedAt = new Date().toISOString();
+      var inspectionId = activeInspection ? activeInspection.inspectionId : null;
+      // WebKit/iOS Safari fix: storing a Blob/File value directly as an
+      // IndexedDB record field fails on-device with "UnknownError: Error
+      // preparing Blob/File data to be stored in object store" -- a
+      // documented WebKit structured-clone bug (not a quota/constraint/
+      // version issue), confirmed via a physical-device diagnostic.
+      // Storing the raw bytes as an ArrayBuffer instead sidesteps it;
+      // toCacheEntry(), buildPdfReportSnapshot(), and
+      // openFullPhotoViewer() each reconstruct a real Blob from the
+      // ArrayBuffer + the already-stored mimeType wherever a record is
+      // read back, so nothing downstream needs to know or care which
+      // form is on disk -- including any *existing* record from before
+      // this fix, which already holds a real Blob and is left exactly as
+      // stored (no migration needed; see the `instanceof Blob` checks in
+      // each of those three).
+      return Promise.all([file.arrayBuffer(), thumbBlob.arrayBuffer()]).then(function (buffers) {
+        var storedRecord = {
+          id: id,
+          fieldId: fieldId,
+          category: category,
+          label: label,
+          inspectionId: inspectionId,
+          blob: buffers[0],
+          thumbnailBlob: buffers[1],
+          mimeType: mimeType,
+          originalFileName: originalFileName,
+          addedAt: addedAt,
+          width: decodedMeta.width,
+          height: decodedMeta.height,
+          order: order
+        };
+        return idbAdd(storedRecord).then(function () {
+          // Returned to the caller with the original Blobs (not the
+          // ArrayBuffers just written), so ingestPhoto()/
+          // ingestGeneralPhoto() can use it immediately (toCacheEntry())
+          // without a wasted round-trip re-conversion right after write.
+          return {
+            id: id,
+            fieldId: fieldId,
+            category: category,
+            label: label,
+            inspectionId: inspectionId,
+            blob: file,
+            thumbnailBlob: thumbBlob,
+            mimeType: mimeType,
+            originalFileName: originalFileName,
+            addedAt: addedAt,
+            width: decodedMeta.width,
+            height: decodedMeta.height,
+            order: order
+          };
+        });
+      });
     }).then(function (record) {
       if (decodedUrl) URL.revokeObjectURL(decodedUrl);
       return record;
@@ -1753,10 +1842,15 @@
     idbGetById(id).then(function (record) {
       if (!record) return;
       if (fullViewerState) URL.revokeObjectURL(fullViewerState.url);
+      // WebKit fix: record.blob is an ArrayBuffer for any photo stored
+      // after the IndexedDB Blob-storage fix (see decodeAndStorePhoto()'s
+      // own comment); reconstruct a real Blob from it -- a pre-fix record
+      // already holds one and is used as-is.
+      var fullBlob = (record.blob instanceof Blob) ? record.blob : new Blob([record.blob], { type: record.mimeType || 'image/jpeg' });
       fullViewerState = {
         fieldId: fieldId,
         id: id,
-        url: URL.createObjectURL(record.blob),
+        url: URL.createObjectURL(fullBlob),
         originalFileName: record.originalFileName || ''
       };
       renderPhotoViewer();
@@ -3725,7 +3819,15 @@
     });
 
     var contentReady = new Promise(function (resolve) {
+      // img.decode() (not just img.complete/onload) -- WebKit has long had
+      // cases, especially for <img> injected via document.write() into a
+      // same-origin iframe exactly like this one, where complete/onload
+      // fire before the bitmap is actually safe to read via drawImage()
+      // inside html2canvas's own capture pass. decode() is the stronger,
+      // purpose-built guarantee for that; complete/onload is only the
+      // fallback for engines without it.
       var imagePromises = Array.prototype.map.call(win.document.images || [], function (img) {
+        if (typeof img.decode === 'function') return img.decode().catch(function () {});
         if (img.complete) return Promise.resolve();
         return new Promise(function (imageDone) {
           img.onload = imageDone;
@@ -3970,16 +4072,44 @@
     });
   }
 
+  // Fix (regression reported after the photo-optimization milestone):
+  // html2canvas -- as bundled inside html2pdf.js and used by
+  // renderReportPdfBlob() for Share PDF -- does not reliably rasterize
+  // an <img> whose src is a blob: object URL. The element itself
+  // decodes fine (img.complete, correct naturalWidth/height), but
+  // html2canvas's own internal capture produces a blank/white region in
+  // its place; confirmed directly by rendering the same image via a
+  // blob: URL (blank) and a data: URL (correct) through the real bundled
+  // renderer. A data: URL is self-contained (no async fetch through the
+  // browser's blob registry for html2canvas's own loader to race with),
+  // so it sidesteps the problem entirely. Print / Save PDF is unaffected
+  // either way -- it uses the browser's native window.print(), which has
+  // always handled blob: URLs correctly; this fix only changes what
+  // Share PDF's html2canvas-based renderer receives.
+  function blobToDataUrl(blob) {
+    return new Promise(function (resolve, reject) {
+      var reader = new FileReader();
+      reader.onload = function () { resolve(reader.result); };
+      reader.onerror = function () { reject(new Error('Could not read image data')); };
+      reader.readAsDataURL(blob);
+    });
+  }
+
   // Reads one fresh, saved inspection snapshot and builds the report once
-  // for both export paths. Full-resolution photo Blobs are exposed only
-  // through temporary object URLs; no stored photo record is rewritten.
-  // Each photo is run through optimizePhotoBlobForPdf() -- a temporary,
+  // for both export paths. Full-resolution photo Blobs are never
+  // rewritten; a photo's own stored record is only ever read. Each photo
+  // is run through optimizePhotoBlobForPdf() -- a temporary,
   // resized/re-encoded copy for embedding, never the stored Blob itself
   // -- with a per-photo fallback to that photo's original Blob so one
   // corrupt/undecodable photo degrades gracefully instead of failing the
   // whole PDF. Footprint/handwritten-notes export is untouched by this:
   // those are already-rasterized line art/text, not camera photos, and
-  // stay on their existing (lossless-leaning) export path.
+  // stay on their existing (lossless-leaning) export path. Every image
+  // embedded in report.html -- photos, footprint, hand notes -- is a
+  // data: URL rather than a blob: object URL (see blobToDataUrl() above
+  // for why); report.objectUrls stays in place for
+  // cancellation/timeout bookkeeping but is no longer populated by these,
+  // since a data: URL needs no revoking.
   function buildPdfReportSnapshot(inspectionId, preparation) {
     var report = { objectUrls: [] };
     if (preparation) preparation.report = report;
@@ -3999,23 +4129,28 @@
       report.meta = meta;
       report.data = data;
       return Promise.all(photoRecords.map(function (p) {
-        return optimizePhotoBlobForPdf(p.blob).catch(function (e) {
+        // WebKit fix: p.blob is an ArrayBuffer for any photo stored after
+        // the IndexedDB Blob-storage fix (see decodeAndStorePhoto()'s own
+        // comment); reconstruct a real Blob from it -- a pre-fix record
+        // already holds one and is used as-is.
+        var sourceBlob = (p.blob instanceof Blob) ? p.blob : new Blob([p.blob], { type: p.mimeType || 'image/jpeg' });
+        return optimizePhotoBlobForPdf(sourceBlob).catch(function (e) {
           window.console && console.error && console.error(
             'Clipboard-Flux: PDF photo optimization failed, using original photo', e
           );
-          return p.blob;
+          return sourceBlob;
         }).then(function (photoBlobForPdf) {
-          var objectUrl = URL.createObjectURL(photoBlobForPdf);
-          report.objectUrls.push(objectUrl);
-          return {
-            id: p.id,
-            fieldId: p.fieldId,
-            category: p.category || null,
-            label: p.label || null,
-            originalFileName: p.originalFileName || '',
-            order: p.order,
-            objectUrl: objectUrl
-          };
+          return blobToDataUrl(photoBlobForPdf).then(function (dataUrl) {
+            return {
+              id: p.id,
+              fieldId: p.fieldId,
+              category: p.category || null,
+              label: p.label || null,
+              originalFileName: p.originalFileName || '',
+              order: p.order,
+              objectUrl: dataUrl
+            };
+          });
         });
       }));
     }).then(function (photosWithUrls) {
@@ -4031,13 +4166,13 @@
       if (preparation && (preparation.cancelled || preparation.expired)) {
         throw new Error('PDF preparation stopped.');
       }
-      report.footprintImageUrl = rendered[0] ? URL.createObjectURL(rendered[0]) : null;
-      if (report.footprintImageUrl) report.objectUrls.push(report.footprintImageUrl);
-      report.notesHandImageUrls = rendered[1].map(function (blob) {
-        var objectUrl = URL.createObjectURL(blob);
-        report.objectUrls.push(objectUrl);
-        return objectUrl;
-      });
+      return Promise.all([
+        rendered[0] ? blobToDataUrl(rendered[0]) : null,
+        Promise.all(rendered[1].map(blobToDataUrl))
+      ]);
+    }).then(function (urls) {
+      report.footprintImageUrl = urls[0];
+      report.notesHandImageUrls = urls[1];
       report.html = buildPrintDocumentHtml(
         report.meta,
         report.data,
@@ -5469,7 +5604,12 @@
       return;
     }
     var id = activeInspection.inspectionId;
-    idbPutReferenceBlob(id, info.blob).then(function () {
+    // info.mimeType is the *source* file's type (e.g. 'application/pdf'
+    // for a PDF import, or 'image/webp' even though footprintRasterToBlob()
+    // always re-encodes non-JPEG sources as PNG) -- not necessarily what
+    // info.blob was actually encoded as. info.blob.type is the blob's own
+    // real, encoded type and is what must be stored for reconstruction.
+    idbPutReferenceBlob(id, info.blob, info.blob.type).then(function () {
       if (footprintReferenceBitmap) {
         try { footprintReferenceBitmap.close(); } catch (e) { /* already closed */ }
         footprintReferenceBitmap = null;
@@ -7515,7 +7655,7 @@
     }
   });
 
-  fetch('config.json?v=0.23.4', { cache: 'no-store' })
+  fetch('config.json?v=0.23.4.1', { cache: 'no-store' })
     .then(function (r) {
       if (!r.ok) throw new Error('HTTP ' + r.status);
       return r.json();
