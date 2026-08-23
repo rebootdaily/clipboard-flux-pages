@@ -64,7 +64,9 @@
           var data = dataReq.result || null;
           var refRecord = refReq.result || null;
           db.close();
-          resolve(data && refRecord && refRecord.blob ? { data: data, blob: refRecord.blob } : null);
+          resolve(data && refRecord && refRecord.blob
+            ? { data: data, blob: refRecord.blob, mimeType: refRecord.mimeType }
+            : null);
         };
         tx.onerror = function () {
           var err = tx.error || new Error('Could not read Footprint reference data.');
@@ -75,14 +77,24 @@
     });
   }
 
-  function decodeBlob(blob) {
+  // WebKit/iOS Safari fix (same root cause and fix as app.js's
+  // decodeAndStorePhoto()/idbPutReferenceBlob()): storing a Blob/File
+  // value directly as an IndexedDB record field can fail on-device with
+  // "UnknownError: Error preparing Blob/File data to be stored in object
+  // store" -- idbPutReferenceBlob() now stores the reference's bytes as
+  // an ArrayBuffer plus its mimeType instead of a raw Blob. This bridge
+  // reads that same store, so it needs the identical reconstruction; a
+  // pre-fix record already holds a real Blob (with its own correct
+  // .type baked in) and is used as-is.
+  function decodeBlob(blob, mimeType) {
+    var source = (blob instanceof Blob) ? blob : new Blob([blob], { type: mimeType || 'image/png' });
     if (typeof createImageBitmap === 'function') {
-      return createImageBitmap(blob).then(function (bitmap) {
+      return createImageBitmap(source).then(function (bitmap) {
         return { image: bitmap, close: function () { try { bitmap.close(); } catch (e) {} } };
       });
     }
     return new Promise(function (resolve, reject) {
-      var url = URL.createObjectURL(blob);
+      var url = URL.createObjectURL(source);
       var img = new Image();
       img.onload = function () {
         resolve({ image: img, close: function () { URL.revokeObjectURL(url); } });
@@ -256,7 +268,7 @@
     if (!inspectionId) return Promise.resolve();
     return loadSavedFootprintAndReference(inspectionId).then(function (saved) {
       if (!saved || !saved.data || !saved.data.reference || saved.data.reference.visible === false) return;
-      return decodeBlob(saved.blob).then(function (decoded) {
+      return decodeBlob(saved.blob, saved.mimeType).then(function (decoded) {
         var dataUrl;
         try { dataUrl = renderComposite(saved.data, decoded); }
         finally { decoded.close(); }

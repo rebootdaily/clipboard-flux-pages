@@ -433,7 +433,7 @@
   var AUTOSAVE_DEBOUNCE_MS = 700;
   var MIGRATED_INSPECTION_ADDRESS = 'Unsaved / Migrated Inspection';
   // The exported-file schema is versioned independently of
-  // 0.23.4.1 -- app releases and the inspection-file format can
+  // 0.23.4.2 -- app releases and the inspection-file format can
   // and will drift out of step (a future app version might still need
   // to read a schemaVersion 1 file, or refuse a newer one it doesn't
   // understand yet), so import validation checks schema/schemaVersion
@@ -441,10 +441,10 @@
   var EXPORT_SCHEMA = 'clipboard-flux-inspection';
   var EXPORT_SCHEMA_VERSION = 1;
   var SUPPORTED_SCHEMA_VERSIONS = [1];
-  // Stamped at build time exactly like every other 0.23.4.1
+  // Stamped at build time exactly like every other 0.23.4.2
   // token in this file -- informational only in the export, never
   // itself validated on import.
-  var APP_VERSION = '0.23.4.1';
+  var APP_VERSION = '0.23.4.2';
   // Same database as Milestone 14's photos -- name kept for continuity
   // even though it now also holds inspection records; renaming it would
   // mean either abandoning existing photo data or writing a whole
@@ -3610,7 +3610,29 @@
     '.pdf-photo-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}' +
     '.pdf-photo-item{break-inside:avoid;page-break-inside:avoid;border:1px solid #d9e0e6;' +
       'border-radius:4px;padding:4px;text-align:center}' +
-    '.pdf-photo-item img{width:100%;max-height:2.6in;object-fit:contain;display:block}' +
+      // Confirmed empirically against the real bundled html2canvas (not
+      // just read from source): the previous rule --
+      // width:100%;max-height:2.6in;object-fit:contain -- let a portrait
+      // photo's width fill the box while object-fit:contain silently did
+      // not run in this renderer, so the naturally-tall image just got
+      // hard-clipped at max-height instead of letterboxed (the reported
+      // cropping). width/height:auto with a literal (non-percentage)
+      // max-width fits the image through ordinary aspect-ratio-preserving
+      // CSS auto-sizing alone -- object-fit is not just unnecessary here,
+      // it's actively broken in this renderer (confirmed: adding it back
+      // onto this same auto/auto rule made a previously-working photo
+      // render blank), so it is deliberately omitted, not forgotten. A
+      // *percentage* max-width (e.g. max-width:100%) also rendered
+      // nothing at all when combined with auto/auto in this renderer, so
+      // the literal-inch max-width below is load-bearing, not a style
+      // preference. 3.5in is the .pdf-photo-item content width for a
+      // 2-column grid on this module's own PDF page: letter width 8.5in
+      // - 2*0.6in margin (@page above) = 7.3in content, minus the grid's
+      // 8px gap, split across 2 columns, minus this item's own 4px
+      // padding * 2 and 1px border * 2 (all box-sizing:border-box) ->
+      // ~3.5in usable per item.
+    '.pdf-photo-item img{width:auto;height:auto;max-width:3.5in;max-height:2.6in;' +
+      'display:block;margin:0 auto}' +
     '.pdf-photo-caption{font-size:8pt;color:#4a5660;margin-top:3px}' +
     '.pdf-footprint-image{width:100%;max-height:8.5in;object-fit:contain;display:block;' +
       'border:1px solid #d9e0e6;border-radius:4px}' +
@@ -3636,28 +3658,69 @@
   var FOOTPRINT_EXPORT_TARGET_LONG_EDGE = 1600;
   var FOOTPRINT_EXPORT_PADDING_RATIO = 0.08;
 
-  function footprintComputeBounds(strokes) {
-    if (!strokes.length) return null;
+  // `extraPoints` (optional) is merged into the same sweep -- used to
+  // fold the Footprint reference image's rotated bounding box in
+  // alongside the strokes' own bounds (see footprintReferenceCorners()),
+  // so export never crops a reference that extends past the traced
+  // strokes. Omitted/empty, this behaves exactly as before.
+  function footprintComputeBounds(strokes, extraPoints) {
     var minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+    var found = false;
     strokes.forEach(function (s) {
       var pts = s.type === 'line' ? [s.a, s.b] : s.points;
       pts.forEach(function (p) {
+        found = true;
         if (p.x < minX) minX = p.x;
         if (p.x > maxX) maxX = p.x;
         if (p.y < minY) minY = p.y;
         if (p.y > maxY) maxY = p.y;
       });
     });
+    (extraPoints || []).forEach(function (p) {
+      found = true;
+      if (p.x < minX) minX = p.x;
+      if (p.x > maxX) maxX = p.x;
+      if (p.y < minY) minY = p.y;
+      if (p.y > maxY) maxY = p.y;
+    });
+    if (!found) return null;
     return { minX: minX, minY: minY, maxX: maxX, maxY: maxY };
   }
 
+  // The reference image's four corners in the same world coordinate
+  // space `footprint.strokes` live in, after applying its transform
+  // (translate + rotate, center-anchored) -- the exact same math
+  // drawFootprintCanvas() uses to draw it, just producing points instead
+  // of a drawImage() call. Used only to widen the export canvas's bounds
+  // so a reference bigger than the traced strokes isn't cropped.
+  function footprintReferenceCorners(meta) {
+    var refW = meta.width * meta.transform.scale;
+    var refH = meta.height * meta.transform.scale;
+    var hw = refW / 2, hh = refH / 2;
+    var cos = Math.cos(meta.transform.rotation), sin = Math.sin(meta.transform.rotation);
+    return [
+      { x: -hw, y: -hh }, { x: hw, y: -hh }, { x: hw, y: hh }, { x: -hw, y: hh }
+    ].map(function (p) {
+      return {
+        x: meta.transform.x + p.x * cos - p.y * sin,
+        y: meta.transform.y + p.x * sin + p.y * cos
+      };
+    });
+  }
+
   // Returns null when there's nothing to draw (#25 -- no empty Footprint
-  // page/whitespace in the PDF). Reuses footprintDrawOneStroke() exactly
-  // as the live canvas does, so a stroke's appearance in the PDF is
-  // guaranteed consistent with how it looks on screen, not a
-  // reimplementation that could quietly drift out of sync.
-  function footprintRenderExportCanvas(footprintDoc) {
-    var bounds = footprintComputeBounds(footprintDoc.strokes);
+  // page/whitespace in the PDF), which now means no strokes *and* no
+  // visible reference. Reuses footprintDrawOneStroke() exactly as the
+  // live canvas does, so a stroke's appearance in the PDF is guaranteed
+  // consistent with how it looks on screen, not a reimplementation that
+  // could quietly drift out of sync. `referenceInfo` (optional, from
+  // footprintLoadReferenceForExport()) is `{bitmap, meta}` for a visible
+  // reference image, drawn first so strokes/markup land on top of it --
+  // same draw order as drawFootprintCanvas(), same transform math, so
+  // its position/scale/rotation/opacity in the PDF matches the editor.
+  function footprintRenderExportCanvas(footprintDoc, referenceInfo) {
+    var extraPoints = referenceInfo ? footprintReferenceCorners(referenceInfo.meta) : null;
+    var bounds = footprintComputeBounds(footprintDoc.strokes, extraPoints);
     if (!bounds) return null;
     var w = bounds.maxX - bounds.minX;
     var h = bounds.maxY - bounds.minY;
@@ -3673,6 +3736,18 @@
     ctx.fillRect(0, 0, canvas.width, canvas.height);
     ctx.translate((pad - bounds.minX) * scale, (pad - bounds.minY) * scale);
     ctx.scale(scale, scale);
+    if (referenceInfo) {
+      var meta = referenceInfo.meta;
+      ctx.save();
+      ctx.globalAlpha = meta.opacity;
+      ctx.translate(meta.transform.x, meta.transform.y);
+      ctx.rotate(meta.transform.rotation);
+      var refW = meta.width * meta.transform.scale;
+      var refH = meta.height * meta.transform.scale;
+      ctx.drawImage(referenceInfo.bitmap, -refW / 2, -refH / 2, refW, refH);
+      ctx.restore();
+      try { referenceInfo.bitmap.close(); } catch (e) { /* already closed */ }
+    }
     ctx.lineCap = 'round';
     ctx.lineJoin = 'round';
     ctx.strokeStyle = '#1c3a52';
@@ -3680,11 +3755,36 @@
     return canvas;
   }
 
-  function footprintExportImageBlob(footprintDoc) {
-    var canvas = footprintRenderExportCanvas(footprintDoc);
+  function footprintExportImageBlob(footprintDoc, referenceInfo) {
+    var canvas = footprintRenderExportCanvas(footprintDoc, referenceInfo);
     if (!canvas) return Promise.resolve(null);
     return new Promise(function (resolve) {
       canvas.toBlob(function (blob) { resolve(blob); }, 'image/png');
+    });
+  }
+
+  // Loads the Footprint reference image for PDF export -- independent of
+  // the live in-memory footprintReferenceBitmap (which may belong to a
+  // different inspection, or not be loaded at all when export runs).
+  // Reads straight from FOOTPRINT_REFERENCE_STORE keyed by inspectionId,
+  // the same source loadFootprintReferenceBitmap() uses for the live
+  // editor, and reconstructs the Blob the same way (an ArrayBuffer
+  // record from the WebKit storage fix, or a pre-fix Blob as-is -- see
+  // that function's own comment). Resolves null whenever there's nothing
+  // to draw (no reference, hidden, or a decode failure), degrading
+  // export to strokes-only exactly like before this reference support
+  // existed, rather than failing the whole PDF.
+  function footprintLoadReferenceForExport(inspectionId, reference) {
+    if (!reference || !reference.visible) return Promise.resolve(null);
+    return idbGetReferenceBlob(inspectionId).then(function (rec) {
+      if (!rec || !rec.blob) return null;
+      var refBlob = (rec.blob instanceof Blob) ? rec.blob : new Blob([rec.blob], { type: rec.mimeType || 'image/png' });
+      return createImageBitmap(refBlob).then(function (bmp) {
+        return { bitmap: bmp, meta: reference };
+      });
+    }).catch(function (e) {
+      window.console && console.error && console.error('Clipboard-Flux: could not load reference image for PDF export', e);
+      return null;
     });
   }
 
@@ -4158,10 +4258,12 @@
       if (preparation && (preparation.cancelled || preparation.expired)) {
         throw new Error('PDF preparation stopped.');
       }
-      return Promise.all([
-        footprintExportImageBlob(sanitizeFootprint(report.data.footprint)),
-        notesHandExportImagePages(sanitizeNotes(report.data.notes).hand)
-      ]);
+      return footprintLoadReferenceForExport(inspectionId, sanitizeReference(report.data.reference)).then(function (referenceInfo) {
+        return Promise.all([
+          footprintExportImageBlob(sanitizeFootprint(report.data.footprint), referenceInfo),
+          notesHandExportImagePages(sanitizeNotes(report.data.notes).hand)
+        ]);
+      });
     }).then(function (rendered) {
       if (preparation && (preparation.cancelled || preparation.expired)) {
         throw new Error('PDF preparation stopped.');
@@ -5438,10 +5540,14 @@
   // when unlocked, mutually exclusive with normal drawing/pan), never
   // touched by Undo (footprintPushUndoSnapshot() is never called
   // anywhere in this section) or the Eraser (footprintEraseAt() only
-  // ever iterates `footprint.strokes`), and never read by the PDF
-  // export's bounds/render path (footprintComputeBounds()/
-  // footprintRenderExportCanvas() only ever see `footprint.strokes` --
-  // see that section's own code, unchanged by this milestone). Tracing
+  // ever iterates `footprint.strokes`). A visible reference *is* drawn
+  // into the PDF export (footprintRenderExportCanvas(), via
+  // footprintLoadReferenceForExport() reading FOOTPRINT_REFERENCE_STORE
+  // independently of the live footprintReferenceBitmap cache) -- drawn
+  // first, strokes always on top, same transform math as the live
+  // canvas -- but that's purely a render-order/bounds concern, not an
+  // exception to any of the isolation above: it still never becomes
+  // stroke geometry, still isn't touched by Undo/Eraser. Tracing
   // over the reference produces ordinary Pencil strokes through the
   // exact same footprintCommitDrawDraft()/classifyStroke() pipeline
   // every other stroke already goes through; moving, hiding, or
@@ -7655,7 +7761,7 @@
     }
   });
 
-  fetch('config.json?v=0.23.4.1', { cache: 'no-store' })
+  fetch('config.json?v=0.23.4.2', { cache: 'no-store' })
     .then(function (r) {
       if (!r.ok) throw new Error('HTTP ' + r.status);
       return r.json();
