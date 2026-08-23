@@ -84,7 +84,7 @@
   },
   "main": {
     "sheet": "MAIN",
-    "fieldCount": 119,
+    "fieldCount": 120,
     "tabs": [
       "Property",
       "Site",
@@ -137,7 +137,7 @@
         "label": "Inspection Type",
         "urar": "Subject",
         "tab": "Property",
-        "type": "MultiSelect Dropdown",
+        "type": "MultiSelect",
         "options": [
           "Conventional",
           "FHA",
@@ -156,7 +156,7 @@
         "label": "Occupancy",
         "urar": "Subject",
         "tab": "Property",
-        "type": "MultiSelect Dropdown",
+        "type": "MultiSelect",
         "options": [
           "Owner",
           "Tenant",
@@ -255,6 +255,17 @@
         "reminder": "If manufactured take photos of HUD lables and cert."
       },
       {
+        "id": "year_built",
+        "label": "Year Built",
+        "urar": "Subject",
+        "tab": "Property",
+        "type": "Text",
+        "options": [],
+        "followUpTrigger": [],
+        "followUpGroup": "",
+        "reminder": ""
+      },
+      {
         "id": "property_notes",
         "label": "Property Notes",
         "urar": "Subject",
@@ -270,7 +281,7 @@
         "label": "Street Surface",
         "urar": "Site",
         "tab": "Site",
-        "type": "MultiSelect Dropdown",
+        "type": "MultiSelect",
         "options": [
           "Asphalt",
           "Pavers",
@@ -335,7 +346,7 @@
         "label": "View",
         "urar": "Site",
         "tab": "Site",
-        "type": "MultiSelect Dropdown",
+        "type": "MultiSelect",
         "options": [
           "Residential",
           "Water",
@@ -358,12 +369,12 @@
         "label": "Location",
         "urar": "Site",
         "tab": "Site",
-        "type": "MultiSelect Dropdown",
+        "type": "MultiSelect",
         "options": [
+          "Residential",
           "Urban",
           "Suburban",
           "Rural",
-          "Residential",
           "Waterfront",
           "Busy Road/Traffic",
           "Commercial Influence",
@@ -497,7 +508,7 @@
         "label": "Car Storage",
         "urar": "Improvements",
         "tab": "Car Storage",
-        "type": "MultiSelect Dropdown",
+        "type": "MultiSelect",
         "options": [
           "Open",
           "Garage",
@@ -568,7 +579,7 @@
         "label": "Design / Style",
         "urar": "Improvements",
         "tab": "Exterior",
-        "type": "MultiSelect Dropdown",
+        "type": "MultiSelect",
         "options": [
           "Ranch",
           "Mediterranean",
@@ -607,7 +618,7 @@
         "label": "Foundation",
         "urar": "Improvements",
         "tab": "Exterior",
-        "type": "MultiSelect Dropdown",
+        "type": "MultiSelect",
         "options": [
           "Concrete",
           "Crawl Space",
@@ -662,7 +673,7 @@
         "label": "Exterior Walls",
         "urar": "Improvements",
         "tab": "Exterior",
-        "type": "MultiSelect Dropdown",
+        "type": "MultiSelect",
         "options": [
           "CBS/Concrete Block",
           "Wood/Stucco",
@@ -714,7 +725,7 @@
         "label": "Roof Surface",
         "urar": "Improvements",
         "tab": "Exterior",
-        "type": "MultiSelect Dropdown",
+        "type": "MultiSelect",
         "options": [
           "Asphalt Shingle",
           "Tile",
@@ -817,7 +828,7 @@
         "label": "Windows Type",
         "urar": "Improvements",
         "tab": "Exterior",
-        "type": "MultiSelect Dropdown",
+        "type": "MultiSelect",
         "options": [
           "Sliding",
           "S-Hung",
@@ -1045,7 +1056,7 @@
         "label": "Fence",
         "urar": "Improvements",
         "tab": "Amenities",
-        "type": "MultiSelect Dropdown",
+        "type": "MultiSelect",
         "options": [
           "None",
           "Wood",
@@ -1082,7 +1093,7 @@
         "label": "Patio",
         "urar": "Improvements",
         "tab": "Amenities",
-        "type": "MultiSelect Dropdown",
+        "type": "MultiSelect",
         "options": [
           "None",
           "Open",
@@ -1131,7 +1142,7 @@
         "label": "Deck",
         "urar": "Improvements",
         "tab": "Amenities",
-        "type": "MultiSelect Dropdown",
+        "type": "MultiSelect",
         "options": [
           "None",
           "Concrete",
@@ -1141,6 +1152,7 @@
           "Tile",
           "Travertine",
           "Stone",
+          "Chattahoochee",
           "Other"
         ],
         "followUpTrigger": [],
@@ -1236,7 +1248,7 @@
         "label": "Other Amenities / Extras",
         "urar": "Improvements",
         "tab": "Amenities",
-        "type": "MultiSelect Dropdown",
+        "type": "MultiSelect",
         "options": [
           "Irrigation",
           "Ramada",
@@ -1397,7 +1409,7 @@
         "label": "Floors",
         "urar": "Improvements",
         "tab": "Interior",
-        "type": "MultiSelect Dropdown",
+        "type": "MultiSelect",
         "options": [
           "Ceramic Tile",
           "Porcelain Tile",
@@ -1454,7 +1466,7 @@
         "label": "Ceiling Style",
         "urar": "Improvements",
         "tab": "Interior",
-        "type": "MultiSelect Dropdown",
+        "type": "MultiSelect",
         "options": [
           "Flat",
           "Vaulted",
@@ -1506,7 +1518,7 @@
         "label": "Walls",
         "urar": "Improvements",
         "tab": "Interior",
-        "type": "MultiSelect Dropdown",
+        "type": "MultiSelect",
         "options": [
           "Drywall",
           "Plaster",
@@ -1818,7 +1830,7 @@
         "label": "Bath Floor",
         "urar": "Improvements",
         "tab": "Bathrooms",
-        "type": "MultiSelect Dropdown",
+        "type": "MultiSelect",
         "options": [
           "Ceramic Tile",
           "Porcelain Tile",
@@ -1875,7 +1887,7 @@
         "label": "Bath Wainscot",
         "urar": "Improvements",
         "tab": "Bathrooms",
-        "type": "MultiSelect Dropdown",
+        "type": "MultiSelect",
         "options": [
           "Ceramic Tile",
           "Porcelain Tile",
