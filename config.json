@@ -1,5 +1,6 @@
 {
-  "version": "0.23.4.2",
+  "version": "0.23.4.4",
+  "schemaVersion": 2,
   "inputRules": {
     "sheet": "INPUT RULES",
     "validTypes": [
@@ -22,63 +23,78 @@
     "rules": [
       {
         "type": "Text",
-        "description": "Single-line free text"
+        "description": "Single-line free text",
+        "status": "Implemented"
       },
       {
         "type": "LongText",
-        "description": "Multi-line notes"
+        "description": "Multi-line notes",
+        "status": "Implemented"
       },
       {
         "type": "Button",
-        "description": "One selection shown as large touch buttons"
+        "description": "One selection shown as large touch buttons",
+        "status": "Implemented"
       },
       {
         "type": "Dropdown",
-        "description": "One selection from a reusable list"
+        "description": "One selection from a reusable list",
+        "status": "Planned"
       },
       {
         "type": "MultiSelect",
-        "description": "Multiple selections from a reusable list"
+        "description": "Multiple selections from a reusable list",
+        "status": "Implemented"
       },
       {
         "type": "Checkbox",
-        "description": "Independent checklist item"
+        "description": "Independent checklist item",
+        "status": "Planned"
       },
       {
         "type": "Toggle",
-        "description": "Yes / No"
+        "description": "Yes / No",
+        "status": "Planned"
       },
       {
         "type": "Counter",
-        "description": "Numeric plus/minus control"
+        "description": "Numeric plus/minus control",
+        "status": "Implemented"
       },
       {
         "type": "Date",
-        "description": "Date picker"
+        "description": "Date picker",
+        "status": "Planned"
       },
       {
         "type": "Time",
-        "description": "Time picker"
+        "description": "Time picker",
+        "status": "Planned"
       },
       {
         "type": "Camera",
-        "description": "Photo capture or selection"
+        "description": "Photo capture or selection",
+        "status": "Planned"
       },
       {
         "type": "Sketch",
-        "description": "Sketch workspace control"
+        "description": "Sketch workspace control",
+        "status": "Planned"
       },
       {
         "type": "Rating",
-        "description": "Optional numeric or categorical rating"
+        "description": "Optional numeric or categorical rating",
+        "status": "Planned"
       },
       {
         "type": "Currency",
-        "description": "Currency input"
+        "description": "Currency input",
+        "status": "Implemented"
       },
       {
         "type": "MultiSelect Dropdown",
-        "description": "Compact popover presentation of MultiSelect -- same answer semantics, less vertical space"
+        "description": "Compact popover presentation of MultiSelect -- same answer semantics, less vertical space",
+        "status": "Implemented"
       }
     ]
   },
@@ -108,7 +124,12 @@
         "options": [],
         "followUpTrigger": [],
         "followUpGroup": "",
-        "reminder": "Include unit number"
+        "reminder": "Include unit number",
+        "status": "Implemented",
+        "uad36Path": "",
+        "legacyExportName": "Address",
+        "requiredWhen": "",
+        "dataVersion": 1
       },
       {
         "id": "city",
@@ -119,7 +140,12 @@
         "options": [],
         "followUpTrigger": [],
         "followUpGroup": "",
-        "reminder": ""
+        "reminder": "",
+        "status": "Implemented",
+        "uad36Path": "",
+        "legacyExportName": "City",
+        "requiredWhen": "",
+        "dataVersion": 1
       },
       {
         "id": "zip_code",
@@ -130,7 +156,12 @@
         "options": [],
         "followUpTrigger": [],
         "followUpGroup": "",
-        "reminder": ""
+        "reminder": "",
+        "status": "Implemented",
+        "uad36Path": "",
+        "legacyExportName": "Zip Code",
+        "requiredWhen": "",
+        "dataVersion": 1
       },
       {
         "id": "inspection_type",
@@ -149,7 +180,12 @@
         ],
         "followUpTrigger": [],
         "followUpGroup": "",
-        "reminder": ""
+        "reminder": "",
+        "status": "Implemented",
+        "uad36Path": "",
+        "legacyExportName": "Inspection Type",
+        "requiredWhen": "",
+        "dataVersion": 1
       },
       {
         "id": "occupancy",
@@ -169,7 +205,12 @@
           "Vacant"
         ],
         "followUpGroup": "occupancy_vacant",
-        "reminder": ""
+        "reminder": "",
+        "status": "Implemented",
+        "uad36Path": "",
+        "legacyExportName": "Occupancy",
+        "requiredWhen": "",
+        "dataVersion": 1
       },
       {
         "id": "pud_association",
@@ -185,7 +226,12 @@
           "Yes"
         ],
         "followUpGroup": "pud_association",
-        "reminder": ""
+        "reminder": "",
+        "status": "Implemented",
+        "uad36Path": "",
+        "legacyExportName": "PUD / Association",
+        "requiredWhen": "",
+        "dataVersion": 1
       },
       {
         "id": "access_provided",
@@ -202,7 +248,12 @@
         ],
         "followUpTrigger": [],
         "followUpGroup": "",
-        "reminder": ""
+        "reminder": "",
+        "status": "Implemented",
+        "uad36Path": "",
+        "legacyExportName": "Access Provided",
+        "requiredWhen": "",
+        "dataVersion": 1
       },
       {
         "id": "attachment_type",
@@ -218,7 +269,12 @@
         ],
         "followUpTrigger": [],
         "followUpGroup": "",
-        "reminder": ""
+        "reminder": "",
+        "status": "Implemented",
+        "uad36Path": "",
+        "legacyExportName": "Attachment Type",
+        "requiredWhen": "",
+        "dataVersion": 1
       },
       {
         "id": "construction_stage",
@@ -234,7 +290,12 @@
         ],
         "followUpTrigger": [],
         "followUpGroup": "",
-        "reminder": ""
+        "reminder": "",
+        "status": "Implemented",
+        "uad36Path": "",
+        "legacyExportName": "Construction Stage",
+        "requiredWhen": "",
+        "dataVersion": 1
       },
       {
         "id": "construction_method",
@@ -252,7 +313,12 @@
           "Manufactured"
         ],
         "followUpGroup": "manufactured",
-        "reminder": "If manufactured take photos of HUD lables and cert."
+        "reminder": "If manufactured take photos of HUD lables and cert.",
+        "status": "Implemented",
+        "uad36Path": "",
+        "legacyExportName": "Construction Method",
+        "requiredWhen": "",
+        "dataVersion": 1
       },
       {
         "id": "year_built",
@@ -263,7 +329,12 @@
         "options": [],
         "followUpTrigger": [],
         "followUpGroup": "",
-        "reminder": ""
+        "reminder": "",
+        "status": "Implemented",
+        "uad36Path": "",
+        "legacyExportName": "Year Built",
+        "requiredWhen": "",
+        "dataVersion": 1
       },
       {
         "id": "property_notes",
@@ -274,7 +345,12 @@
         "options": [],
         "followUpTrigger": [],
         "followUpGroup": "",
-        "reminder": ""
+        "reminder": "",
+        "status": "Implemented",
+        "uad36Path": "",
+        "legacyExportName": "Property Notes",
+        "requiredWhen": "",
+        "dataVersion": 1
       },
       {
         "id": "street_surface",
@@ -292,7 +368,12 @@
         ],
         "followUpTrigger": [],
         "followUpGroup": "",
-        "reminder": ""
+        "reminder": "",
+        "status": "Implemented",
+        "uad36Path": "",
+        "legacyExportName": "Street Surface",
+        "requiredWhen": "",
+        "dataVersion": 1
       },
       {
         "id": "street_access",
@@ -306,7 +387,12 @@
         ],
         "followUpTrigger": [],
         "followUpGroup": "",
-        "reminder": ""
+        "reminder": "",
+        "status": "Implemented",
+        "uad36Path": "",
+        "legacyExportName": "Street Access",
+        "requiredWhen": "",
+        "dataVersion": 1
       },
       {
         "id": "alley",
@@ -322,7 +408,12 @@
           "Yes"
         ],
         "followUpGroup": "alley",
-        "reminder": "Take photo"
+        "reminder": "Take photo",
+        "status": "Implemented",
+        "uad36Path": "",
+        "legacyExportName": "Alley",
+        "requiredWhen": "",
+        "dataVersion": 1
       },
       {
         "id": "lot_shape",
@@ -339,7 +430,12 @@
         ],
         "followUpTrigger": [],
         "followUpGroup": "",
-        "reminder": ""
+        "reminder": "",
+        "status": "Implemented",
+        "uad36Path": "",
+        "legacyExportName": "Lot Shape",
+        "requiredWhen": "",
+        "dataVersion": 1
       },
       {
         "id": "view",
@@ -353,16 +449,19 @@
           "Golf",
           "Park",
           "City",
-          "Mountain",
           "Woods",
           "Busy Road/Traffic",
           "Commercial/Industrial",
-          "Other",
-          "None/Neutral"
+          "Other"
         ],
         "followUpTrigger": [],
         "followUpGroup": "",
-        "reminder": ""
+        "reminder": "",
+        "status": "Implemented",
+        "uad36Path": "",
+        "legacyExportName": "View",
+        "requiredWhen": "",
+        "dataVersion": 1
       },
       {
         "id": "location",
@@ -377,12 +476,17 @@
           "Rural",
           "Waterfront",
           "Busy Road/Traffic",
-          "Commercial Influence",
+          "Commercial",
           "Other"
         ],
         "followUpTrigger": [],
         "followUpGroup": "",
-        "reminder": ""
+        "reminder": "",
+        "status": "Implemented",
+        "uad36Path": "",
+        "legacyExportName": "Location",
+        "requiredWhen": "",
+        "dataVersion": 1
       },
       {
         "id": "site_notes",
@@ -393,7 +497,12 @@
         "options": [],
         "followUpTrigger": [],
         "followUpGroup": "",
-        "reminder": ""
+        "reminder": "",
+        "status": "Implemented",
+        "uad36Path": "",
+        "legacyExportName": "Site Notes",
+        "requiredWhen": "",
+        "dataVersion": 1
       },
       {
         "id": "electricity",
@@ -407,7 +516,12 @@
         ],
         "followUpTrigger": [],
         "followUpGroup": "",
-        "reminder": "FHA: Take photo of working utility"
+        "reminder": "FHA: Take photo of working utility",
+        "status": "Implemented",
+        "uad36Path": "",
+        "legacyExportName": "Electricity",
+        "requiredWhen": "",
+        "dataVersion": 1
       },
       {
         "id": "water",
@@ -424,7 +538,12 @@
         ],
         "followUpTrigger": [],
         "followUpGroup": "",
-        "reminder": "FHA: Take photo of utility/locate if well. Well \u226550 ft from septic tank, \u2265100 ft from drain field."
+        "reminder": "FHA: Take photo of utility/locate if well. Well \u226550 ft from septic tank, \u2265100 ft from drain field.",
+        "status": "Implemented",
+        "uad36Path": "",
+        "legacyExportName": "Water",
+        "requiredWhen": "",
+        "dataVersion": 1
       },
       {
         "id": "gas_available",
@@ -440,7 +559,12 @@
           "Yes"
         ],
         "followUpGroup": "gas",
-        "reminder": ""
+        "reminder": "",
+        "status": "Implemented",
+        "uad36Path": "",
+        "legacyExportName": "Gas Available",
+        "requiredWhen": "",
+        "dataVersion": 1
       },
       {
         "id": "sanitary_sewer",
@@ -457,7 +581,12 @@
         ],
         "followUpTrigger": [],
         "followUpGroup": "",
-        "reminder": "FHA: Septic tank needs to be located on lot"
+        "reminder": "FHA: Septic tank needs to be located on lot",
+        "status": "Implemented",
+        "uad36Path": "",
+        "legacyExportName": "Sanitary Sewer",
+        "requiredWhen": "",
+        "dataVersion": 1
       },
       {
         "id": "utilities_notes_repairs",
@@ -468,7 +597,12 @@
         "options": [],
         "followUpTrigger": [],
         "followUpGroup": "",
-        "reminder": "Extras/Adverse conditions? FHA: note standing water/improper grading (positive drainage required)."
+        "reminder": "Extras/Adverse conditions? FHA: note standing water/improper grading (positive drainage required).",
+        "status": "Implemented",
+        "uad36Path": "",
+        "legacyExportName": "Utilities Notes/Repairs",
+        "requiredWhen": "",
+        "dataVersion": 1
       },
       {
         "id": "driveway_surface",
@@ -490,7 +624,12 @@
         ],
         "followUpTrigger": [],
         "followUpGroup": "",
-        "reminder": ""
+        "reminder": "",
+        "status": "Implemented",
+        "uad36Path": "",
+        "legacyExportName": "Driveway Surface",
+        "requiredWhen": "",
+        "dataVersion": 1
       },
       {
         "id": "driveway_capacity",
@@ -501,7 +640,12 @@
         "options": [],
         "followUpTrigger": [],
         "followUpGroup": "",
-        "reminder": ""
+        "reminder": "",
+        "status": "Implemented",
+        "uad36Path": "",
+        "legacyExportName": "Driveway Capacity",
+        "requiredWhen": "",
+        "dataVersion": 1
       },
       {
         "id": "car_storage",
@@ -523,7 +667,12 @@
           "Covered"
         ],
         "followUpGroup": "car_storage",
-        "reminder": ""
+        "reminder": "",
+        "status": "Implemented",
+        "uad36Path": "",
+        "legacyExportName": "Car Storage",
+        "requiredWhen": "",
+        "dataVersion": 1
       },
       {
         "id": "car_storage_notes_repairs",
@@ -534,7 +683,12 @@
         "options": [],
         "followUpTrigger": [],
         "followUpGroup": "",
-        "reminder": ""
+        "reminder": "",
+        "status": "Implemented",
+        "uad36Path": "",
+        "legacyExportName": "Car Storage Notes/Repairs",
+        "requiredWhen": "",
+        "dataVersion": 1
       },
       {
         "id": "stories",
@@ -545,7 +699,12 @@
         "options": [],
         "followUpTrigger": [],
         "followUpGroup": "",
-        "reminder": "ANSI: A level is below-grade if any part of it is below grade."
+        "reminder": "ANSI: A level is below-grade if any part of it is below grade.",
+        "status": "Implemented",
+        "uad36Path": "",
+        "legacyExportName": "Stories",
+        "requiredWhen": "",
+        "dataVersion": 1
       },
       {
         "id": "number_of_units",
@@ -556,7 +715,12 @@
         "options": [],
         "followUpTrigger": [],
         "followUpGroup": "",
-        "reminder": ""
+        "reminder": "",
+        "status": "Implemented",
+        "uad36Path": "",
+        "legacyExportName": "Number of Units",
+        "requiredWhen": "",
+        "dataVersion": 1
       },
       {
         "id": "adu",
@@ -572,7 +736,12 @@
           "Yes"
         ],
         "followUpGroup": "adu",
-        "reminder": ""
+        "reminder": "",
+        "status": "Implemented",
+        "uad36Path": "",
+        "legacyExportName": "ADU",
+        "requiredWhen": "",
+        "dataVersion": 1
       },
       {
         "id": "design_style",
@@ -582,19 +751,27 @@
         "type": "MultiSelect",
         "options": [
           "Ranch",
-          "Mediterranean",
+          "Medi",
           "Villa",
-          "Contemporary",
+          "Contem",
           "Colonial",
-          "Bungalow/Cottage",
-          "Townhouse",
+          "Bung/Cottage",
+          "Townhse",
           "Condo",
-          "Twinhome",
+          "Twinhme",
+          "Manu",
           "Other"
         ],
-        "followUpTrigger": [],
-        "followUpGroup": "",
-        "reminder": ""
+        "followUpTrigger": [
+          "Condo"
+        ],
+        "followUpGroup": "condo",
+        "reminder": "",
+        "status": "Implemented",
+        "uad36Path": "",
+        "legacyExportName": "Design / Style",
+        "requiredWhen": "",
+        "dataVersion": 1
       },
       {
         "id": "front_door_elevation",
@@ -611,7 +788,12 @@
         ],
         "followUpTrigger": [],
         "followUpGroup": "",
-        "reminder": ""
+        "reminder": "",
+        "status": "Implemented",
+        "uad36Path": "",
+        "legacyExportName": "Front Door Elevation",
+        "requiredWhen": "",
+        "dataVersion": 1
       },
       {
         "id": "foundation",
@@ -632,7 +814,12 @@
         ],
         "followUpTrigger": [],
         "followUpGroup": "",
-        "reminder": "MDC: No basement/cellar space may be used as a habitable room. 17-26(5)"
+        "reminder": "MDC: No basement/cellar space may be used as a habitable room. 17-26(5)",
+        "status": "Implemented",
+        "uad36Path": "",
+        "legacyExportName": "Foundation",
+        "requiredWhen": "",
+        "dataVersion": 1
       },
       {
         "id": "foundation_walls",
@@ -649,7 +836,12 @@
         ],
         "followUpTrigger": [],
         "followUpGroup": "",
-        "reminder": "FNMA/FHA: settlement, water seepage, or cracking \u2192 document & photograph."
+        "reminder": "FNMA/FHA: settlement, water seepage, or cracking \u2192 document & photograph.",
+        "status": "Implemented",
+        "uad36Path": "",
+        "legacyExportName": "Foundation Walls",
+        "requiredWhen": "",
+        "dataVersion": 1
       },
       {
         "id": "foundation_walls_condition",
@@ -666,7 +858,12 @@
         ],
         "followUpTrigger": [],
         "followUpGroup": "",
-        "reminder": ""
+        "reminder": "",
+        "status": "Implemented",
+        "uad36Path": "",
+        "legacyExportName": "Foundation Walls Condition",
+        "requiredWhen": "",
+        "dataVersion": 1
       },
       {
         "id": "exterior_walls",
@@ -685,7 +882,12 @@
         ],
         "followUpTrigger": [],
         "followUpGroup": "",
-        "reminder": ""
+        "reminder": "",
+        "status": "Implemented",
+        "uad36Path": "",
+        "legacyExportName": "Exterior Walls",
+        "requiredWhen": "",
+        "dataVersion": 1
       },
       {
         "id": "exterior_walls_condition",
@@ -702,7 +904,12 @@
         ],
         "followUpTrigger": [],
         "followUpGroup": "",
-        "reminder": ""
+        "reminder": "",
+        "status": "Implemented",
+        "uad36Path": "",
+        "legacyExportName": "Exterior Walls Condition",
+        "requiredWhen": "",
+        "dataVersion": 1
       },
       {
         "id": "solar_panels",
@@ -718,7 +925,12 @@
           "Yes"
         ],
         "followUpGroup": "solar_panels",
-        "reminder": ""
+        "reminder": "",
+        "status": "Implemented",
+        "uad36Path": "",
+        "legacyExportName": "Solar Panels",
+        "requiredWhen": "",
+        "dataVersion": 1
       },
       {
         "id": "roof_surface",
@@ -736,7 +948,12 @@
         ],
         "followUpTrigger": [],
         "followUpGroup": "",
-        "reminder": ""
+        "reminder": "",
+        "status": "Implemented",
+        "uad36Path": "",
+        "legacyExportName": "Roof Surface",
+        "requiredWhen": "",
+        "dataVersion": 1
       },
       {
         "id": "roof_surface_condition",
@@ -753,7 +970,12 @@
         ],
         "followUpTrigger": [],
         "followUpGroup": "",
-        "reminder": ""
+        "reminder": "",
+        "status": "Implemented",
+        "uad36Path": "",
+        "legacyExportName": "Roof Surface Condition",
+        "requiredWhen": "",
+        "dataVersion": 1
       },
       {
         "id": "roof_updated",
@@ -771,7 +993,12 @@
           "Partial"
         ],
         "followUpGroup": "roof_updated",
-        "reminder": ""
+        "reminder": "",
+        "status": "Implemented",
+        "uad36Path": "",
+        "legacyExportName": "Roof Updated",
+        "requiredWhen": "",
+        "dataVersion": 1
       },
       {
         "id": "gutters_downspouts",
@@ -786,7 +1013,12 @@
         ],
         "followUpTrigger": [],
         "followUpGroup": "",
-        "reminder": ""
+        "reminder": "",
+        "status": "Implemented",
+        "uad36Path": "",
+        "legacyExportName": "Gutters / Downspouts",
+        "requiredWhen": "",
+        "dataVersion": 1
       },
       {
         "id": "gutters_downspouts_condition",
@@ -803,7 +1035,12 @@
         ],
         "followUpTrigger": [],
         "followUpGroup": "",
-        "reminder": ""
+        "reminder": "",
+        "status": "Implemented",
+        "uad36Path": "",
+        "legacyExportName": "Gutters / Downspouts Condition",
+        "requiredWhen": "",
+        "dataVersion": 1
       },
       {
         "id": "gutters_updated",
@@ -821,7 +1058,12 @@
           "Partial"
         ],
         "followUpGroup": "gutters_updated",
-        "reminder": ""
+        "reminder": "",
+        "status": "Implemented",
+        "uad36Path": "",
+        "legacyExportName": "Gutters Updated",
+        "requiredWhen": "",
+        "dataVersion": 1
       },
       {
         "id": "windows_type",
@@ -840,7 +1082,12 @@
         ],
         "followUpTrigger": [],
         "followUpGroup": "",
-        "reminder": ""
+        "reminder": "",
+        "status": "Implemented",
+        "uad36Path": "",
+        "legacyExportName": "Windows Type",
+        "requiredWhen": "",
+        "dataVersion": 1
       },
       {
         "id": "windows_type_condition",
@@ -857,7 +1104,12 @@
         ],
         "followUpTrigger": [],
         "followUpGroup": "",
-        "reminder": ""
+        "reminder": "",
+        "status": "Implemented",
+        "uad36Path": "",
+        "legacyExportName": "Windows Type Condition",
+        "requiredWhen": "",
+        "dataVersion": 1
       },
       {
         "id": "windows_updated",
@@ -875,7 +1127,12 @@
           "Partial"
         ],
         "followUpGroup": "windows_updated",
-        "reminder": ""
+        "reminder": "",
+        "status": "Implemented",
+        "uad36Path": "",
+        "legacyExportName": "Windows Updated",
+        "requiredWhen": "",
+        "dataVersion": 1
       },
       {
         "id": "windows_impact",
@@ -890,7 +1147,12 @@
         ],
         "followUpTrigger": [],
         "followUpGroup": "",
-        "reminder": ""
+        "reminder": "",
+        "status": "Implemented",
+        "uad36Path": "",
+        "legacyExportName": "Windows Impact",
+        "requiredWhen": "",
+        "dataVersion": 1
       },
       {
         "id": "screens",
@@ -906,7 +1168,12 @@
         ],
         "followUpTrigger": [],
         "followUpGroup": "",
-        "reminder": ""
+        "reminder": "",
+        "status": "Implemented",
+        "uad36Path": "",
+        "legacyExportName": "Screens",
+        "requiredWhen": "",
+        "dataVersion": 1
       },
       {
         "id": "screens_condition",
@@ -923,7 +1190,12 @@
         ],
         "followUpTrigger": [],
         "followUpGroup": "",
-        "reminder": ""
+        "reminder": "",
+        "status": "Implemented",
+        "uad36Path": "",
+        "legacyExportName": "Screens Condition",
+        "requiredWhen": "",
+        "dataVersion": 1
       },
       {
         "id": "shutters",
@@ -941,7 +1213,12 @@
           "Partial"
         ],
         "followUpGroup": "shutters",
-        "reminder": ""
+        "reminder": "",
+        "status": "Implemented",
+        "uad36Path": "",
+        "legacyExportName": "Shutters",
+        "requiredWhen": "",
+        "dataVersion": 1
       },
       {
         "id": "security_bars",
@@ -959,7 +1236,12 @@
           "Partial"
         ],
         "followUpGroup": "security_bars",
-        "reminder": ""
+        "reminder": "",
+        "status": "Implemented",
+        "uad36Path": "",
+        "legacyExportName": "Security Bars",
+        "requiredWhen": "",
+        "dataVersion": 1
       },
       {
         "id": "storm_sash_insulated",
@@ -974,7 +1256,12 @@
         ],
         "followUpTrigger": [],
         "followUpGroup": "",
-        "reminder": ""
+        "reminder": "",
+        "status": "Implemented",
+        "uad36Path": "",
+        "legacyExportName": "Storm Sash / Insulated",
+        "requiredWhen": "",
+        "dataVersion": 1
       },
       {
         "id": "fireplace",
@@ -988,7 +1275,12 @@
         ],
         "followUpTrigger": [],
         "followUpGroup": "",
-        "reminder": ""
+        "reminder": "",
+        "status": "Implemented",
+        "uad36Path": "",
+        "legacyExportName": "Fireplace",
+        "requiredWhen": "",
+        "dataVersion": 1
       },
       {
         "id": "exterior_notes_repairs",
@@ -999,7 +1291,12 @@
         "options": [],
         "followUpTrigger": [],
         "followUpGroup": "",
-        "reminder": ""
+        "reminder": "",
+        "status": "Implemented",
+        "uad36Path": "",
+        "legacyExportName": "Exterior Notes/Repairs",
+        "requiredWhen": "",
+        "dataVersion": 1
       },
       {
         "id": "heating",
@@ -1015,7 +1312,12 @@
         ],
         "followUpTrigger": [],
         "followUpGroup": "",
-        "reminder": ""
+        "reminder": "",
+        "status": "Implemented",
+        "uad36Path": "",
+        "legacyExportName": "Heating",
+        "requiredWhen": "",
+        "dataVersion": 1
       },
       {
         "id": "cooling",
@@ -1031,7 +1333,12 @@
         ],
         "followUpTrigger": [],
         "followUpGroup": "",
-        "reminder": ""
+        "reminder": "",
+        "status": "Implemented",
+        "uad36Path": "",
+        "legacyExportName": "Cooling",
+        "requiredWhen": "",
+        "dataVersion": 1
       },
       {
         "id": "cooling_updated",
@@ -1049,7 +1356,12 @@
           "Partial"
         ],
         "followUpGroup": "cooling_updated",
-        "reminder": ""
+        "reminder": "",
+        "status": "Implemented",
+        "uad36Path": "",
+        "legacyExportName": "Cooling Updated",
+        "requiredWhen": "",
+        "dataVersion": 1
       },
       {
         "id": "fence",
@@ -1069,7 +1381,12 @@
         ],
         "followUpTrigger": [],
         "followUpGroup": "",
-        "reminder": ""
+        "reminder": "",
+        "status": "Implemented",
+        "uad36Path": "",
+        "legacyExportName": "Fence",
+        "requiredWhen": "",
+        "dataVersion": 1
       },
       {
         "id": "fence_condition",
@@ -1086,7 +1403,57 @@
         ],
         "followUpTrigger": [],
         "followUpGroup": "",
-        "reminder": ""
+        "reminder": "",
+        "status": "Implemented",
+        "uad36Path": "",
+        "legacyExportName": "Fence Condition",
+        "requiredWhen": "",
+        "dataVersion": 1
+      },
+      {
+        "id": "porch",
+        "label": "Porch",
+        "urar": "Improvements",
+        "tab": "Amenities",
+        "type": "MultiSelect",
+        "options": [
+          "None",
+          "Open",
+          "Covered",
+          "Aluminum",
+          "Canvas",
+          "Other"
+        ],
+        "followUpTrigger": [],
+        "followUpGroup": "",
+        "reminder": "",
+        "status": "Implemented",
+        "uad36Path": "",
+        "legacyExportName": "Porch",
+        "requiredWhen": "",
+        "dataVersion": 1
+      },
+      {
+        "id": "porch_condition",
+        "label": "Porch Condition",
+        "urar": "Improvements",
+        "tab": "Amenities",
+        "type": "Button",
+        "options": [
+          "Excellent",
+          "Good",
+          "Typical",
+          "Fair",
+          "Poor"
+        ],
+        "followUpTrigger": [],
+        "followUpGroup": "",
+        "reminder": "",
+        "status": "Implemented",
+        "uad36Path": "",
+        "legacyExportName": "Porch Condition",
+        "requiredWhen": "",
+        "dataVersion": 1
       },
       {
         "id": "patio",
@@ -1104,7 +1471,12 @@
         ],
         "followUpTrigger": [],
         "followUpGroup": "",
-        "reminder": ""
+        "reminder": "",
+        "status": "Implemented",
+        "uad36Path": "",
+        "legacyExportName": "Patio",
+        "requiredWhen": "",
+        "dataVersion": 1
       },
       {
         "id": "patio_condition",
@@ -1121,7 +1493,12 @@
         ],
         "followUpTrigger": [],
         "followUpGroup": "",
-        "reminder": ""
+        "reminder": "",
+        "status": "Implemented",
+        "uad36Path": "",
+        "legacyExportName": "Patio Condition",
+        "requiredWhen": "",
+        "dataVersion": 1
       },
       {
         "id": "patio_attachment",
@@ -1135,7 +1512,12 @@
         ],
         "followUpTrigger": [],
         "followUpGroup": "",
-        "reminder": ""
+        "reminder": "",
+        "status": "Implemented",
+        "uad36Path": "",
+        "legacyExportName": "Patio Attachment",
+        "requiredWhen": "",
+        "dataVersion": 1
       },
       {
         "id": "deck",
@@ -1157,7 +1539,12 @@
         ],
         "followUpTrigger": [],
         "followUpGroup": "",
-        "reminder": ""
+        "reminder": "",
+        "status": "Implemented",
+        "uad36Path": "",
+        "legacyExportName": "Deck",
+        "requiredWhen": "",
+        "dataVersion": 1
       },
       {
         "id": "deck_condition",
@@ -1174,7 +1561,12 @@
         ],
         "followUpTrigger": [],
         "followUpGroup": "",
-        "reminder": ""
+        "reminder": "",
+        "status": "Implemented",
+        "uad36Path": "",
+        "legacyExportName": "Deck Condition",
+        "requiredWhen": "",
+        "dataVersion": 1
       },
       {
         "id": "balcony",
@@ -1190,42 +1582,12 @@
           "Yes"
         ],
         "followUpGroup": "balcony",
-        "reminder": ""
-      },
-      {
-        "id": "porch",
-        "label": "Porch",
-        "urar": "Improvements",
-        "tab": "Amenities",
-        "type": "MultiSelect",
-        "options": [
-          "None",
-          "Open",
-          "Covered",
-          "Aluminum",
-          "Canvas",
-          "Other"
-        ],
-        "followUpTrigger": [],
-        "followUpGroup": "",
-        "reminder": ""
-      },
-      {
-        "id": "porch_condition",
-        "label": "Porch Condition",
-        "urar": "Improvements",
-        "tab": "Amenities",
-        "type": "Button",
-        "options": [
-          "Excellent",
-          "Good",
-          "Typical",
-          "Fair",
-          "Poor"
-        ],
-        "followUpTrigger": [],
-        "followUpGroup": "",
-        "reminder": ""
+        "reminder": "",
+        "status": "Implemented",
+        "uad36Path": "",
+        "legacyExportName": "Balcony",
+        "requiredWhen": "",
+        "dataVersion": 1
       },
       {
         "id": "pool",
@@ -1241,7 +1603,12 @@
           "Yes"
         ],
         "followUpGroup": "pool",
-        "reminder": ""
+        "reminder": "",
+        "status": "Implemented",
+        "uad36Path": "",
+        "legacyExportName": "Pool",
+        "requiredWhen": "",
+        "dataVersion": 1
       },
       {
         "id": "other_amenities_extras",
@@ -1259,7 +1626,12 @@
         ],
         "followUpTrigger": [],
         "followUpGroup": "",
-        "reminder": "Irrigation, Cabana, BBQ, Etc."
+        "reminder": "Irrigation, Cabana, BBQ, Etc.",
+        "status": "Implemented",
+        "uad36Path": "",
+        "legacyExportName": "Other Amenities / Extras",
+        "requiredWhen": "",
+        "dataVersion": 1
       },
       {
         "id": "outdoor_patio_notes_repairs",
@@ -1270,7 +1642,12 @@
         "options": [],
         "followUpTrigger": [],
         "followUpGroup": "",
-        "reminder": "Extras/Adverse conditions?"
+        "reminder": "Extras/Adverse conditions?",
+        "status": "Implemented",
+        "uad36Path": "",
+        "legacyExportName": "Outdoor/Patio Notes/Repairs",
+        "requiredWhen": "",
+        "dataVersion": 1
       },
       {
         "id": "living_room",
@@ -1281,7 +1658,12 @@
         "options": [],
         "followUpTrigger": [],
         "followUpGroup": "",
-        "reminder": ""
+        "reminder": "",
+        "status": "Implemented",
+        "uad36Path": "",
+        "legacyExportName": "Living Room",
+        "requiredWhen": "",
+        "dataVersion": 1
       },
       {
         "id": "dining_room",
@@ -1292,7 +1674,12 @@
         "options": [],
         "followUpTrigger": [],
         "followUpGroup": "",
-        "reminder": ""
+        "reminder": "",
+        "status": "Implemented",
+        "uad36Path": "",
+        "legacyExportName": "Dining Room",
+        "requiredWhen": "",
+        "dataVersion": 1
       },
       {
         "id": "dining_area",
@@ -1303,7 +1690,12 @@
         "options": [],
         "followUpTrigger": [],
         "followUpGroup": "",
-        "reminder": ""
+        "reminder": "",
+        "status": "Implemented",
+        "uad36Path": "",
+        "legacyExportName": "Dining Area",
+        "requiredWhen": "",
+        "dataVersion": 1
       },
       {
         "id": "family_room",
@@ -1314,7 +1706,12 @@
         "options": [],
         "followUpTrigger": [],
         "followUpGroup": "",
-        "reminder": ""
+        "reminder": "",
+        "status": "Implemented",
+        "uad36Path": "",
+        "legacyExportName": "Family Room",
+        "requiredWhen": "",
+        "dataVersion": 1
       },
       {
         "id": "breakfast_area",
@@ -1325,7 +1722,12 @@
         "options": [],
         "followUpTrigger": [],
         "followUpGroup": "",
-        "reminder": ""
+        "reminder": "",
+        "status": "Implemented",
+        "uad36Path": "",
+        "legacyExportName": "Breakfast Area",
+        "requiredWhen": "",
+        "dataVersion": 1
       },
       {
         "id": "kitchen",
@@ -1336,7 +1738,12 @@
         "options": [],
         "followUpTrigger": [],
         "followUpGroup": "",
-        "reminder": ""
+        "reminder": "",
+        "status": "Implemented",
+        "uad36Path": "",
+        "legacyExportName": "Kitchen",
+        "requiredWhen": "",
+        "dataVersion": 1
       },
       {
         "id": "den",
@@ -1347,7 +1754,12 @@
         "options": [],
         "followUpTrigger": [],
         "followUpGroup": "",
-        "reminder": ""
+        "reminder": "",
+        "status": "Implemented",
+        "uad36Path": "",
+        "legacyExportName": "Den",
+        "requiredWhen": "",
+        "dataVersion": 1
       },
       {
         "id": "bedrooms",
@@ -1358,7 +1770,12 @@
         "options": [],
         "followUpTrigger": [],
         "followUpGroup": "",
-        "reminder": "FBC: Habitable room \u226570 sf \u00b7 \u22657 ft min horizontal dimension. MDC rental sleeping room: \u22658 ft width."
+        "reminder": "FBC: Habitable room \u226570 sf \u00b7 \u22657 ft min horizontal dimension. MDC rental sleeping room: \u22658 ft width.",
+        "status": "Implemented",
+        "uad36Path": "",
+        "legacyExportName": "Bedrooms",
+        "requiredWhen": "",
+        "dataVersion": 1
       },
       {
         "id": "bathrooms",
@@ -1369,7 +1786,12 @@
         "options": [],
         "followUpTrigger": [],
         "followUpGroup": "",
-        "reminder": ""
+        "reminder": "",
+        "status": "Implemented",
+        "uad36Path": "",
+        "legacyExportName": "Bathrooms",
+        "requiredWhen": "",
+        "dataVersion": 1
       },
       {
         "id": "half_bath",
@@ -1380,7 +1802,12 @@
         "options": [],
         "followUpTrigger": [],
         "followUpGroup": "",
-        "reminder": ""
+        "reminder": "",
+        "status": "Implemented",
+        "uad36Path": "",
+        "legacyExportName": "Half Bath",
+        "requiredWhen": "",
+        "dataVersion": 1
       },
       {
         "id": "smoke_detectors",
@@ -1391,7 +1818,12 @@
         "options": [],
         "followUpTrigger": [],
         "followUpGroup": "",
-        "reminder": ""
+        "reminder": "",
+        "status": "Implemented",
+        "uad36Path": "",
+        "legacyExportName": "Smoke Detectors",
+        "requiredWhen": "",
+        "dataVersion": 1
       },
       {
         "id": "rooms_notes_repairs",
@@ -1402,7 +1834,12 @@
         "options": [],
         "followUpTrigger": [],
         "followUpGroup": "",
-        "reminder": ""
+        "reminder": "",
+        "status": "Implemented",
+        "uad36Path": "",
+        "legacyExportName": "Rooms Notes/Repairs",
+        "requiredWhen": "",
+        "dataVersion": 1
       },
       {
         "id": "floors",
@@ -1424,7 +1861,12 @@
         ],
         "followUpTrigger": [],
         "followUpGroup": "",
-        "reminder": ""
+        "reminder": "",
+        "status": "Implemented",
+        "uad36Path": "",
+        "legacyExportName": "Floors",
+        "requiredWhen": "",
+        "dataVersion": 1
       },
       {
         "id": "floors_condition",
@@ -1441,7 +1883,12 @@
         ],
         "followUpTrigger": [],
         "followUpGroup": "",
-        "reminder": ""
+        "reminder": "",
+        "status": "Implemented",
+        "uad36Path": "",
+        "legacyExportName": "Floors Condition",
+        "requiredWhen": "",
+        "dataVersion": 1
       },
       {
         "id": "floors_updated",
@@ -1459,7 +1906,12 @@
           "Partial"
         ],
         "followUpGroup": "floors_updated",
-        "reminder": ""
+        "reminder": "",
+        "status": "Implemented",
+        "uad36Path": "",
+        "legacyExportName": "Floors Updated",
+        "requiredWhen": "",
+        "dataVersion": 1
       },
       {
         "id": "ceiling_style",
@@ -1482,7 +1934,12 @@
         ],
         "followUpTrigger": [],
         "followUpGroup": "",
-        "reminder": ""
+        "reminder": "",
+        "status": "Implemented",
+        "uad36Path": "",
+        "legacyExportName": "Ceiling Style",
+        "requiredWhen": "",
+        "dataVersion": 1
       },
       {
         "id": "ceiling_condition",
@@ -1500,7 +1957,12 @@
         ],
         "followUpTrigger": [],
         "followUpGroup": "",
-        "reminder": ""
+        "reminder": "",
+        "status": "Implemented",
+        "uad36Path": "",
+        "legacyExportName": "Ceiling Condition",
+        "requiredWhen": "",
+        "dataVersion": 1
       },
       {
         "id": "ceiling_height",
@@ -1511,7 +1973,12 @@
         "options": [],
         "followUpTrigger": [],
         "followUpGroup": "",
-        "reminder": "ANSI: \u22657 ft ceiling (finished area). Sloped: \u226550% of room \u22657 ft; under 5 ft excluded."
+        "reminder": "ANSI: \u22657 ft ceiling (finished area). Sloped: \u226550% of room \u22657 ft; under 5 ft excluded.",
+        "status": "Implemented",
+        "uad36Path": "",
+        "legacyExportName": "Ceiling Height",
+        "requiredWhen": "",
+        "dataVersion": 1
       },
       {
         "id": "walls",
@@ -1531,7 +1998,12 @@
         ],
         "followUpTrigger": [],
         "followUpGroup": "",
-        "reminder": ""
+        "reminder": "",
+        "status": "Implemented",
+        "uad36Path": "",
+        "legacyExportName": "Walls",
+        "requiredWhen": "",
+        "dataVersion": 1
       },
       {
         "id": "walls_condition",
@@ -1548,7 +2020,12 @@
         ],
         "followUpTrigger": [],
         "followUpGroup": "",
-        "reminder": ""
+        "reminder": "",
+        "status": "Implemented",
+        "uad36Path": "",
+        "legacyExportName": "Walls Condition",
+        "requiredWhen": "",
+        "dataVersion": 1
       },
       {
         "id": "walls_updated",
@@ -1566,7 +2043,12 @@
           "Partial"
         ],
         "followUpGroup": "walls_updated",
-        "reminder": ""
+        "reminder": "",
+        "status": "Implemented",
+        "uad36Path": "",
+        "legacyExportName": "Walls Updated",
+        "requiredWhen": "",
+        "dataVersion": 1
       },
       {
         "id": "trim_finish",
@@ -1582,7 +2064,12 @@
         ],
         "followUpTrigger": [],
         "followUpGroup": "",
-        "reminder": ""
+        "reminder": "",
+        "status": "Implemented",
+        "uad36Path": "",
+        "legacyExportName": "Trim / Finish",
+        "requiredWhen": "",
+        "dataVersion": 1
       },
       {
         "id": "trim_finish_condition",
@@ -1599,7 +2086,12 @@
         ],
         "followUpTrigger": [],
         "followUpGroup": "",
-        "reminder": ""
+        "reminder": "",
+        "status": "Implemented",
+        "uad36Path": "",
+        "legacyExportName": "Trim / Finish Condition",
+        "requiredWhen": "",
+        "dataVersion": 1
       },
       {
         "id": "trim_finish_updated",
@@ -1617,7 +2109,12 @@
           "Partial"
         ],
         "followUpGroup": "trim_updated",
-        "reminder": ""
+        "reminder": "",
+        "status": "Implemented",
+        "uad36Path": "",
+        "legacyExportName": "Trim / Finish Updated",
+        "requiredWhen": "",
+        "dataVersion": 1
       },
       {
         "id": "attic",
@@ -1633,7 +2130,12 @@
         ],
         "followUpTrigger": [],
         "followUpGroup": "",
-        "reminder": "FHA: Take pictures in attic. Note water stains, mold smell, or poor ventilation."
+        "reminder": "FHA: Take pictures in attic. Note water stains, mold smell, or poor ventilation.",
+        "status": "Implemented",
+        "uad36Path": "",
+        "legacyExportName": "Attic",
+        "requiredWhen": "",
+        "dataVersion": 1
       },
       {
         "id": "interior_other",
@@ -1644,7 +2146,12 @@
         "options": [],
         "followUpTrigger": [],
         "followUpGroup": "",
-        "reminder": ""
+        "reminder": "",
+        "status": "Implemented",
+        "uad36Path": "",
+        "legacyExportName": "Interior Other",
+        "requiredWhen": "",
+        "dataVersion": 1
       },
       {
         "id": "kitchen_updated",
@@ -1662,7 +2169,12 @@
           "Partial"
         ],
         "followUpGroup": "kitchen_updated",
-        "reminder": ""
+        "reminder": "",
+        "status": "Implemented",
+        "uad36Path": "",
+        "legacyExportName": "Kitchen Updated",
+        "requiredWhen": "",
+        "dataVersion": 1
       },
       {
         "id": "refrigerator",
@@ -1673,7 +2185,12 @@
         "options": [],
         "followUpTrigger": [],
         "followUpGroup": "",
-        "reminder": ""
+        "reminder": "",
+        "status": "Implemented",
+        "uad36Path": "",
+        "legacyExportName": "Refrigerator",
+        "requiredWhen": "",
+        "dataVersion": 1
       },
       {
         "id": "range",
@@ -1684,7 +2201,12 @@
         "options": [],
         "followUpTrigger": [],
         "followUpGroup": "",
-        "reminder": ""
+        "reminder": "",
+        "status": "Implemented",
+        "uad36Path": "",
+        "legacyExportName": "Range",
+        "requiredWhen": "",
+        "dataVersion": 1
       },
       {
         "id": "oven",
@@ -1695,7 +2217,12 @@
         "options": [],
         "followUpTrigger": [],
         "followUpGroup": "",
-        "reminder": ""
+        "reminder": "",
+        "status": "Implemented",
+        "uad36Path": "",
+        "legacyExportName": "Oven",
+        "requiredWhen": "",
+        "dataVersion": 1
       },
       {
         "id": "dishwasher",
@@ -1706,7 +2233,12 @@
         "options": [],
         "followUpTrigger": [],
         "followUpGroup": "",
-        "reminder": ""
+        "reminder": "",
+        "status": "Implemented",
+        "uad36Path": "",
+        "legacyExportName": "Dishwasher",
+        "requiredWhen": "",
+        "dataVersion": 1
       },
       {
         "id": "disposal",
@@ -1717,7 +2249,12 @@
         "options": [],
         "followUpTrigger": [],
         "followUpGroup": "",
-        "reminder": ""
+        "reminder": "",
+        "status": "Implemented",
+        "uad36Path": "",
+        "legacyExportName": "Disposal",
+        "requiredWhen": "",
+        "dataVersion": 1
       },
       {
         "id": "microwave",
@@ -1728,7 +2265,12 @@
         "options": [],
         "followUpTrigger": [],
         "followUpGroup": "",
-        "reminder": ""
+        "reminder": "",
+        "status": "Implemented",
+        "uad36Path": "",
+        "legacyExportName": "Microwave",
+        "requiredWhen": "",
+        "dataVersion": 1
       },
       {
         "id": "range_hood",
@@ -1739,7 +2281,12 @@
         "options": [],
         "followUpTrigger": [],
         "followUpGroup": "",
-        "reminder": ""
+        "reminder": "",
+        "status": "Implemented",
+        "uad36Path": "",
+        "legacyExportName": "Range Hood",
+        "requiredWhen": "",
+        "dataVersion": 1
       },
       {
         "id": "beverage_cooler",
@@ -1750,7 +2297,12 @@
         "options": [],
         "followUpTrigger": [],
         "followUpGroup": "",
-        "reminder": ""
+        "reminder": "",
+        "status": "Implemented",
+        "uad36Path": "",
+        "legacyExportName": "Beverage Cooler",
+        "requiredWhen": "",
+        "dataVersion": 1
       },
       {
         "id": "appliances_other",
@@ -1761,7 +2313,12 @@
         "options": [],
         "followUpTrigger": [],
         "followUpGroup": "",
-        "reminder": ""
+        "reminder": "",
+        "status": "Implemented",
+        "uad36Path": "",
+        "legacyExportName": "Appliances Other",
+        "requiredWhen": "",
+        "dataVersion": 1
       },
       {
         "id": "clothes_washer",
@@ -1772,7 +2329,12 @@
         "options": [],
         "followUpTrigger": [],
         "followUpGroup": "",
-        "reminder": ""
+        "reminder": "",
+        "status": "Implemented",
+        "uad36Path": "",
+        "legacyExportName": "Clothes Washer",
+        "requiredWhen": "",
+        "dataVersion": 1
       },
       {
         "id": "clothes_dryer",
@@ -1783,7 +2345,12 @@
         "options": [],
         "followUpTrigger": [],
         "followUpGroup": "",
-        "reminder": ""
+        "reminder": "",
+        "status": "Implemented",
+        "uad36Path": "",
+        "legacyExportName": "Clothes Dryer",
+        "requiredWhen": "",
+        "dataVersion": 1
       },
       {
         "id": "wet_bar",
@@ -1794,7 +2361,12 @@
         "options": [],
         "followUpTrigger": [],
         "followUpGroup": "",
-        "reminder": ""
+        "reminder": "",
+        "status": "Implemented",
+        "uad36Path": "",
+        "legacyExportName": "Wet Bar",
+        "requiredWhen": "",
+        "dataVersion": 1
       },
       {
         "id": "kitchen_notes",
@@ -1805,7 +2377,12 @@
         "options": [],
         "followUpTrigger": [],
         "followUpGroup": "",
-        "reminder": ""
+        "reminder": "",
+        "status": "Implemented",
+        "uad36Path": "",
+        "legacyExportName": "Kitchen Notes",
+        "requiredWhen": "",
+        "dataVersion": 1
       },
       {
         "id": "bathrooms_updated",
@@ -1823,7 +2400,12 @@
           "Partial"
         ],
         "followUpGroup": "bathrooms_updated",
-        "reminder": ""
+        "reminder": "",
+        "status": "Implemented",
+        "uad36Path": "",
+        "legacyExportName": "Bathrooms Updated",
+        "requiredWhen": "",
+        "dataVersion": 1
       },
       {
         "id": "bath_floor",
@@ -1845,7 +2427,12 @@
         ],
         "followUpTrigger": [],
         "followUpGroup": "",
-        "reminder": ""
+        "reminder": "",
+        "status": "Implemented",
+        "uad36Path": "",
+        "legacyExportName": "Bath Floor",
+        "requiredWhen": "",
+        "dataVersion": 1
       },
       {
         "id": "bath_floor_condition",
@@ -1862,7 +2449,12 @@
         ],
         "followUpTrigger": [],
         "followUpGroup": "",
-        "reminder": ""
+        "reminder": "",
+        "status": "Implemented",
+        "uad36Path": "",
+        "legacyExportName": "Bath Floor Condition",
+        "requiredWhen": "",
+        "dataVersion": 1
       },
       {
         "id": "bath_floor_updated",
@@ -1880,7 +2472,12 @@
           "Partial"
         ],
         "followUpGroup": "bathrooms_updated",
-        "reminder": ""
+        "reminder": "",
+        "status": "Implemented",
+        "uad36Path": "",
+        "legacyExportName": "Bath Floor Updated",
+        "requiredWhen": "",
+        "dataVersion": 1
       },
       {
         "id": "bath_wainscot",
@@ -1902,7 +2499,12 @@
         ],
         "followUpTrigger": [],
         "followUpGroup": "",
-        "reminder": ""
+        "reminder": "",
+        "status": "Implemented",
+        "uad36Path": "",
+        "legacyExportName": "Bath Wainscot",
+        "requiredWhen": "",
+        "dataVersion": 1
       },
       {
         "id": "bath_wainscot_condition",
@@ -1919,7 +2521,12 @@
         ],
         "followUpTrigger": [],
         "followUpGroup": "",
-        "reminder": ""
+        "reminder": "",
+        "status": "Implemented",
+        "uad36Path": "",
+        "legacyExportName": "Bath Wainscot Condition",
+        "requiredWhen": "",
+        "dataVersion": 1
       },
       {
         "id": "bath_wainscot_updated",
@@ -1937,7 +2544,12 @@
           "Partial"
         ],
         "followUpGroup": "bathrooms_updated",
-        "reminder": ""
+        "reminder": "",
+        "status": "Implemented",
+        "uad36Path": "",
+        "legacyExportName": "Bath Wainscot Updated",
+        "requiredWhen": "",
+        "dataVersion": 1
       },
       {
         "id": "bathrooms_notes",
@@ -1948,16 +2560,22 @@
         "options": [],
         "followUpTrigger": [],
         "followUpGroup": "",
-        "reminder": ""
+        "reminder": "",
+        "status": "Implemented",
+        "uad36Path": "",
+        "legacyExportName": "Bathrooms Notes",
+        "requiredWhen": "",
+        "dataVersion": 1
       }
     ],
     "unsupportedTypes": [],
     "triggerGroupMismatches": [],
-    "orphanedGroupReferences": []
+    "orphanedGroupReferences": [],
+    "plannedTypesUsed": []
   },
   "followUp": {
     "sheet": "FOLLOW_UP",
-    "questionCount": 60,
+    "questionCount": 77,
     "groups": [
       {
         "group": "occupancy_vacant",
@@ -1975,7 +2593,12 @@
             "showWhenQuestion": "",
             "showWhenValue": [],
             "showWhenQuestionId": null,
-            "showWhenInvalid": false
+            "showWhenInvalid": false,
+            "status": "Implemented",
+            "uad36Path": "",
+            "legacyExportName": "Electricity on?",
+            "requiredWhen": "",
+            "dataVersion": 1
           },
           {
             "id": "occupancy_vacant__water_on",
@@ -1990,7 +2613,12 @@
             "showWhenQuestion": "",
             "showWhenValue": [],
             "showWhenQuestionId": null,
-            "showWhenInvalid": false
+            "showWhenInvalid": false,
+            "status": "Implemented",
+            "uad36Path": "",
+            "legacyExportName": "Water on?",
+            "requiredWhen": "",
+            "dataVersion": 1
           }
         ]
       },
@@ -2007,7 +2635,12 @@
             "showWhenQuestion": "",
             "showWhenValue": [],
             "showWhenQuestionId": null,
-            "showWhenInvalid": false
+            "showWhenInvalid": false,
+            "status": "Implemented",
+            "uad36Path": "",
+            "legacyExportName": "Association Fee",
+            "requiredWhen": "",
+            "dataVersion": 1
           },
           {
             "id": "pud_association__fee_frequency",
@@ -2024,7 +2657,12 @@
             "showWhenQuestion": "",
             "showWhenValue": [],
             "showWhenQuestionId": null,
-            "showWhenInvalid": false
+            "showWhenInvalid": false,
+            "status": "Implemented",
+            "uad36Path": "",
+            "legacyExportName": "Fee Frequency",
+            "requiredWhen": "",
+            "dataVersion": 1
           },
           {
             "id": "pud_association__amenities_included",
@@ -2045,7 +2683,12 @@
             "showWhenQuestion": "",
             "showWhenValue": [],
             "showWhenQuestionId": null,
-            "showWhenInvalid": false
+            "showWhenInvalid": false,
+            "status": "Implemented",
+            "uad36Path": "",
+            "legacyExportName": "Amenities Included",
+            "requiredWhen": "",
+            "dataVersion": 1
           },
           {
             "id": "pud_association__special_assessment",
@@ -2060,7 +2703,12 @@
             "showWhenQuestion": "",
             "showWhenValue": [],
             "showWhenQuestionId": null,
-            "showWhenInvalid": false
+            "showWhenInvalid": false,
+            "status": "Implemented",
+            "uad36Path": "",
+            "legacyExportName": "Special Assessment",
+            "requiredWhen": "",
+            "dataVersion": 1
           },
           {
             "id": "pud_association__special_assessment_fee",
@@ -2074,7 +2722,12 @@
               "Yes"
             ],
             "showWhenQuestionId": "pud_association__special_assessment",
-            "showWhenInvalid": false
+            "showWhenInvalid": false,
+            "status": "Implemented",
+            "uad36Path": "",
+            "legacyExportName": "Special Assessment Fee",
+            "requiredWhen": "",
+            "dataVersion": 1
           },
           {
             "id": "pud_association__special_assessment_fee_frequency",
@@ -2093,7 +2746,12 @@
               "Yes"
             ],
             "showWhenQuestionId": "pud_association__special_assessment",
-            "showWhenInvalid": false
+            "showWhenInvalid": false,
+            "status": "Implemented",
+            "uad36Path": "",
+            "legacyExportName": "Special Assessment Fee Frequency",
+            "requiredWhen": "",
+            "dataVersion": 1
           },
           {
             "id": "pud_association__special_assessment_reason_time",
@@ -2107,7 +2765,12 @@
               "Yes"
             ],
             "showWhenQuestionId": "pud_association__special_assessment",
-            "showWhenInvalid": false
+            "showWhenInvalid": false,
+            "status": "Implemented",
+            "uad36Path": "",
+            "legacyExportName": "Special Assessment Reason / Time",
+            "requiredWhen": "",
+            "dataVersion": 1
           },
           {
             "id": "pud_association__pud_comments",
@@ -2119,7 +2782,12 @@
             "showWhenQuestion": "",
             "showWhenValue": [],
             "showWhenQuestionId": null,
-            "showWhenInvalid": false
+            "showWhenInvalid": false,
+            "status": "Implemented",
+            "uad36Path": "",
+            "legacyExportName": "PUD Comments",
+            "requiredWhen": "",
+            "dataVersion": 1
           }
         ]
       },
@@ -2141,7 +2809,12 @@
             "showWhenQuestion": "",
             "showWhenValue": [],
             "showWhenQuestionId": null,
-            "showWhenInvalid": false
+            "showWhenInvalid": false,
+            "status": "Implemented",
+            "uad36Path": "",
+            "legacyExportName": "Number of Sections",
+            "requiredWhen": "",
+            "dataVersion": 1
           },
           {
             "id": "manufactured__manufac_s_vin_s",
@@ -2153,7 +2826,12 @@
             "showWhenQuestion": "",
             "showWhenValue": [],
             "showWhenQuestionId": null,
-            "showWhenInvalid": false
+            "showWhenInvalid": false,
+            "status": "Implemented",
+            "uad36Path": "",
+            "legacyExportName": "Manufac#'s/VIN#'s",
+            "requiredWhen": "",
+            "dataVersion": 1
           },
           {
             "id": "manufactured__hud_certification_label",
@@ -2165,7 +2843,12 @@
             "showWhenQuestion": "",
             "showWhenValue": [],
             "showWhenQuestionId": null,
-            "showWhenInvalid": false
+            "showWhenInvalid": false,
+            "status": "Implemented",
+            "uad36Path": "",
+            "legacyExportName": "HUD Certification Label",
+            "requiredWhen": "",
+            "dataVersion": 1
           },
           {
             "id": "manufactured__manufacturer_s_name",
@@ -2177,7 +2860,12 @@
             "showWhenQuestion": "",
             "showWhenValue": [],
             "showWhenQuestionId": null,
-            "showWhenInvalid": false
+            "showWhenInvalid": false,
+            "status": "Implemented",
+            "uad36Path": "",
+            "legacyExportName": "Manufacturer's Name",
+            "requiredWhen": "",
+            "dataVersion": 1
           },
           {
             "id": "manufactured__trade_model",
@@ -2189,7 +2877,12 @@
             "showWhenQuestion": "",
             "showWhenValue": [],
             "showWhenQuestionId": null,
-            "showWhenInvalid": false
+            "showWhenInvalid": false,
+            "status": "Implemented",
+            "uad36Path": "",
+            "legacyExportName": "Trade/Model",
+            "requiredWhen": "",
+            "dataVersion": 1
           },
           {
             "id": "manufactured__manufacture_year",
@@ -2201,7 +2894,12 @@
             "showWhenQuestion": "",
             "showWhenValue": [],
             "showWhenQuestionId": null,
-            "showWhenInvalid": false
+            "showWhenInvalid": false,
+            "status": "Implemented",
+            "uad36Path": "",
+            "legacyExportName": "Manufacture Year",
+            "requiredWhen": "",
+            "dataVersion": 1
           },
           {
             "id": "manufactured__skirting",
@@ -2213,7 +2911,12 @@
             "showWhenQuestion": "",
             "showWhenValue": [],
             "showWhenQuestionId": null,
-            "showWhenInvalid": false
+            "showWhenInvalid": false,
+            "status": "Implemented",
+            "uad36Path": "",
+            "legacyExportName": "Skirting",
+            "requiredWhen": "",
+            "dataVersion": 1
           }
         ]
       },
@@ -2237,7 +2940,12 @@
             "showWhenQuestion": "",
             "showWhenValue": [],
             "showWhenQuestionId": null,
-            "showWhenInvalid": false
+            "showWhenInvalid": false,
+            "status": "Implemented",
+            "uad36Path": "",
+            "legacyExportName": "Alley Surface",
+            "requiredWhen": "",
+            "dataVersion": 1
           },
           {
             "id": "alley__alley_access",
@@ -2252,7 +2960,12 @@
             "showWhenQuestion": "",
             "showWhenValue": [],
             "showWhenQuestionId": null,
-            "showWhenInvalid": false
+            "showWhenInvalid": false,
+            "status": "Implemented",
+            "uad36Path": "",
+            "legacyExportName": "Alley Access",
+            "requiredWhen": "",
+            "dataVersion": 1
           }
         ]
       },
@@ -2273,7 +2986,12 @@
             "showWhenQuestion": "",
             "showWhenValue": [],
             "showWhenQuestionId": null,
-            "showWhenInvalid": false
+            "showWhenInvalid": false,
+            "status": "Implemented",
+            "uad36Path": "",
+            "legacyExportName": "Gas Service",
+            "requiredWhen": "",
+            "dataVersion": 1
           }
         ]
       },
@@ -2290,7 +3008,12 @@
             "showWhenQuestion": "",
             "showWhenValue": [],
             "showWhenQuestionId": null,
-            "showWhenInvalid": false
+            "showWhenInvalid": false,
+            "status": "Implemented",
+            "uad36Path": "",
+            "legacyExportName": "# Garage Spaces",
+            "requiredWhen": "",
+            "dataVersion": 1
           },
           {
             "id": "car_storage__carport_spaces",
@@ -2302,7 +3025,12 @@
             "showWhenQuestion": "",
             "showWhenValue": [],
             "showWhenQuestionId": null,
-            "showWhenInvalid": false
+            "showWhenInvalid": false,
+            "status": "Implemented",
+            "uad36Path": "",
+            "legacyExportName": "# Carport Spaces",
+            "requiredWhen": "",
+            "dataVersion": 1
           },
           {
             "id": "car_storage__covered_spaces",
@@ -2314,7 +3042,12 @@
             "showWhenQuestion": "",
             "showWhenValue": [],
             "showWhenQuestionId": null,
-            "showWhenInvalid": false
+            "showWhenInvalid": false,
+            "status": "Implemented",
+            "uad36Path": "",
+            "legacyExportName": "# Covered Spaces",
+            "requiredWhen": "",
+            "dataVersion": 1
           },
           {
             "id": "car_storage__car_storage_attachment",
@@ -2331,7 +3064,12 @@
             "showWhenQuestion": "",
             "showWhenValue": [],
             "showWhenQuestionId": null,
-            "showWhenInvalid": false
+            "showWhenInvalid": false,
+            "status": "Implemented",
+            "uad36Path": "",
+            "legacyExportName": "Car Storage Attachment",
+            "requiredWhen": "",
+            "dataVersion": 1
           }
         ]
       },
@@ -2351,7 +3089,12 @@
             "showWhenQuestion": "",
             "showWhenValue": [],
             "showWhenQuestionId": null,
-            "showWhenInvalid": false
+            "showWhenInvalid": false,
+            "status": "Implemented",
+            "uad36Path": "",
+            "legacyExportName": "Rented",
+            "requiredWhen": "",
+            "dataVersion": 1
           },
           {
             "id": "adu__certified",
@@ -2366,7 +3109,12 @@
             "showWhenQuestion": "",
             "showWhenValue": [],
             "showWhenQuestionId": null,
-            "showWhenInvalid": false
+            "showWhenInvalid": false,
+            "status": "Implemented",
+            "uad36Path": "",
+            "legacyExportName": "Certified",
+            "requiredWhen": "",
+            "dataVersion": 1
           },
           {
             "id": "adu__permits",
@@ -2381,7 +3129,12 @@
             "showWhenQuestion": "",
             "showWhenValue": [],
             "showWhenQuestionId": null,
-            "showWhenInvalid": false
+            "showWhenInvalid": false,
+            "status": "Implemented",
+            "uad36Path": "",
+            "legacyExportName": "Permits",
+            "requiredWhen": "",
+            "dataVersion": 1
           },
           {
             "id": "adu__adu_notes",
@@ -2393,7 +3146,341 @@
             "showWhenQuestion": "",
             "showWhenValue": [],
             "showWhenQuestionId": null,
-            "showWhenInvalid": false
+            "showWhenInvalid": false,
+            "status": "Implemented",
+            "uad36Path": "",
+            "legacyExportName": "ADU Notes",
+            "requiredWhen": "",
+            "dataVersion": 1
+          }
+        ]
+      },
+      {
+        "group": "condo",
+        "questions": [
+          {
+            "id": "condo__description",
+            "group": "condo",
+            "label": "Description",
+            "type": "Button",
+            "options": [
+              "Row/Townhse",
+              "Garden",
+              "Mid-Rise",
+              "High-Rise",
+              "Other"
+            ],
+            "destination": "Exit Interview",
+            "showWhenQuestion": "",
+            "showWhenValue": [],
+            "showWhenQuestionId": null,
+            "showWhenInvalid": false,
+            "status": "Implemented",
+            "uad36Path": "",
+            "legacyExportName": "Description",
+            "requiredWhen": "",
+            "dataVersion": 1
+          },
+          {
+            "id": "condo__stories",
+            "group": "condo",
+            "label": "Stories",
+            "type": "Text",
+            "options": [],
+            "destination": "Exit Interview",
+            "showWhenQuestion": "",
+            "showWhenValue": [],
+            "showWhenQuestionId": null,
+            "showWhenInvalid": false,
+            "status": "Implemented",
+            "uad36Path": "",
+            "legacyExportName": "Stories",
+            "requiredWhen": "",
+            "dataVersion": 1
+          },
+          {
+            "id": "condo__buildings",
+            "group": "condo",
+            "label": "Buildings",
+            "type": "Counter",
+            "options": [],
+            "destination": "Exit Interview",
+            "showWhenQuestion": "",
+            "showWhenValue": [],
+            "showWhenQuestionId": null,
+            "showWhenInvalid": false,
+            "status": "Implemented",
+            "uad36Path": "",
+            "legacyExportName": "Buildings",
+            "requiredWhen": "",
+            "dataVersion": 1
+          },
+          {
+            "id": "condo__elevator",
+            "group": "condo",
+            "label": "Elevator",
+            "type": "Counter",
+            "options": [],
+            "destination": "Exit Interview",
+            "showWhenQuestion": "",
+            "showWhenValue": [],
+            "showWhenQuestionId": null,
+            "showWhenInvalid": false,
+            "status": "Implemented",
+            "uad36Path": "",
+            "legacyExportName": "Elevator",
+            "requiredWhen": "",
+            "dataVersion": 1
+          },
+          {
+            "id": "condo__condo_fee",
+            "group": "condo",
+            "label": "Condo Fee $",
+            "type": "Text",
+            "options": [],
+            "destination": "Exit Interview",
+            "showWhenQuestion": "",
+            "showWhenValue": [],
+            "showWhenQuestionId": null,
+            "showWhenInvalid": false,
+            "status": "Implemented",
+            "uad36Path": "",
+            "legacyExportName": "Condo Fee $",
+            "requiredWhen": "",
+            "dataVersion": 1
+          },
+          {
+            "id": "condo__fee_frequency",
+            "group": "condo",
+            "label": "Fee Frequency",
+            "type": "Button",
+            "options": [
+              "Monthly",
+              "Quarterly",
+              "Annual",
+              "Other"
+            ],
+            "destination": "Exit Interview",
+            "showWhenQuestion": "",
+            "showWhenValue": [],
+            "showWhenQuestionId": null,
+            "showWhenInvalid": false,
+            "status": "Implemented",
+            "uad36Path": "",
+            "legacyExportName": "Fee Frequency",
+            "requiredWhen": "",
+            "dataVersion": 1
+          },
+          {
+            "id": "condo__fee_includes",
+            "group": "condo",
+            "label": "Fee Includes",
+            "type": "MultiSelect",
+            "options": [
+              "Water",
+              "Sewer",
+              "Insurance",
+              "Common Areas",
+              "Other"
+            ],
+            "destination": "Exit Interview",
+            "showWhenQuestion": "",
+            "showWhenValue": [],
+            "showWhenQuestionId": null,
+            "showWhenInvalid": false,
+            "status": "Implemented",
+            "uad36Path": "",
+            "legacyExportName": "Fee Includes",
+            "requiredWhen": "",
+            "dataVersion": 1
+          },
+          {
+            "id": "condo__special_assessment",
+            "group": "condo",
+            "label": "Special Assessment",
+            "type": "Button",
+            "options": [
+              "Yes",
+              "No"
+            ],
+            "destination": "Exit Interview",
+            "showWhenQuestion": "",
+            "showWhenValue": [],
+            "showWhenQuestionId": null,
+            "showWhenInvalid": false,
+            "status": "Implemented",
+            "uad36Path": "",
+            "legacyExportName": "Special Assessment",
+            "requiredWhen": "",
+            "dataVersion": 1
+          },
+          {
+            "id": "condo__special_assessment_amount",
+            "group": "condo",
+            "label": "Special Assessment Amount $",
+            "type": "Text",
+            "options": [],
+            "destination": "Exit Interview",
+            "showWhenQuestion": "",
+            "showWhenValue": [],
+            "showWhenQuestionId": null,
+            "showWhenInvalid": false,
+            "status": "Implemented",
+            "uad36Path": "",
+            "legacyExportName": "Special Assessment Amount $",
+            "requiredWhen": "",
+            "dataVersion": 1
+          },
+          {
+            "id": "condo__special_assesment_purpose",
+            "group": "condo",
+            "label": "Special Assesment Purpose",
+            "type": "Text",
+            "options": [],
+            "destination": "Exit Interview",
+            "showWhenQuestion": "",
+            "showWhenValue": [],
+            "showWhenQuestionId": null,
+            "showWhenInvalid": false,
+            "status": "Implemented",
+            "uad36Path": "",
+            "legacyExportName": "Special Assesment Purpose",
+            "requiredWhen": "",
+            "dataVersion": 1
+          },
+          {
+            "id": "condo__special_assessment_time",
+            "group": "condo",
+            "label": "Special Assessment Time",
+            "type": "Text",
+            "options": [],
+            "destination": "Exit Interview",
+            "showWhenQuestion": "",
+            "showWhenValue": [],
+            "showWhenQuestionId": null,
+            "showWhenInvalid": false,
+            "status": "Implemented",
+            "uad36Path": "",
+            "legacyExportName": "Special Assessment Time",
+            "requiredWhen": "",
+            "dataVersion": 1
+          },
+          {
+            "id": "condo__parking_type",
+            "group": "condo",
+            "label": "Parking Type",
+            "type": "MultiSelect",
+            "options": [
+              "Open",
+              "Covered",
+              "Garage",
+              "Other"
+            ],
+            "destination": "Exit Interview",
+            "showWhenQuestion": "",
+            "showWhenValue": [],
+            "showWhenQuestionId": null,
+            "showWhenInvalid": false,
+            "status": "Implemented",
+            "uad36Path": "",
+            "legacyExportName": "Parking Type",
+            "requiredWhen": "",
+            "dataVersion": 1
+          },
+          {
+            "id": "condo__parking_spaces",
+            "group": "condo",
+            "label": "Parking Spaces #",
+            "type": "Text",
+            "options": [],
+            "destination": "Exit Interview",
+            "showWhenQuestion": "",
+            "showWhenValue": [],
+            "showWhenQuestionId": null,
+            "showWhenInvalid": false,
+            "status": "Implemented",
+            "uad36Path": "",
+            "legacyExportName": "Parking Spaces #",
+            "requiredWhen": "",
+            "dataVersion": 1
+          },
+          {
+            "id": "condo__amenities",
+            "group": "condo",
+            "label": "Amenities",
+            "type": "MultiSelect",
+            "options": [
+              "Pool",
+              "Clubhouse",
+              "Tennis",
+              "Marina",
+              "Other"
+            ],
+            "destination": "Exit Interview",
+            "showWhenQuestion": "",
+            "showWhenValue": [],
+            "showWhenQuestionId": null,
+            "showWhenInvalid": false,
+            "status": "Implemented",
+            "uad36Path": "",
+            "legacyExportName": "Amenities",
+            "requiredWhen": "",
+            "dataVersion": 1
+          },
+          {
+            "id": "condo__conversion",
+            "group": "condo",
+            "label": "Conversion",
+            "type": "Button",
+            "options": [
+              "Yes:No"
+            ],
+            "destination": "Exit Interview",
+            "showWhenQuestion": "",
+            "showWhenValue": [],
+            "showWhenQuestionId": null,
+            "showWhenInvalid": false,
+            "status": "Implemented",
+            "uad36Path": "",
+            "legacyExportName": "Conversion",
+            "requiredWhen": "",
+            "dataVersion": 1
+          },
+          {
+            "id": "condo__dock_space",
+            "group": "condo",
+            "label": "Dock Space",
+            "type": "Button",
+            "options": [
+              "Yes:No"
+            ],
+            "destination": "Exit Interview",
+            "showWhenQuestion": "",
+            "showWhenValue": [],
+            "showWhenQuestionId": null,
+            "showWhenInvalid": false,
+            "status": "Implemented",
+            "uad36Path": "",
+            "legacyExportName": "Dock Space",
+            "requiredWhen": "",
+            "dataVersion": 1
+          },
+          {
+            "id": "condo__notes",
+            "group": "condo",
+            "label": "Notes",
+            "type": "Text",
+            "options": [],
+            "destination": "Exit Interview",
+            "showWhenQuestion": "",
+            "showWhenValue": [],
+            "showWhenQuestionId": null,
+            "showWhenInvalid": false,
+            "status": "Implemented",
+            "uad36Path": "",
+            "legacyExportName": "Notes",
+            "requiredWhen": "",
+            "dataVersion": 1
           }
         ]
       },
@@ -2416,7 +3503,12 @@
             "showWhenQuestion": "",
             "showWhenValue": [],
             "showWhenQuestionId": null,
-            "showWhenInvalid": false
+            "showWhenInvalid": false,
+            "status": "Implemented",
+            "uad36Path": "",
+            "legacyExportName": "Ownership",
+            "requiredWhen": "",
+            "dataVersion": 1
           },
           {
             "id": "solar_panels__system",
@@ -2431,7 +3523,12 @@
             "showWhenQuestion": "",
             "showWhenValue": [],
             "showWhenQuestionId": null,
-            "showWhenInvalid": false
+            "showWhenInvalid": false,
+            "status": "Implemented",
+            "uad36Path": "",
+            "legacyExportName": "System",
+            "requiredWhen": "",
+            "dataVersion": 1
           },
           {
             "id": "solar_panels__age",
@@ -2443,7 +3540,12 @@
             "showWhenQuestion": "",
             "showWhenValue": [],
             "showWhenQuestionId": null,
-            "showWhenInvalid": false
+            "showWhenInvalid": false,
+            "status": "Implemented",
+            "uad36Path": "",
+            "legacyExportName": "Age",
+            "requiredWhen": "",
+            "dataVersion": 1
           },
           {
             "id": "solar_panels__capacity_kw",
@@ -2455,7 +3557,12 @@
             "showWhenQuestion": "",
             "showWhenValue": [],
             "showWhenQuestionId": null,
-            "showWhenInvalid": false
+            "showWhenInvalid": false,
+            "status": "Implemented",
+            "uad36Path": "",
+            "legacyExportName": "Capacity (KW)",
+            "requiredWhen": "",
+            "dataVersion": 1
           }
         ]
       },
@@ -2472,7 +3579,12 @@
             "showWhenQuestion": "",
             "showWhenValue": [],
             "showWhenQuestionId": null,
-            "showWhenInvalid": false
+            "showWhenInvalid": false,
+            "status": "Implemented",
+            "uad36Path": "",
+            "legacyExportName": "Timeframe",
+            "requiredWhen": "",
+            "dataVersion": 1
           },
           {
             "id": "roof_updated__details",
@@ -2484,7 +3596,12 @@
             "showWhenQuestion": "",
             "showWhenValue": [],
             "showWhenQuestionId": null,
-            "showWhenInvalid": false
+            "showWhenInvalid": false,
+            "status": "Implemented",
+            "uad36Path": "",
+            "legacyExportName": "Details",
+            "requiredWhen": "",
+            "dataVersion": 1
           }
         ]
       },
@@ -2501,7 +3618,12 @@
             "showWhenQuestion": "",
             "showWhenValue": [],
             "showWhenQuestionId": null,
-            "showWhenInvalid": false
+            "showWhenInvalid": false,
+            "status": "Implemented",
+            "uad36Path": "",
+            "legacyExportName": "Timeframe",
+            "requiredWhen": "",
+            "dataVersion": 1
           },
           {
             "id": "gutters_updated__details",
@@ -2513,7 +3635,12 @@
             "showWhenQuestion": "",
             "showWhenValue": [],
             "showWhenQuestionId": null,
-            "showWhenInvalid": false
+            "showWhenInvalid": false,
+            "status": "Implemented",
+            "uad36Path": "",
+            "legacyExportName": "Details",
+            "requiredWhen": "",
+            "dataVersion": 1
           }
         ]
       },
@@ -2530,7 +3657,12 @@
             "showWhenQuestion": "",
             "showWhenValue": [],
             "showWhenQuestionId": null,
-            "showWhenInvalid": false
+            "showWhenInvalid": false,
+            "status": "Implemented",
+            "uad36Path": "",
+            "legacyExportName": "Timeframe",
+            "requiredWhen": "",
+            "dataVersion": 1
           },
           {
             "id": "windows_updated__details",
@@ -2542,7 +3674,12 @@
             "showWhenQuestion": "",
             "showWhenValue": [],
             "showWhenQuestionId": null,
-            "showWhenInvalid": false
+            "showWhenInvalid": false,
+            "status": "Implemented",
+            "uad36Path": "",
+            "legacyExportName": "Details",
+            "requiredWhen": "",
+            "dataVersion": 1
           }
         ]
       },
@@ -2564,7 +3701,12 @@
             "showWhenQuestion": "",
             "showWhenValue": [],
             "showWhenQuestionId": null,
-            "showWhenInvalid": false
+            "showWhenInvalid": false,
+            "status": "Implemented",
+            "uad36Path": "",
+            "legacyExportName": "Shutters Type",
+            "requiredWhen": "",
+            "dataVersion": 1
           }
         ]
       },
@@ -2585,7 +3727,12 @@
             "showWhenQuestion": "",
             "showWhenValue": [],
             "showWhenQuestionId": null,
-            "showWhenInvalid": false
+            "showWhenInvalid": false,
+            "status": "Implemented",
+            "uad36Path": "",
+            "legacyExportName": "Safety release",
+            "requiredWhen": "",
+            "dataVersion": 1
           },
           {
             "id": "security_bars__do_bedrooms_have_bars",
@@ -2601,7 +3748,12 @@
             "showWhenQuestion": "",
             "showWhenValue": [],
             "showWhenQuestionId": null,
-            "showWhenInvalid": false
+            "showWhenInvalid": false,
+            "status": "Implemented",
+            "uad36Path": "",
+            "legacyExportName": "Do bedrooms have bars",
+            "requiredWhen": "",
+            "dataVersion": 1
           }
         ]
       },
@@ -2623,7 +3775,12 @@
             "showWhenQuestion": "",
             "showWhenValue": [],
             "showWhenQuestionId": null,
-            "showWhenInvalid": false
+            "showWhenInvalid": false,
+            "status": "Implemented",
+            "uad36Path": "",
+            "legacyExportName": "Balcony type",
+            "requiredWhen": "",
+            "dataVersion": 1
           }
         ]
       },
@@ -2644,7 +3801,12 @@
             "showWhenQuestion": "",
             "showWhenValue": [],
             "showWhenQuestionId": null,
-            "showWhenInvalid": false
+            "showWhenInvalid": false,
+            "status": "Implemented",
+            "uad36Path": "",
+            "legacyExportName": "Pool Construction",
+            "requiredWhen": "",
+            "dataVersion": 1
           },
           {
             "id": "pool__pool_updated",
@@ -2660,7 +3822,12 @@
             "showWhenQuestion": "",
             "showWhenValue": [],
             "showWhenQuestionId": null,
-            "showWhenInvalid": false
+            "showWhenInvalid": false,
+            "status": "Implemented",
+            "uad36Path": "",
+            "legacyExportName": "Pool Updated",
+            "requiredWhen": "",
+            "dataVersion": 1
           },
           {
             "id": "pool__year_updated",
@@ -2675,7 +3842,12 @@
               "Partial"
             ],
             "showWhenQuestionId": "pool__pool_updated",
-            "showWhenInvalid": false
+            "showWhenInvalid": false,
+            "status": "Implemented",
+            "uad36Path": "",
+            "legacyExportName": "Year Updated",
+            "requiredWhen": "",
+            "dataVersion": 1
           },
           {
             "id": "pool__scope_of_update",
@@ -2695,7 +3867,12 @@
               "Partial"
             ],
             "showWhenQuestionId": "pool__pool_updated",
-            "showWhenInvalid": false
+            "showWhenInvalid": false,
+            "status": "Implemented",
+            "uad36Path": "",
+            "legacyExportName": "Scope of Update",
+            "requiredWhen": "",
+            "dataVersion": 1
           },
           {
             "id": "pool__pool_amenities",
@@ -2713,7 +3890,12 @@
             "showWhenQuestion": "",
             "showWhenValue": [],
             "showWhenQuestionId": null,
-            "showWhenInvalid": false
+            "showWhenInvalid": false,
+            "status": "Implemented",
+            "uad36Path": "",
+            "legacyExportName": "Pool Amenities",
+            "requiredWhen": "",
+            "dataVersion": 1
           }
         ]
       },
@@ -2730,7 +3912,12 @@
             "showWhenQuestion": "",
             "showWhenValue": [],
             "showWhenQuestionId": null,
-            "showWhenInvalid": false
+            "showWhenInvalid": false,
+            "status": "Implemented",
+            "uad36Path": "",
+            "legacyExportName": "Timeframe",
+            "requiredWhen": "",
+            "dataVersion": 1
           },
           {
             "id": "kitchen_updated__details",
@@ -2742,7 +3929,12 @@
             "showWhenQuestion": "",
             "showWhenValue": [],
             "showWhenQuestionId": null,
-            "showWhenInvalid": false
+            "showWhenInvalid": false,
+            "status": "Implemented",
+            "uad36Path": "",
+            "legacyExportName": "Details",
+            "requiredWhen": "",
+            "dataVersion": 1
           }
         ]
       },
@@ -2767,7 +3959,12 @@
             "showWhenQuestion": "",
             "showWhenValue": [],
             "showWhenQuestionId": null,
-            "showWhenInvalid": false
+            "showWhenInvalid": false,
+            "status": "Implemented",
+            "uad36Path": "",
+            "legacyExportName": "What bathrooms were updated",
+            "requiredWhen": "",
+            "dataVersion": 1
           },
           {
             "id": "bathrooms_updated__timeframe",
@@ -2779,7 +3976,12 @@
             "showWhenQuestion": "",
             "showWhenValue": [],
             "showWhenQuestionId": null,
-            "showWhenInvalid": false
+            "showWhenInvalid": false,
+            "status": "Implemented",
+            "uad36Path": "",
+            "legacyExportName": "Timeframe",
+            "requiredWhen": "",
+            "dataVersion": 1
           },
           {
             "id": "bathrooms_updated__details",
@@ -2791,7 +3993,12 @@
             "showWhenQuestion": "",
             "showWhenValue": [],
             "showWhenQuestionId": null,
-            "showWhenInvalid": false
+            "showWhenInvalid": false,
+            "status": "Implemented",
+            "uad36Path": "",
+            "legacyExportName": "Details",
+            "requiredWhen": "",
+            "dataVersion": 1
           }
         ]
       },
@@ -2808,7 +4015,12 @@
             "showWhenQuestion": "",
             "showWhenValue": [],
             "showWhenQuestionId": null,
-            "showWhenInvalid": false
+            "showWhenInvalid": false,
+            "status": "Implemented",
+            "uad36Path": "",
+            "legacyExportName": "Timeframe",
+            "requiredWhen": "",
+            "dataVersion": 1
           },
           {
             "id": "floors_updated__details",
@@ -2820,7 +4032,12 @@
             "showWhenQuestion": "",
             "showWhenValue": [],
             "showWhenQuestionId": null,
-            "showWhenInvalid": false
+            "showWhenInvalid": false,
+            "status": "Implemented",
+            "uad36Path": "",
+            "legacyExportName": "Details",
+            "requiredWhen": "",
+            "dataVersion": 1
           }
         ]
       },
@@ -2837,7 +4054,12 @@
             "showWhenQuestion": "",
             "showWhenValue": [],
             "showWhenQuestionId": null,
-            "showWhenInvalid": false
+            "showWhenInvalid": false,
+            "status": "Implemented",
+            "uad36Path": "",
+            "legacyExportName": "Timeframe",
+            "requiredWhen": "",
+            "dataVersion": 1
           },
           {
             "id": "walls_updated__details",
@@ -2849,7 +4071,12 @@
             "showWhenQuestion": "",
             "showWhenValue": [],
             "showWhenQuestionId": null,
-            "showWhenInvalid": false
+            "showWhenInvalid": false,
+            "status": "Implemented",
+            "uad36Path": "",
+            "legacyExportName": "Details",
+            "requiredWhen": "",
+            "dataVersion": 1
           }
         ]
       },
@@ -2866,7 +4093,12 @@
             "showWhenQuestion": "",
             "showWhenValue": [],
             "showWhenQuestionId": null,
-            "showWhenInvalid": false
+            "showWhenInvalid": false,
+            "status": "Implemented",
+            "uad36Path": "",
+            "legacyExportName": "Timeframe",
+            "requiredWhen": "",
+            "dataVersion": 1
           },
           {
             "id": "trim_updated__details",
@@ -2878,7 +4110,12 @@
             "showWhenQuestion": "",
             "showWhenValue": [],
             "showWhenQuestionId": null,
-            "showWhenInvalid": false
+            "showWhenInvalid": false,
+            "status": "Implemented",
+            "uad36Path": "",
+            "legacyExportName": "Details",
+            "requiredWhen": "",
+            "dataVersion": 1
           }
         ]
       },
@@ -2895,7 +4132,12 @@
             "showWhenQuestion": "",
             "showWhenValue": [],
             "showWhenQuestionId": null,
-            "showWhenInvalid": false
+            "showWhenInvalid": false,
+            "status": "Implemented",
+            "uad36Path": "",
+            "legacyExportName": "Timeframe",
+            "requiredWhen": "",
+            "dataVersion": 1
           },
           {
             "id": "cooling_updated__details",
@@ -2907,14 +4149,20 @@
             "showWhenQuestion": "",
             "showWhenValue": [],
             "showWhenQuestionId": null,
-            "showWhenInvalid": false
+            "showWhenInvalid": false,
+            "status": "Implemented",
+            "uad36Path": "",
+            "legacyExportName": "Details",
+            "requiredWhen": "",
+            "dataVersion": 1
           }
         ]
       }
     ],
     "unsupportedTypes": [],
     "invalidDestinations": [],
-    "showWhenWarnings": []
+    "showWhenWarnings": [],
+    "plannedTypesUsed": []
   },
   "photoLabels": {
     "sheet": "PHOTO LABELS",
@@ -3023,6 +4271,2777 @@
       {
         "category": "Other",
         "label": "Additional Photo"
+      }
+    ]
+  },
+  "uad36Map": {
+    "sheet": "UAD 3.6 MAP",
+    "rowCount": 197,
+    "statusCounts": {
+      "Mapped": 0,
+      "Not Applicable": 0,
+      "Partial": 0,
+      "Unmapped": 197
+    },
+    "missingFluxFieldIds": [],
+    "rows": [
+      {
+        "fluxFieldId": "address",
+        "sourceSheet": "MAIN",
+        "uad36Path": "",
+        "uadLabel": "",
+        "valueType": "Text",
+        "cardinality": "0..1",
+        "requiredWhen": "",
+        "enumerationMap": "",
+        "transform": "",
+        "legacyExportName": "Address",
+        "status": "Unmapped",
+        "notes": "Authoritative UAD 3.6 mapping pending."
+      },
+      {
+        "fluxFieldId": "city",
+        "sourceSheet": "MAIN",
+        "uad36Path": "",
+        "uadLabel": "",
+        "valueType": "Text",
+        "cardinality": "0..1",
+        "requiredWhen": "",
+        "enumerationMap": "",
+        "transform": "",
+        "legacyExportName": "City",
+        "status": "Unmapped",
+        "notes": "Authoritative UAD 3.6 mapping pending."
+      },
+      {
+        "fluxFieldId": "zip_code",
+        "sourceSheet": "MAIN",
+        "uad36Path": "",
+        "uadLabel": "",
+        "valueType": "Text",
+        "cardinality": "0..1",
+        "requiredWhen": "",
+        "enumerationMap": "",
+        "transform": "",
+        "legacyExportName": "Zip Code",
+        "status": "Unmapped",
+        "notes": "Authoritative UAD 3.6 mapping pending."
+      },
+      {
+        "fluxFieldId": "inspection_type",
+        "sourceSheet": "MAIN",
+        "uad36Path": "",
+        "uadLabel": "",
+        "valueType": "MultiSelect",
+        "cardinality": "0..1",
+        "requiredWhen": "",
+        "enumerationMap": "",
+        "transform": "",
+        "legacyExportName": "Inspection Type",
+        "status": "Unmapped",
+        "notes": "Authoritative UAD 3.6 mapping pending."
+      },
+      {
+        "fluxFieldId": "occupancy",
+        "sourceSheet": "MAIN",
+        "uad36Path": "",
+        "uadLabel": "",
+        "valueType": "MultiSelect",
+        "cardinality": "0..1",
+        "requiredWhen": "",
+        "enumerationMap": "",
+        "transform": "",
+        "legacyExportName": "Occupancy",
+        "status": "Unmapped",
+        "notes": "Authoritative UAD 3.6 mapping pending."
+      },
+      {
+        "fluxFieldId": "pud_association",
+        "sourceSheet": "MAIN",
+        "uad36Path": "",
+        "uadLabel": "",
+        "valueType": "Button",
+        "cardinality": "0..1",
+        "requiredWhen": "",
+        "enumerationMap": "",
+        "transform": "",
+        "legacyExportName": "PUD / Association",
+        "status": "Unmapped",
+        "notes": "Authoritative UAD 3.6 mapping pending."
+      },
+      {
+        "fluxFieldId": "access_provided",
+        "sourceSheet": "MAIN",
+        "uad36Path": "",
+        "uadLabel": "",
+        "valueType": "MultiSelect",
+        "cardinality": "0..1",
+        "requiredWhen": "",
+        "enumerationMap": "",
+        "transform": "",
+        "legacyExportName": "Access Provided",
+        "status": "Unmapped",
+        "notes": "Authoritative UAD 3.6 mapping pending."
+      },
+      {
+        "fluxFieldId": "attachment_type",
+        "sourceSheet": "MAIN",
+        "uad36Path": "",
+        "uadLabel": "",
+        "valueType": "Button",
+        "cardinality": "0..1",
+        "requiredWhen": "",
+        "enumerationMap": "",
+        "transform": "",
+        "legacyExportName": "Attachment Type",
+        "status": "Unmapped",
+        "notes": "Authoritative UAD 3.6 mapping pending."
+      },
+      {
+        "fluxFieldId": "construction_stage",
+        "sourceSheet": "MAIN",
+        "uad36Path": "",
+        "uadLabel": "",
+        "valueType": "MultiSelect",
+        "cardinality": "0..1",
+        "requiredWhen": "",
+        "enumerationMap": "",
+        "transform": "",
+        "legacyExportName": "Construction Stage",
+        "status": "Unmapped",
+        "notes": "Authoritative UAD 3.6 mapping pending."
+      },
+      {
+        "fluxFieldId": "construction_method",
+        "sourceSheet": "MAIN",
+        "uad36Path": "",
+        "uadLabel": "",
+        "valueType": "Button",
+        "cardinality": "0..1",
+        "requiredWhen": "",
+        "enumerationMap": "",
+        "transform": "",
+        "legacyExportName": "Construction Method",
+        "status": "Unmapped",
+        "notes": "Authoritative UAD 3.6 mapping pending."
+      },
+      {
+        "fluxFieldId": "year_built",
+        "sourceSheet": "MAIN",
+        "uad36Path": "",
+        "uadLabel": "",
+        "valueType": "Text",
+        "cardinality": "0..1",
+        "requiredWhen": "",
+        "enumerationMap": "",
+        "transform": "",
+        "legacyExportName": "Year Built",
+        "status": "Unmapped",
+        "notes": "Authoritative UAD 3.6 mapping pending."
+      },
+      {
+        "fluxFieldId": "property_notes",
+        "sourceSheet": "MAIN",
+        "uad36Path": "",
+        "uadLabel": "",
+        "valueType": "LongText",
+        "cardinality": "0..1",
+        "requiredWhen": "",
+        "enumerationMap": "",
+        "transform": "",
+        "legacyExportName": "Property Notes",
+        "status": "Unmapped",
+        "notes": "Authoritative UAD 3.6 mapping pending."
+      },
+      {
+        "fluxFieldId": "street_surface",
+        "sourceSheet": "MAIN",
+        "uad36Path": "",
+        "uadLabel": "",
+        "valueType": "MultiSelect",
+        "cardinality": "0..1",
+        "requiredWhen": "",
+        "enumerationMap": "",
+        "transform": "",
+        "legacyExportName": "Street Surface",
+        "status": "Unmapped",
+        "notes": "Authoritative UAD 3.6 mapping pending."
+      },
+      {
+        "fluxFieldId": "street_access",
+        "sourceSheet": "MAIN",
+        "uad36Path": "",
+        "uadLabel": "",
+        "valueType": "Button",
+        "cardinality": "0..1",
+        "requiredWhen": "",
+        "enumerationMap": "",
+        "transform": "",
+        "legacyExportName": "Street Access",
+        "status": "Unmapped",
+        "notes": "Authoritative UAD 3.6 mapping pending."
+      },
+      {
+        "fluxFieldId": "alley",
+        "sourceSheet": "MAIN",
+        "uad36Path": "",
+        "uadLabel": "",
+        "valueType": "Button",
+        "cardinality": "0..1",
+        "requiredWhen": "",
+        "enumerationMap": "",
+        "transform": "",
+        "legacyExportName": "Alley",
+        "status": "Unmapped",
+        "notes": "Authoritative UAD 3.6 mapping pending."
+      },
+      {
+        "fluxFieldId": "lot_shape",
+        "sourceSheet": "MAIN",
+        "uad36Path": "",
+        "uadLabel": "",
+        "valueType": "MultiSelect",
+        "cardinality": "0..1",
+        "requiredWhen": "",
+        "enumerationMap": "",
+        "transform": "",
+        "legacyExportName": "Lot Shape",
+        "status": "Unmapped",
+        "notes": "Authoritative UAD 3.6 mapping pending."
+      },
+      {
+        "fluxFieldId": "view",
+        "sourceSheet": "MAIN",
+        "uad36Path": "",
+        "uadLabel": "",
+        "valueType": "MultiSelect",
+        "cardinality": "0..1",
+        "requiredWhen": "",
+        "enumerationMap": "",
+        "transform": "",
+        "legacyExportName": "View",
+        "status": "Unmapped",
+        "notes": "Authoritative UAD 3.6 mapping pending."
+      },
+      {
+        "fluxFieldId": "location",
+        "sourceSheet": "MAIN",
+        "uad36Path": "",
+        "uadLabel": "",
+        "valueType": "MultiSelect",
+        "cardinality": "0..1",
+        "requiredWhen": "",
+        "enumerationMap": "",
+        "transform": "",
+        "legacyExportName": "Location",
+        "status": "Unmapped",
+        "notes": "Authoritative UAD 3.6 mapping pending."
+      },
+      {
+        "fluxFieldId": "site_notes",
+        "sourceSheet": "MAIN",
+        "uad36Path": "",
+        "uadLabel": "",
+        "valueType": "Text",
+        "cardinality": "0..1",
+        "requiredWhen": "",
+        "enumerationMap": "",
+        "transform": "",
+        "legacyExportName": "Site Notes",
+        "status": "Unmapped",
+        "notes": "Authoritative UAD 3.6 mapping pending."
+      },
+      {
+        "fluxFieldId": "electricity",
+        "sourceSheet": "MAIN",
+        "uad36Path": "",
+        "uadLabel": "",
+        "valueType": "Button",
+        "cardinality": "0..1",
+        "requiredWhen": "",
+        "enumerationMap": "",
+        "transform": "",
+        "legacyExportName": "Electricity",
+        "status": "Unmapped",
+        "notes": "Authoritative UAD 3.6 mapping pending."
+      },
+      {
+        "fluxFieldId": "water",
+        "sourceSheet": "MAIN",
+        "uad36Path": "",
+        "uadLabel": "",
+        "valueType": "Button",
+        "cardinality": "0..1",
+        "requiredWhen": "",
+        "enumerationMap": "",
+        "transform": "",
+        "legacyExportName": "Water",
+        "status": "Unmapped",
+        "notes": "Authoritative UAD 3.6 mapping pending."
+      },
+      {
+        "fluxFieldId": "gas_available",
+        "sourceSheet": "MAIN",
+        "uad36Path": "",
+        "uadLabel": "",
+        "valueType": "Button",
+        "cardinality": "0..1",
+        "requiredWhen": "",
+        "enumerationMap": "",
+        "transform": "",
+        "legacyExportName": "Gas Available",
+        "status": "Unmapped",
+        "notes": "Authoritative UAD 3.6 mapping pending."
+      },
+      {
+        "fluxFieldId": "sanitary_sewer",
+        "sourceSheet": "MAIN",
+        "uad36Path": "",
+        "uadLabel": "",
+        "valueType": "Button",
+        "cardinality": "0..1",
+        "requiredWhen": "",
+        "enumerationMap": "",
+        "transform": "",
+        "legacyExportName": "Sanitary Sewer",
+        "status": "Unmapped",
+        "notes": "Authoritative UAD 3.6 mapping pending."
+      },
+      {
+        "fluxFieldId": "utilities_notes_repairs",
+        "sourceSheet": "MAIN",
+        "uad36Path": "",
+        "uadLabel": "",
+        "valueType": "LongText",
+        "cardinality": "0..1",
+        "requiredWhen": "",
+        "enumerationMap": "",
+        "transform": "",
+        "legacyExportName": "Utilities Notes/Repairs",
+        "status": "Unmapped",
+        "notes": "Authoritative UAD 3.6 mapping pending."
+      },
+      {
+        "fluxFieldId": "driveway_surface",
+        "sourceSheet": "MAIN",
+        "uad36Path": "",
+        "uadLabel": "",
+        "valueType": "MultiSelect",
+        "cardinality": "0..1",
+        "requiredWhen": "",
+        "enumerationMap": "",
+        "transform": "",
+        "legacyExportName": "Driveway Surface",
+        "status": "Unmapped",
+        "notes": "Authoritative UAD 3.6 mapping pending."
+      },
+      {
+        "fluxFieldId": "driveway_capacity",
+        "sourceSheet": "MAIN",
+        "uad36Path": "",
+        "uadLabel": "",
+        "valueType": "Counter",
+        "cardinality": "0..1",
+        "requiredWhen": "",
+        "enumerationMap": "",
+        "transform": "",
+        "legacyExportName": "Driveway Capacity",
+        "status": "Unmapped",
+        "notes": "Authoritative UAD 3.6 mapping pending."
+      },
+      {
+        "fluxFieldId": "car_storage",
+        "sourceSheet": "MAIN",
+        "uad36Path": "",
+        "uadLabel": "",
+        "valueType": "MultiSelect",
+        "cardinality": "0..1",
+        "requiredWhen": "",
+        "enumerationMap": "",
+        "transform": "",
+        "legacyExportName": "Car Storage",
+        "status": "Unmapped",
+        "notes": "Authoritative UAD 3.6 mapping pending."
+      },
+      {
+        "fluxFieldId": "car_storage_notes_repairs",
+        "sourceSheet": "MAIN",
+        "uad36Path": "",
+        "uadLabel": "",
+        "valueType": "LongText",
+        "cardinality": "0..1",
+        "requiredWhen": "",
+        "enumerationMap": "",
+        "transform": "",
+        "legacyExportName": "Car Storage Notes/Repairs",
+        "status": "Unmapped",
+        "notes": "Authoritative UAD 3.6 mapping pending."
+      },
+      {
+        "fluxFieldId": "stories",
+        "sourceSheet": "MAIN",
+        "uad36Path": "",
+        "uadLabel": "",
+        "valueType": "Counter",
+        "cardinality": "0..1",
+        "requiredWhen": "",
+        "enumerationMap": "",
+        "transform": "",
+        "legacyExportName": "Stories",
+        "status": "Unmapped",
+        "notes": "Authoritative UAD 3.6 mapping pending."
+      },
+      {
+        "fluxFieldId": "number_of_units",
+        "sourceSheet": "MAIN",
+        "uad36Path": "",
+        "uadLabel": "",
+        "valueType": "Counter",
+        "cardinality": "0..1",
+        "requiredWhen": "",
+        "enumerationMap": "",
+        "transform": "",
+        "legacyExportName": "Number of Units",
+        "status": "Unmapped",
+        "notes": "Authoritative UAD 3.6 mapping pending."
+      },
+      {
+        "fluxFieldId": "adu",
+        "sourceSheet": "MAIN",
+        "uad36Path": "",
+        "uadLabel": "",
+        "valueType": "Button",
+        "cardinality": "0..1",
+        "requiredWhen": "",
+        "enumerationMap": "",
+        "transform": "",
+        "legacyExportName": "ADU",
+        "status": "Unmapped",
+        "notes": "Authoritative UAD 3.6 mapping pending."
+      },
+      {
+        "fluxFieldId": "design_style",
+        "sourceSheet": "MAIN",
+        "uad36Path": "",
+        "uadLabel": "",
+        "valueType": "MultiSelect",
+        "cardinality": "0..1",
+        "requiredWhen": "",
+        "enumerationMap": "",
+        "transform": "",
+        "legacyExportName": "Design / Style",
+        "status": "Unmapped",
+        "notes": "Authoritative UAD 3.6 mapping pending."
+      },
+      {
+        "fluxFieldId": "front_door_elevation",
+        "sourceSheet": "MAIN",
+        "uad36Path": "",
+        "uadLabel": "",
+        "valueType": "Button",
+        "cardinality": "0..1",
+        "requiredWhen": "",
+        "enumerationMap": "",
+        "transform": "",
+        "legacyExportName": "Front Door Elevation",
+        "status": "Unmapped",
+        "notes": "Authoritative UAD 3.6 mapping pending."
+      },
+      {
+        "fluxFieldId": "foundation",
+        "sourceSheet": "MAIN",
+        "uad36Path": "",
+        "uadLabel": "",
+        "valueType": "MultiSelect",
+        "cardinality": "0..1",
+        "requiredWhen": "",
+        "enumerationMap": "",
+        "transform": "",
+        "legacyExportName": "Foundation",
+        "status": "Unmapped",
+        "notes": "Authoritative UAD 3.6 mapping pending."
+      },
+      {
+        "fluxFieldId": "foundation_walls",
+        "sourceSheet": "MAIN",
+        "uad36Path": "",
+        "uadLabel": "",
+        "valueType": "MultiSelect",
+        "cardinality": "0..1",
+        "requiredWhen": "",
+        "enumerationMap": "",
+        "transform": "",
+        "legacyExportName": "Foundation Walls",
+        "status": "Unmapped",
+        "notes": "Authoritative UAD 3.6 mapping pending."
+      },
+      {
+        "fluxFieldId": "foundation_walls_condition",
+        "sourceSheet": "MAIN",
+        "uad36Path": "",
+        "uadLabel": "",
+        "valueType": "Button",
+        "cardinality": "0..1",
+        "requiredWhen": "",
+        "enumerationMap": "",
+        "transform": "",
+        "legacyExportName": "Foundation Walls Condition",
+        "status": "Unmapped",
+        "notes": "Authoritative UAD 3.6 mapping pending."
+      },
+      {
+        "fluxFieldId": "exterior_walls",
+        "sourceSheet": "MAIN",
+        "uad36Path": "",
+        "uadLabel": "",
+        "valueType": "MultiSelect",
+        "cardinality": "0..1",
+        "requiredWhen": "",
+        "enumerationMap": "",
+        "transform": "",
+        "legacyExportName": "Exterior Walls",
+        "status": "Unmapped",
+        "notes": "Authoritative UAD 3.6 mapping pending."
+      },
+      {
+        "fluxFieldId": "exterior_walls_condition",
+        "sourceSheet": "MAIN",
+        "uad36Path": "",
+        "uadLabel": "",
+        "valueType": "Button",
+        "cardinality": "0..1",
+        "requiredWhen": "",
+        "enumerationMap": "",
+        "transform": "",
+        "legacyExportName": "Exterior Walls Condition",
+        "status": "Unmapped",
+        "notes": "Authoritative UAD 3.6 mapping pending."
+      },
+      {
+        "fluxFieldId": "solar_panels",
+        "sourceSheet": "MAIN",
+        "uad36Path": "",
+        "uadLabel": "",
+        "valueType": "Button",
+        "cardinality": "0..1",
+        "requiredWhen": "",
+        "enumerationMap": "",
+        "transform": "",
+        "legacyExportName": "Solar Panels",
+        "status": "Unmapped",
+        "notes": "Authoritative UAD 3.6 mapping pending."
+      },
+      {
+        "fluxFieldId": "roof_surface",
+        "sourceSheet": "MAIN",
+        "uad36Path": "",
+        "uadLabel": "",
+        "valueType": "MultiSelect",
+        "cardinality": "0..1",
+        "requiredWhen": "",
+        "enumerationMap": "",
+        "transform": "",
+        "legacyExportName": "Roof Surface",
+        "status": "Unmapped",
+        "notes": "Authoritative UAD 3.6 mapping pending."
+      },
+      {
+        "fluxFieldId": "roof_surface_condition",
+        "sourceSheet": "MAIN",
+        "uad36Path": "",
+        "uadLabel": "",
+        "valueType": "Button",
+        "cardinality": "0..1",
+        "requiredWhen": "",
+        "enumerationMap": "",
+        "transform": "",
+        "legacyExportName": "Roof Surface Condition",
+        "status": "Unmapped",
+        "notes": "Authoritative UAD 3.6 mapping pending."
+      },
+      {
+        "fluxFieldId": "roof_updated",
+        "sourceSheet": "MAIN",
+        "uad36Path": "",
+        "uadLabel": "",
+        "valueType": "Button",
+        "cardinality": "0..1",
+        "requiredWhen": "",
+        "enumerationMap": "",
+        "transform": "",
+        "legacyExportName": "Roof Updated",
+        "status": "Unmapped",
+        "notes": "Authoritative UAD 3.6 mapping pending."
+      },
+      {
+        "fluxFieldId": "gutters_downspouts",
+        "sourceSheet": "MAIN",
+        "uad36Path": "",
+        "uadLabel": "",
+        "valueType": "Button",
+        "cardinality": "0..1",
+        "requiredWhen": "",
+        "enumerationMap": "",
+        "transform": "",
+        "legacyExportName": "Gutters / Downspouts",
+        "status": "Unmapped",
+        "notes": "Authoritative UAD 3.6 mapping pending."
+      },
+      {
+        "fluxFieldId": "gutters_downspouts_condition",
+        "sourceSheet": "MAIN",
+        "uad36Path": "",
+        "uadLabel": "",
+        "valueType": "Button",
+        "cardinality": "0..1",
+        "requiredWhen": "",
+        "enumerationMap": "",
+        "transform": "",
+        "legacyExportName": "Gutters / Downspouts Condition",
+        "status": "Unmapped",
+        "notes": "Authoritative UAD 3.6 mapping pending."
+      },
+      {
+        "fluxFieldId": "gutters_updated",
+        "sourceSheet": "MAIN",
+        "uad36Path": "",
+        "uadLabel": "",
+        "valueType": "Button",
+        "cardinality": "0..1",
+        "requiredWhen": "",
+        "enumerationMap": "",
+        "transform": "",
+        "legacyExportName": "Gutters Updated",
+        "status": "Unmapped",
+        "notes": "Authoritative UAD 3.6 mapping pending."
+      },
+      {
+        "fluxFieldId": "windows_type",
+        "sourceSheet": "MAIN",
+        "uad36Path": "",
+        "uadLabel": "",
+        "valueType": "MultiSelect",
+        "cardinality": "0..1",
+        "requiredWhen": "",
+        "enumerationMap": "",
+        "transform": "",
+        "legacyExportName": "Windows Type",
+        "status": "Unmapped",
+        "notes": "Authoritative UAD 3.6 mapping pending."
+      },
+      {
+        "fluxFieldId": "windows_type_condition",
+        "sourceSheet": "MAIN",
+        "uad36Path": "",
+        "uadLabel": "",
+        "valueType": "Button",
+        "cardinality": "0..1",
+        "requiredWhen": "",
+        "enumerationMap": "",
+        "transform": "",
+        "legacyExportName": "Windows Type Condition",
+        "status": "Unmapped",
+        "notes": "Authoritative UAD 3.6 mapping pending."
+      },
+      {
+        "fluxFieldId": "windows_updated",
+        "sourceSheet": "MAIN",
+        "uad36Path": "",
+        "uadLabel": "",
+        "valueType": "Button",
+        "cardinality": "0..1",
+        "requiredWhen": "",
+        "enumerationMap": "",
+        "transform": "",
+        "legacyExportName": "Windows Updated",
+        "status": "Unmapped",
+        "notes": "Authoritative UAD 3.6 mapping pending."
+      },
+      {
+        "fluxFieldId": "windows_impact",
+        "sourceSheet": "MAIN",
+        "uad36Path": "",
+        "uadLabel": "",
+        "valueType": "Button",
+        "cardinality": "0..1",
+        "requiredWhen": "",
+        "enumerationMap": "",
+        "transform": "",
+        "legacyExportName": "Windows Impact",
+        "status": "Unmapped",
+        "notes": "Authoritative UAD 3.6 mapping pending."
+      },
+      {
+        "fluxFieldId": "screens",
+        "sourceSheet": "MAIN",
+        "uad36Path": "",
+        "uadLabel": "",
+        "valueType": "MultiSelect",
+        "cardinality": "0..1",
+        "requiredWhen": "",
+        "enumerationMap": "",
+        "transform": "",
+        "legacyExportName": "Screens",
+        "status": "Unmapped",
+        "notes": "Authoritative UAD 3.6 mapping pending."
+      },
+      {
+        "fluxFieldId": "screens_condition",
+        "sourceSheet": "MAIN",
+        "uad36Path": "",
+        "uadLabel": "",
+        "valueType": "Button",
+        "cardinality": "0..1",
+        "requiredWhen": "",
+        "enumerationMap": "",
+        "transform": "",
+        "legacyExportName": "Screens Condition",
+        "status": "Unmapped",
+        "notes": "Authoritative UAD 3.6 mapping pending."
+      },
+      {
+        "fluxFieldId": "shutters",
+        "sourceSheet": "MAIN",
+        "uad36Path": "",
+        "uadLabel": "",
+        "valueType": "Button",
+        "cardinality": "0..1",
+        "requiredWhen": "",
+        "enumerationMap": "",
+        "transform": "",
+        "legacyExportName": "Shutters",
+        "status": "Unmapped",
+        "notes": "Authoritative UAD 3.6 mapping pending."
+      },
+      {
+        "fluxFieldId": "security_bars",
+        "sourceSheet": "MAIN",
+        "uad36Path": "",
+        "uadLabel": "",
+        "valueType": "Button",
+        "cardinality": "0..1",
+        "requiredWhen": "",
+        "enumerationMap": "",
+        "transform": "",
+        "legacyExportName": "Security Bars",
+        "status": "Unmapped",
+        "notes": "Authoritative UAD 3.6 mapping pending."
+      },
+      {
+        "fluxFieldId": "storm_sash_insulated",
+        "sourceSheet": "MAIN",
+        "uad36Path": "",
+        "uadLabel": "",
+        "valueType": "Button",
+        "cardinality": "0..1",
+        "requiredWhen": "",
+        "enumerationMap": "",
+        "transform": "",
+        "legacyExportName": "Storm Sash / Insulated",
+        "status": "Unmapped",
+        "notes": "Authoritative UAD 3.6 mapping pending."
+      },
+      {
+        "fluxFieldId": "fireplace",
+        "sourceSheet": "MAIN",
+        "uad36Path": "",
+        "uadLabel": "",
+        "valueType": "Button",
+        "cardinality": "0..1",
+        "requiredWhen": "",
+        "enumerationMap": "",
+        "transform": "",
+        "legacyExportName": "Fireplace",
+        "status": "Unmapped",
+        "notes": "Authoritative UAD 3.6 mapping pending."
+      },
+      {
+        "fluxFieldId": "exterior_notes_repairs",
+        "sourceSheet": "MAIN",
+        "uad36Path": "",
+        "uadLabel": "",
+        "valueType": "LongText",
+        "cardinality": "0..1",
+        "requiredWhen": "",
+        "enumerationMap": "",
+        "transform": "",
+        "legacyExportName": "Exterior Notes/Repairs",
+        "status": "Unmapped",
+        "notes": "Authoritative UAD 3.6 mapping pending."
+      },
+      {
+        "fluxFieldId": "heating",
+        "sourceSheet": "MAIN",
+        "uad36Path": "",
+        "uadLabel": "",
+        "valueType": "MultiSelect",
+        "cardinality": "0..1",
+        "requiredWhen": "",
+        "enumerationMap": "",
+        "transform": "",
+        "legacyExportName": "Heating",
+        "status": "Unmapped",
+        "notes": "Authoritative UAD 3.6 mapping pending."
+      },
+      {
+        "fluxFieldId": "cooling",
+        "sourceSheet": "MAIN",
+        "uad36Path": "",
+        "uadLabel": "",
+        "valueType": "MultiSelect",
+        "cardinality": "0..1",
+        "requiredWhen": "",
+        "enumerationMap": "",
+        "transform": "",
+        "legacyExportName": "Cooling",
+        "status": "Unmapped",
+        "notes": "Authoritative UAD 3.6 mapping pending."
+      },
+      {
+        "fluxFieldId": "cooling_updated",
+        "sourceSheet": "MAIN",
+        "uad36Path": "",
+        "uadLabel": "",
+        "valueType": "Button",
+        "cardinality": "0..1",
+        "requiredWhen": "",
+        "enumerationMap": "",
+        "transform": "",
+        "legacyExportName": "Cooling Updated",
+        "status": "Unmapped",
+        "notes": "Authoritative UAD 3.6 mapping pending."
+      },
+      {
+        "fluxFieldId": "fence",
+        "sourceSheet": "MAIN",
+        "uad36Path": "",
+        "uadLabel": "",
+        "valueType": "MultiSelect",
+        "cardinality": "0..1",
+        "requiredWhen": "",
+        "enumerationMap": "",
+        "transform": "",
+        "legacyExportName": "Fence",
+        "status": "Unmapped",
+        "notes": "Authoritative UAD 3.6 mapping pending."
+      },
+      {
+        "fluxFieldId": "fence_condition",
+        "sourceSheet": "MAIN",
+        "uad36Path": "",
+        "uadLabel": "",
+        "valueType": "Button",
+        "cardinality": "0..1",
+        "requiredWhen": "",
+        "enumerationMap": "",
+        "transform": "",
+        "legacyExportName": "Fence Condition",
+        "status": "Unmapped",
+        "notes": "Authoritative UAD 3.6 mapping pending."
+      },
+      {
+        "fluxFieldId": "porch",
+        "sourceSheet": "MAIN",
+        "uad36Path": "",
+        "uadLabel": "",
+        "valueType": "MultiSelect",
+        "cardinality": "0..1",
+        "requiredWhen": "",
+        "enumerationMap": "",
+        "transform": "",
+        "legacyExportName": "Porch",
+        "status": "Unmapped",
+        "notes": "Authoritative UAD 3.6 mapping pending."
+      },
+      {
+        "fluxFieldId": "porch_condition",
+        "sourceSheet": "MAIN",
+        "uad36Path": "",
+        "uadLabel": "",
+        "valueType": "Button",
+        "cardinality": "0..1",
+        "requiredWhen": "",
+        "enumerationMap": "",
+        "transform": "",
+        "legacyExportName": "Porch Condition",
+        "status": "Unmapped",
+        "notes": "Authoritative UAD 3.6 mapping pending."
+      },
+      {
+        "fluxFieldId": "patio",
+        "sourceSheet": "MAIN",
+        "uad36Path": "",
+        "uadLabel": "",
+        "valueType": "MultiSelect",
+        "cardinality": "0..1",
+        "requiredWhen": "",
+        "enumerationMap": "",
+        "transform": "",
+        "legacyExportName": "Patio",
+        "status": "Unmapped",
+        "notes": "Authoritative UAD 3.6 mapping pending."
+      },
+      {
+        "fluxFieldId": "patio_condition",
+        "sourceSheet": "MAIN",
+        "uad36Path": "",
+        "uadLabel": "",
+        "valueType": "Button",
+        "cardinality": "0..1",
+        "requiredWhen": "",
+        "enumerationMap": "",
+        "transform": "",
+        "legacyExportName": "Patio Condition",
+        "status": "Unmapped",
+        "notes": "Authoritative UAD 3.6 mapping pending."
+      },
+      {
+        "fluxFieldId": "patio_attachment",
+        "sourceSheet": "MAIN",
+        "uad36Path": "",
+        "uadLabel": "",
+        "valueType": "MultiSelect",
+        "cardinality": "0..1",
+        "requiredWhen": "",
+        "enumerationMap": "",
+        "transform": "",
+        "legacyExportName": "Patio Attachment",
+        "status": "Unmapped",
+        "notes": "Authoritative UAD 3.6 mapping pending."
+      },
+      {
+        "fluxFieldId": "deck",
+        "sourceSheet": "MAIN",
+        "uad36Path": "",
+        "uadLabel": "",
+        "valueType": "MultiSelect",
+        "cardinality": "0..1",
+        "requiredWhen": "",
+        "enumerationMap": "",
+        "transform": "",
+        "legacyExportName": "Deck",
+        "status": "Unmapped",
+        "notes": "Authoritative UAD 3.6 mapping pending."
+      },
+      {
+        "fluxFieldId": "deck_condition",
+        "sourceSheet": "MAIN",
+        "uad36Path": "",
+        "uadLabel": "",
+        "valueType": "Button",
+        "cardinality": "0..1",
+        "requiredWhen": "",
+        "enumerationMap": "",
+        "transform": "",
+        "legacyExportName": "Deck Condition",
+        "status": "Unmapped",
+        "notes": "Authoritative UAD 3.6 mapping pending."
+      },
+      {
+        "fluxFieldId": "balcony",
+        "sourceSheet": "MAIN",
+        "uad36Path": "",
+        "uadLabel": "",
+        "valueType": "Button",
+        "cardinality": "0..1",
+        "requiredWhen": "",
+        "enumerationMap": "",
+        "transform": "",
+        "legacyExportName": "Balcony",
+        "status": "Unmapped",
+        "notes": "Authoritative UAD 3.6 mapping pending."
+      },
+      {
+        "fluxFieldId": "pool",
+        "sourceSheet": "MAIN",
+        "uad36Path": "",
+        "uadLabel": "",
+        "valueType": "Button",
+        "cardinality": "0..1",
+        "requiredWhen": "",
+        "enumerationMap": "",
+        "transform": "",
+        "legacyExportName": "Pool",
+        "status": "Unmapped",
+        "notes": "Authoritative UAD 3.6 mapping pending."
+      },
+      {
+        "fluxFieldId": "other_amenities_extras",
+        "sourceSheet": "MAIN",
+        "uad36Path": "",
+        "uadLabel": "",
+        "valueType": "MultiSelect",
+        "cardinality": "0..1",
+        "requiredWhen": "",
+        "enumerationMap": "",
+        "transform": "",
+        "legacyExportName": "Other Amenities / Extras",
+        "status": "Unmapped",
+        "notes": "Authoritative UAD 3.6 mapping pending."
+      },
+      {
+        "fluxFieldId": "outdoor_patio_notes_repairs",
+        "sourceSheet": "MAIN",
+        "uad36Path": "",
+        "uadLabel": "",
+        "valueType": "LongText",
+        "cardinality": "0..1",
+        "requiredWhen": "",
+        "enumerationMap": "",
+        "transform": "",
+        "legacyExportName": "Outdoor/Patio Notes/Repairs",
+        "status": "Unmapped",
+        "notes": "Authoritative UAD 3.6 mapping pending."
+      },
+      {
+        "fluxFieldId": "living_room",
+        "sourceSheet": "MAIN",
+        "uad36Path": "",
+        "uadLabel": "",
+        "valueType": "Counter",
+        "cardinality": "0..1",
+        "requiredWhen": "",
+        "enumerationMap": "",
+        "transform": "",
+        "legacyExportName": "Living Room",
+        "status": "Unmapped",
+        "notes": "Authoritative UAD 3.6 mapping pending."
+      },
+      {
+        "fluxFieldId": "dining_room",
+        "sourceSheet": "MAIN",
+        "uad36Path": "",
+        "uadLabel": "",
+        "valueType": "Counter",
+        "cardinality": "0..1",
+        "requiredWhen": "",
+        "enumerationMap": "",
+        "transform": "",
+        "legacyExportName": "Dining Room",
+        "status": "Unmapped",
+        "notes": "Authoritative UAD 3.6 mapping pending."
+      },
+      {
+        "fluxFieldId": "dining_area",
+        "sourceSheet": "MAIN",
+        "uad36Path": "",
+        "uadLabel": "",
+        "valueType": "Counter",
+        "cardinality": "0..1",
+        "requiredWhen": "",
+        "enumerationMap": "",
+        "transform": "",
+        "legacyExportName": "Dining Area",
+        "status": "Unmapped",
+        "notes": "Authoritative UAD 3.6 mapping pending."
+      },
+      {
+        "fluxFieldId": "family_room",
+        "sourceSheet": "MAIN",
+        "uad36Path": "",
+        "uadLabel": "",
+        "valueType": "Counter",
+        "cardinality": "0..1",
+        "requiredWhen": "",
+        "enumerationMap": "",
+        "transform": "",
+        "legacyExportName": "Family Room",
+        "status": "Unmapped",
+        "notes": "Authoritative UAD 3.6 mapping pending."
+      },
+      {
+        "fluxFieldId": "breakfast_area",
+        "sourceSheet": "MAIN",
+        "uad36Path": "",
+        "uadLabel": "",
+        "valueType": "Counter",
+        "cardinality": "0..1",
+        "requiredWhen": "",
+        "enumerationMap": "",
+        "transform": "",
+        "legacyExportName": "Breakfast Area",
+        "status": "Unmapped",
+        "notes": "Authoritative UAD 3.6 mapping pending."
+      },
+      {
+        "fluxFieldId": "kitchen",
+        "sourceSheet": "MAIN",
+        "uad36Path": "",
+        "uadLabel": "",
+        "valueType": "Counter",
+        "cardinality": "0..1",
+        "requiredWhen": "",
+        "enumerationMap": "",
+        "transform": "",
+        "legacyExportName": "Kitchen",
+        "status": "Unmapped",
+        "notes": "Authoritative UAD 3.6 mapping pending."
+      },
+      {
+        "fluxFieldId": "den",
+        "sourceSheet": "MAIN",
+        "uad36Path": "",
+        "uadLabel": "",
+        "valueType": "Counter",
+        "cardinality": "0..1",
+        "requiredWhen": "",
+        "enumerationMap": "",
+        "transform": "",
+        "legacyExportName": "Den",
+        "status": "Unmapped",
+        "notes": "Authoritative UAD 3.6 mapping pending."
+      },
+      {
+        "fluxFieldId": "bedrooms",
+        "sourceSheet": "MAIN",
+        "uad36Path": "",
+        "uadLabel": "",
+        "valueType": "Counter",
+        "cardinality": "0..1",
+        "requiredWhen": "",
+        "enumerationMap": "",
+        "transform": "",
+        "legacyExportName": "Bedrooms",
+        "status": "Unmapped",
+        "notes": "Authoritative UAD 3.6 mapping pending."
+      },
+      {
+        "fluxFieldId": "bathrooms",
+        "sourceSheet": "MAIN",
+        "uad36Path": "",
+        "uadLabel": "",
+        "valueType": "Counter",
+        "cardinality": "0..1",
+        "requiredWhen": "",
+        "enumerationMap": "",
+        "transform": "",
+        "legacyExportName": "Bathrooms",
+        "status": "Unmapped",
+        "notes": "Authoritative UAD 3.6 mapping pending."
+      },
+      {
+        "fluxFieldId": "half_bath",
+        "sourceSheet": "MAIN",
+        "uad36Path": "",
+        "uadLabel": "",
+        "valueType": "Counter",
+        "cardinality": "0..1",
+        "requiredWhen": "",
+        "enumerationMap": "",
+        "transform": "",
+        "legacyExportName": "Half Bath",
+        "status": "Unmapped",
+        "notes": "Authoritative UAD 3.6 mapping pending."
+      },
+      {
+        "fluxFieldId": "smoke_detectors",
+        "sourceSheet": "MAIN",
+        "uad36Path": "",
+        "uadLabel": "",
+        "valueType": "Counter",
+        "cardinality": "0..1",
+        "requiredWhen": "",
+        "enumerationMap": "",
+        "transform": "",
+        "legacyExportName": "Smoke Detectors",
+        "status": "Unmapped",
+        "notes": "Authoritative UAD 3.6 mapping pending."
+      },
+      {
+        "fluxFieldId": "rooms_notes_repairs",
+        "sourceSheet": "MAIN",
+        "uad36Path": "",
+        "uadLabel": "",
+        "valueType": "Text",
+        "cardinality": "0..1",
+        "requiredWhen": "",
+        "enumerationMap": "",
+        "transform": "",
+        "legacyExportName": "Rooms Notes/Repairs",
+        "status": "Unmapped",
+        "notes": "Authoritative UAD 3.6 mapping pending."
+      },
+      {
+        "fluxFieldId": "floors",
+        "sourceSheet": "MAIN",
+        "uad36Path": "",
+        "uadLabel": "",
+        "valueType": "MultiSelect",
+        "cardinality": "0..1",
+        "requiredWhen": "",
+        "enumerationMap": "",
+        "transform": "",
+        "legacyExportName": "Floors",
+        "status": "Unmapped",
+        "notes": "Authoritative UAD 3.6 mapping pending."
+      },
+      {
+        "fluxFieldId": "floors_condition",
+        "sourceSheet": "MAIN",
+        "uad36Path": "",
+        "uadLabel": "",
+        "valueType": "Button",
+        "cardinality": "0..1",
+        "requiredWhen": "",
+        "enumerationMap": "",
+        "transform": "",
+        "legacyExportName": "Floors Condition",
+        "status": "Unmapped",
+        "notes": "Authoritative UAD 3.6 mapping pending."
+      },
+      {
+        "fluxFieldId": "floors_updated",
+        "sourceSheet": "MAIN",
+        "uad36Path": "",
+        "uadLabel": "",
+        "valueType": "Button",
+        "cardinality": "0..1",
+        "requiredWhen": "",
+        "enumerationMap": "",
+        "transform": "",
+        "legacyExportName": "Floors Updated",
+        "status": "Unmapped",
+        "notes": "Authoritative UAD 3.6 mapping pending."
+      },
+      {
+        "fluxFieldId": "ceiling_style",
+        "sourceSheet": "MAIN",
+        "uad36Path": "",
+        "uadLabel": "",
+        "valueType": "MultiSelect",
+        "cardinality": "0..1",
+        "requiredWhen": "",
+        "enumerationMap": "",
+        "transform": "",
+        "legacyExportName": "Ceiling Style",
+        "status": "Unmapped",
+        "notes": "Authoritative UAD 3.6 mapping pending."
+      },
+      {
+        "fluxFieldId": "ceiling_condition",
+        "sourceSheet": "MAIN",
+        "uad36Path": "",
+        "uadLabel": "",
+        "valueType": "Button",
+        "cardinality": "0..1",
+        "requiredWhen": "",
+        "enumerationMap": "",
+        "transform": "",
+        "legacyExportName": "Ceiling Condition",
+        "status": "Unmapped",
+        "notes": "Authoritative UAD 3.6 mapping pending."
+      },
+      {
+        "fluxFieldId": "ceiling_height",
+        "sourceSheet": "MAIN",
+        "uad36Path": "",
+        "uadLabel": "",
+        "valueType": "Text",
+        "cardinality": "0..1",
+        "requiredWhen": "",
+        "enumerationMap": "",
+        "transform": "",
+        "legacyExportName": "Ceiling Height",
+        "status": "Unmapped",
+        "notes": "Authoritative UAD 3.6 mapping pending."
+      },
+      {
+        "fluxFieldId": "walls",
+        "sourceSheet": "MAIN",
+        "uad36Path": "",
+        "uadLabel": "",
+        "valueType": "MultiSelect",
+        "cardinality": "0..1",
+        "requiredWhen": "",
+        "enumerationMap": "",
+        "transform": "",
+        "legacyExportName": "Walls",
+        "status": "Unmapped",
+        "notes": "Authoritative UAD 3.6 mapping pending."
+      },
+      {
+        "fluxFieldId": "walls_condition",
+        "sourceSheet": "MAIN",
+        "uad36Path": "",
+        "uadLabel": "",
+        "valueType": "Button",
+        "cardinality": "0..1",
+        "requiredWhen": "",
+        "enumerationMap": "",
+        "transform": "",
+        "legacyExportName": "Walls Condition",
+        "status": "Unmapped",
+        "notes": "Authoritative UAD 3.6 mapping pending."
+      },
+      {
+        "fluxFieldId": "walls_updated",
+        "sourceSheet": "MAIN",
+        "uad36Path": "",
+        "uadLabel": "",
+        "valueType": "Button",
+        "cardinality": "0..1",
+        "requiredWhen": "",
+        "enumerationMap": "",
+        "transform": "",
+        "legacyExportName": "Walls Updated",
+        "status": "Unmapped",
+        "notes": "Authoritative UAD 3.6 mapping pending."
+      },
+      {
+        "fluxFieldId": "trim_finish",
+        "sourceSheet": "MAIN",
+        "uad36Path": "",
+        "uadLabel": "",
+        "valueType": "MultiSelect",
+        "cardinality": "0..1",
+        "requiredWhen": "",
+        "enumerationMap": "",
+        "transform": "",
+        "legacyExportName": "Trim / Finish",
+        "status": "Unmapped",
+        "notes": "Authoritative UAD 3.6 mapping pending."
+      },
+      {
+        "fluxFieldId": "trim_finish_condition",
+        "sourceSheet": "MAIN",
+        "uad36Path": "",
+        "uadLabel": "",
+        "valueType": "Button",
+        "cardinality": "0..1",
+        "requiredWhen": "",
+        "enumerationMap": "",
+        "transform": "",
+        "legacyExportName": "Trim / Finish Condition",
+        "status": "Unmapped",
+        "notes": "Authoritative UAD 3.6 mapping pending."
+      },
+      {
+        "fluxFieldId": "trim_finish_updated",
+        "sourceSheet": "MAIN",
+        "uad36Path": "",
+        "uadLabel": "",
+        "valueType": "Button",
+        "cardinality": "0..1",
+        "requiredWhen": "",
+        "enumerationMap": "",
+        "transform": "",
+        "legacyExportName": "Trim / Finish Updated",
+        "status": "Unmapped",
+        "notes": "Authoritative UAD 3.6 mapping pending."
+      },
+      {
+        "fluxFieldId": "attic",
+        "sourceSheet": "MAIN",
+        "uad36Path": "",
+        "uadLabel": "",
+        "valueType": "MultiSelect",
+        "cardinality": "0..1",
+        "requiredWhen": "",
+        "enumerationMap": "",
+        "transform": "",
+        "legacyExportName": "Attic",
+        "status": "Unmapped",
+        "notes": "Authoritative UAD 3.6 mapping pending."
+      },
+      {
+        "fluxFieldId": "interior_other",
+        "sourceSheet": "MAIN",
+        "uad36Path": "",
+        "uadLabel": "",
+        "valueType": "Text",
+        "cardinality": "0..1",
+        "requiredWhen": "",
+        "enumerationMap": "",
+        "transform": "",
+        "legacyExportName": "Interior Other",
+        "status": "Unmapped",
+        "notes": "Authoritative UAD 3.6 mapping pending."
+      },
+      {
+        "fluxFieldId": "kitchen_updated",
+        "sourceSheet": "MAIN",
+        "uad36Path": "",
+        "uadLabel": "",
+        "valueType": "Button",
+        "cardinality": "0..1",
+        "requiredWhen": "",
+        "enumerationMap": "",
+        "transform": "",
+        "legacyExportName": "Kitchen Updated",
+        "status": "Unmapped",
+        "notes": "Authoritative UAD 3.6 mapping pending."
+      },
+      {
+        "fluxFieldId": "refrigerator",
+        "sourceSheet": "MAIN",
+        "uad36Path": "",
+        "uadLabel": "",
+        "valueType": "Counter",
+        "cardinality": "0..1",
+        "requiredWhen": "",
+        "enumerationMap": "",
+        "transform": "",
+        "legacyExportName": "Refrigerator",
+        "status": "Unmapped",
+        "notes": "Authoritative UAD 3.6 mapping pending."
+      },
+      {
+        "fluxFieldId": "range",
+        "sourceSheet": "MAIN",
+        "uad36Path": "",
+        "uadLabel": "",
+        "valueType": "Counter",
+        "cardinality": "0..1",
+        "requiredWhen": "",
+        "enumerationMap": "",
+        "transform": "",
+        "legacyExportName": "Range",
+        "status": "Unmapped",
+        "notes": "Authoritative UAD 3.6 mapping pending."
+      },
+      {
+        "fluxFieldId": "oven",
+        "sourceSheet": "MAIN",
+        "uad36Path": "",
+        "uadLabel": "",
+        "valueType": "Counter",
+        "cardinality": "0..1",
+        "requiredWhen": "",
+        "enumerationMap": "",
+        "transform": "",
+        "legacyExportName": "Oven",
+        "status": "Unmapped",
+        "notes": "Authoritative UAD 3.6 mapping pending."
+      },
+      {
+        "fluxFieldId": "dishwasher",
+        "sourceSheet": "MAIN",
+        "uad36Path": "",
+        "uadLabel": "",
+        "valueType": "Counter",
+        "cardinality": "0..1",
+        "requiredWhen": "",
+        "enumerationMap": "",
+        "transform": "",
+        "legacyExportName": "Dishwasher",
+        "status": "Unmapped",
+        "notes": "Authoritative UAD 3.6 mapping pending."
+      },
+      {
+        "fluxFieldId": "disposal",
+        "sourceSheet": "MAIN",
+        "uad36Path": "",
+        "uadLabel": "",
+        "valueType": "Counter",
+        "cardinality": "0..1",
+        "requiredWhen": "",
+        "enumerationMap": "",
+        "transform": "",
+        "legacyExportName": "Disposal",
+        "status": "Unmapped",
+        "notes": "Authoritative UAD 3.6 mapping pending."
+      },
+      {
+        "fluxFieldId": "microwave",
+        "sourceSheet": "MAIN",
+        "uad36Path": "",
+        "uadLabel": "",
+        "valueType": "Counter",
+        "cardinality": "0..1",
+        "requiredWhen": "",
+        "enumerationMap": "",
+        "transform": "",
+        "legacyExportName": "Microwave",
+        "status": "Unmapped",
+        "notes": "Authoritative UAD 3.6 mapping pending."
+      },
+      {
+        "fluxFieldId": "range_hood",
+        "sourceSheet": "MAIN",
+        "uad36Path": "",
+        "uadLabel": "",
+        "valueType": "Counter",
+        "cardinality": "0..1",
+        "requiredWhen": "",
+        "enumerationMap": "",
+        "transform": "",
+        "legacyExportName": "Range Hood",
+        "status": "Unmapped",
+        "notes": "Authoritative UAD 3.6 mapping pending."
+      },
+      {
+        "fluxFieldId": "beverage_cooler",
+        "sourceSheet": "MAIN",
+        "uad36Path": "",
+        "uadLabel": "",
+        "valueType": "Counter",
+        "cardinality": "0..1",
+        "requiredWhen": "",
+        "enumerationMap": "",
+        "transform": "",
+        "legacyExportName": "Beverage Cooler",
+        "status": "Unmapped",
+        "notes": "Authoritative UAD 3.6 mapping pending."
+      },
+      {
+        "fluxFieldId": "appliances_other",
+        "sourceSheet": "MAIN",
+        "uad36Path": "",
+        "uadLabel": "",
+        "valueType": "Text",
+        "cardinality": "0..1",
+        "requiredWhen": "",
+        "enumerationMap": "",
+        "transform": "",
+        "legacyExportName": "Appliances Other",
+        "status": "Unmapped",
+        "notes": "Authoritative UAD 3.6 mapping pending."
+      },
+      {
+        "fluxFieldId": "clothes_washer",
+        "sourceSheet": "MAIN",
+        "uad36Path": "",
+        "uadLabel": "",
+        "valueType": "Counter",
+        "cardinality": "0..1",
+        "requiredWhen": "",
+        "enumerationMap": "",
+        "transform": "",
+        "legacyExportName": "Clothes Washer",
+        "status": "Unmapped",
+        "notes": "Authoritative UAD 3.6 mapping pending."
+      },
+      {
+        "fluxFieldId": "clothes_dryer",
+        "sourceSheet": "MAIN",
+        "uad36Path": "",
+        "uadLabel": "",
+        "valueType": "Counter",
+        "cardinality": "0..1",
+        "requiredWhen": "",
+        "enumerationMap": "",
+        "transform": "",
+        "legacyExportName": "Clothes Dryer",
+        "status": "Unmapped",
+        "notes": "Authoritative UAD 3.6 mapping pending."
+      },
+      {
+        "fluxFieldId": "wet_bar",
+        "sourceSheet": "MAIN",
+        "uad36Path": "",
+        "uadLabel": "",
+        "valueType": "Counter",
+        "cardinality": "0..1",
+        "requiredWhen": "",
+        "enumerationMap": "",
+        "transform": "",
+        "legacyExportName": "Wet Bar",
+        "status": "Unmapped",
+        "notes": "Authoritative UAD 3.6 mapping pending."
+      },
+      {
+        "fluxFieldId": "kitchen_notes",
+        "sourceSheet": "MAIN",
+        "uad36Path": "",
+        "uadLabel": "",
+        "valueType": "Text",
+        "cardinality": "0..1",
+        "requiredWhen": "",
+        "enumerationMap": "",
+        "transform": "",
+        "legacyExportName": "Kitchen Notes",
+        "status": "Unmapped",
+        "notes": "Authoritative UAD 3.6 mapping pending."
+      },
+      {
+        "fluxFieldId": "bathrooms_updated",
+        "sourceSheet": "MAIN",
+        "uad36Path": "",
+        "uadLabel": "",
+        "valueType": "Button",
+        "cardinality": "0..1",
+        "requiredWhen": "",
+        "enumerationMap": "",
+        "transform": "",
+        "legacyExportName": "Bathrooms Updated",
+        "status": "Unmapped",
+        "notes": "Authoritative UAD 3.6 mapping pending."
+      },
+      {
+        "fluxFieldId": "bath_floor",
+        "sourceSheet": "MAIN",
+        "uad36Path": "",
+        "uadLabel": "",
+        "valueType": "MultiSelect",
+        "cardinality": "0..1",
+        "requiredWhen": "",
+        "enumerationMap": "",
+        "transform": "",
+        "legacyExportName": "Bath Floor",
+        "status": "Unmapped",
+        "notes": "Authoritative UAD 3.6 mapping pending."
+      },
+      {
+        "fluxFieldId": "bath_floor_condition",
+        "sourceSheet": "MAIN",
+        "uad36Path": "",
+        "uadLabel": "",
+        "valueType": "Button",
+        "cardinality": "0..1",
+        "requiredWhen": "",
+        "enumerationMap": "",
+        "transform": "",
+        "legacyExportName": "Bath Floor Condition",
+        "status": "Unmapped",
+        "notes": "Authoritative UAD 3.6 mapping pending."
+      },
+      {
+        "fluxFieldId": "bath_floor_updated",
+        "sourceSheet": "MAIN",
+        "uad36Path": "",
+        "uadLabel": "",
+        "valueType": "Button",
+        "cardinality": "0..1",
+        "requiredWhen": "",
+        "enumerationMap": "",
+        "transform": "",
+        "legacyExportName": "Bath Floor Updated",
+        "status": "Unmapped",
+        "notes": "Authoritative UAD 3.6 mapping pending."
+      },
+      {
+        "fluxFieldId": "bath_wainscot",
+        "sourceSheet": "MAIN",
+        "uad36Path": "",
+        "uadLabel": "",
+        "valueType": "MultiSelect",
+        "cardinality": "0..1",
+        "requiredWhen": "",
+        "enumerationMap": "",
+        "transform": "",
+        "legacyExportName": "Bath Wainscot",
+        "status": "Unmapped",
+        "notes": "Authoritative UAD 3.6 mapping pending."
+      },
+      {
+        "fluxFieldId": "bath_wainscot_condition",
+        "sourceSheet": "MAIN",
+        "uad36Path": "",
+        "uadLabel": "",
+        "valueType": "Button",
+        "cardinality": "0..1",
+        "requiredWhen": "",
+        "enumerationMap": "",
+        "transform": "",
+        "legacyExportName": "Bath Wainscot Condition",
+        "status": "Unmapped",
+        "notes": "Authoritative UAD 3.6 mapping pending."
+      },
+      {
+        "fluxFieldId": "bath_wainscot_updated",
+        "sourceSheet": "MAIN",
+        "uad36Path": "",
+        "uadLabel": "",
+        "valueType": "Button",
+        "cardinality": "0..1",
+        "requiredWhen": "",
+        "enumerationMap": "",
+        "transform": "",
+        "legacyExportName": "Bath Wainscot Updated",
+        "status": "Unmapped",
+        "notes": "Authoritative UAD 3.6 mapping pending."
+      },
+      {
+        "fluxFieldId": "bathrooms_notes",
+        "sourceSheet": "MAIN",
+        "uad36Path": "",
+        "uadLabel": "",
+        "valueType": "Text",
+        "cardinality": "0..1",
+        "requiredWhen": "",
+        "enumerationMap": "",
+        "transform": "",
+        "legacyExportName": "Bathrooms Notes",
+        "status": "Unmapped",
+        "notes": "Authoritative UAD 3.6 mapping pending."
+      },
+      {
+        "fluxFieldId": "occupancy_vacant__electricity_on",
+        "sourceSheet": "FOLLOW_UP",
+        "uad36Path": "",
+        "uadLabel": "",
+        "valueType": "Button",
+        "cardinality": "0..1",
+        "requiredWhen": "",
+        "enumerationMap": "",
+        "transform": "",
+        "legacyExportName": "Electricity on?",
+        "status": "Unmapped",
+        "notes": "Authoritative UAD 3.6 mapping pending."
+      },
+      {
+        "fluxFieldId": "occupancy_vacant__water_on",
+        "sourceSheet": "FOLLOW_UP",
+        "uad36Path": "",
+        "uadLabel": "",
+        "valueType": "Button",
+        "cardinality": "0..1",
+        "requiredWhen": "",
+        "enumerationMap": "",
+        "transform": "",
+        "legacyExportName": "Water on?",
+        "status": "Unmapped",
+        "notes": "Authoritative UAD 3.6 mapping pending."
+      },
+      {
+        "fluxFieldId": "pud_association__association_fee",
+        "sourceSheet": "FOLLOW_UP",
+        "uad36Path": "",
+        "uadLabel": "",
+        "valueType": "Currency",
+        "cardinality": "0..1",
+        "requiredWhen": "",
+        "enumerationMap": "",
+        "transform": "",
+        "legacyExportName": "Association Fee",
+        "status": "Unmapped",
+        "notes": "Authoritative UAD 3.6 mapping pending."
+      },
+      {
+        "fluxFieldId": "pud_association__fee_frequency",
+        "sourceSheet": "FOLLOW_UP",
+        "uad36Path": "",
+        "uadLabel": "",
+        "valueType": "Button",
+        "cardinality": "0..1",
+        "requiredWhen": "",
+        "enumerationMap": "",
+        "transform": "",
+        "legacyExportName": "Fee Frequency",
+        "status": "Unmapped",
+        "notes": "Authoritative UAD 3.6 mapping pending."
+      },
+      {
+        "fluxFieldId": "pud_association__amenities_included",
+        "sourceSheet": "FOLLOW_UP",
+        "uad36Path": "",
+        "uadLabel": "",
+        "valueType": "MultiSelect",
+        "cardinality": "0..1",
+        "requiredWhen": "",
+        "enumerationMap": "",
+        "transform": "",
+        "legacyExportName": "Amenities Included",
+        "status": "Unmapped",
+        "notes": "Authoritative UAD 3.6 mapping pending."
+      },
+      {
+        "fluxFieldId": "pud_association__special_assessment",
+        "sourceSheet": "FOLLOW_UP",
+        "uad36Path": "",
+        "uadLabel": "",
+        "valueType": "Button",
+        "cardinality": "0..1",
+        "requiredWhen": "",
+        "enumerationMap": "",
+        "transform": "",
+        "legacyExportName": "Special Assessment",
+        "status": "Unmapped",
+        "notes": "Authoritative UAD 3.6 mapping pending."
+      },
+      {
+        "fluxFieldId": "pud_association__special_assessment_fee",
+        "sourceSheet": "FOLLOW_UP",
+        "uad36Path": "",
+        "uadLabel": "",
+        "valueType": "Currency",
+        "cardinality": "0..1",
+        "requiredWhen": "",
+        "enumerationMap": "",
+        "transform": "",
+        "legacyExportName": "Special Assessment Fee",
+        "status": "Unmapped",
+        "notes": "Authoritative UAD 3.6 mapping pending."
+      },
+      {
+        "fluxFieldId": "pud_association__special_assessment_fee_frequency",
+        "sourceSheet": "FOLLOW_UP",
+        "uad36Path": "",
+        "uadLabel": "",
+        "valueType": "Button",
+        "cardinality": "0..1",
+        "requiredWhen": "",
+        "enumerationMap": "",
+        "transform": "",
+        "legacyExportName": "Special Assessment Fee Frequency",
+        "status": "Unmapped",
+        "notes": "Authoritative UAD 3.6 mapping pending."
+      },
+      {
+        "fluxFieldId": "pud_association__special_assessment_reason_time",
+        "sourceSheet": "FOLLOW_UP",
+        "uad36Path": "",
+        "uadLabel": "",
+        "valueType": "Text",
+        "cardinality": "0..1",
+        "requiredWhen": "",
+        "enumerationMap": "",
+        "transform": "",
+        "legacyExportName": "Special Assessment Reason / Time",
+        "status": "Unmapped",
+        "notes": "Authoritative UAD 3.6 mapping pending."
+      },
+      {
+        "fluxFieldId": "pud_association__pud_comments",
+        "sourceSheet": "FOLLOW_UP",
+        "uad36Path": "",
+        "uadLabel": "",
+        "valueType": "Text",
+        "cardinality": "0..1",
+        "requiredWhen": "",
+        "enumerationMap": "",
+        "transform": "",
+        "legacyExportName": "PUD Comments",
+        "status": "Unmapped",
+        "notes": "Authoritative UAD 3.6 mapping pending."
+      },
+      {
+        "fluxFieldId": "manufactured__number_of_sections",
+        "sourceSheet": "FOLLOW_UP",
+        "uad36Path": "",
+        "uadLabel": "",
+        "valueType": "Button",
+        "cardinality": "0..1",
+        "requiredWhen": "",
+        "enumerationMap": "",
+        "transform": "",
+        "legacyExportName": "Number of Sections",
+        "status": "Unmapped",
+        "notes": "Authoritative UAD 3.6 mapping pending."
+      },
+      {
+        "fluxFieldId": "manufactured__manufac_s_vin_s",
+        "sourceSheet": "FOLLOW_UP",
+        "uad36Path": "",
+        "uadLabel": "",
+        "valueType": "Text",
+        "cardinality": "0..1",
+        "requiredWhen": "",
+        "enumerationMap": "",
+        "transform": "",
+        "legacyExportName": "Manufac#'s/VIN#'s",
+        "status": "Unmapped",
+        "notes": "Authoritative UAD 3.6 mapping pending."
+      },
+      {
+        "fluxFieldId": "manufactured__hud_certification_label",
+        "sourceSheet": "FOLLOW_UP",
+        "uad36Path": "",
+        "uadLabel": "",
+        "valueType": "Text",
+        "cardinality": "0..1",
+        "requiredWhen": "",
+        "enumerationMap": "",
+        "transform": "",
+        "legacyExportName": "HUD Certification Label",
+        "status": "Unmapped",
+        "notes": "Authoritative UAD 3.6 mapping pending."
+      },
+      {
+        "fluxFieldId": "manufactured__manufacturer_s_name",
+        "sourceSheet": "FOLLOW_UP",
+        "uad36Path": "",
+        "uadLabel": "",
+        "valueType": "Text",
+        "cardinality": "0..1",
+        "requiredWhen": "",
+        "enumerationMap": "",
+        "transform": "",
+        "legacyExportName": "Manufacturer's Name",
+        "status": "Unmapped",
+        "notes": "Authoritative UAD 3.6 mapping pending."
+      },
+      {
+        "fluxFieldId": "manufactured__trade_model",
+        "sourceSheet": "FOLLOW_UP",
+        "uad36Path": "",
+        "uadLabel": "",
+        "valueType": "Text",
+        "cardinality": "0..1",
+        "requiredWhen": "",
+        "enumerationMap": "",
+        "transform": "",
+        "legacyExportName": "Trade/Model",
+        "status": "Unmapped",
+        "notes": "Authoritative UAD 3.6 mapping pending."
+      },
+      {
+        "fluxFieldId": "manufactured__manufacture_year",
+        "sourceSheet": "FOLLOW_UP",
+        "uad36Path": "",
+        "uadLabel": "",
+        "valueType": "Text",
+        "cardinality": "0..1",
+        "requiredWhen": "",
+        "enumerationMap": "",
+        "transform": "",
+        "legacyExportName": "Manufacture Year",
+        "status": "Unmapped",
+        "notes": "Authoritative UAD 3.6 mapping pending."
+      },
+      {
+        "fluxFieldId": "manufactured__skirting",
+        "sourceSheet": "FOLLOW_UP",
+        "uad36Path": "",
+        "uadLabel": "",
+        "valueType": "Text",
+        "cardinality": "0..1",
+        "requiredWhen": "",
+        "enumerationMap": "",
+        "transform": "",
+        "legacyExportName": "Skirting",
+        "status": "Unmapped",
+        "notes": "Authoritative UAD 3.6 mapping pending."
+      },
+      {
+        "fluxFieldId": "alley__alley_surface",
+        "sourceSheet": "FOLLOW_UP",
+        "uad36Path": "",
+        "uadLabel": "",
+        "valueType": "MultiSelect",
+        "cardinality": "0..1",
+        "requiredWhen": "",
+        "enumerationMap": "",
+        "transform": "",
+        "legacyExportName": "Alley Surface",
+        "status": "Unmapped",
+        "notes": "Authoritative UAD 3.6 mapping pending."
+      },
+      {
+        "fluxFieldId": "alley__alley_access",
+        "sourceSheet": "FOLLOW_UP",
+        "uad36Path": "",
+        "uadLabel": "",
+        "valueType": "Button",
+        "cardinality": "0..1",
+        "requiredWhen": "",
+        "enumerationMap": "",
+        "transform": "",
+        "legacyExportName": "Alley Access",
+        "status": "Unmapped",
+        "notes": "Authoritative UAD 3.6 mapping pending."
+      },
+      {
+        "fluxFieldId": "gas__gas_service",
+        "sourceSheet": "FOLLOW_UP",
+        "uad36Path": "",
+        "uadLabel": "",
+        "valueType": "Button",
+        "cardinality": "0..1",
+        "requiredWhen": "",
+        "enumerationMap": "",
+        "transform": "",
+        "legacyExportName": "Gas Service",
+        "status": "Unmapped",
+        "notes": "Authoritative UAD 3.6 mapping pending."
+      },
+      {
+        "fluxFieldId": "car_storage__garage_spaces",
+        "sourceSheet": "FOLLOW_UP",
+        "uad36Path": "",
+        "uadLabel": "",
+        "valueType": "Counter",
+        "cardinality": "0..1",
+        "requiredWhen": "",
+        "enumerationMap": "",
+        "transform": "",
+        "legacyExportName": "# Garage Spaces",
+        "status": "Unmapped",
+        "notes": "Authoritative UAD 3.6 mapping pending."
+      },
+      {
+        "fluxFieldId": "car_storage__carport_spaces",
+        "sourceSheet": "FOLLOW_UP",
+        "uad36Path": "",
+        "uadLabel": "",
+        "valueType": "Counter",
+        "cardinality": "0..1",
+        "requiredWhen": "",
+        "enumerationMap": "",
+        "transform": "",
+        "legacyExportName": "# Carport Spaces",
+        "status": "Unmapped",
+        "notes": "Authoritative UAD 3.6 mapping pending."
+      },
+      {
+        "fluxFieldId": "car_storage__covered_spaces",
+        "sourceSheet": "FOLLOW_UP",
+        "uad36Path": "",
+        "uadLabel": "",
+        "valueType": "Counter",
+        "cardinality": "0..1",
+        "requiredWhen": "",
+        "enumerationMap": "",
+        "transform": "",
+        "legacyExportName": "# Covered Spaces",
+        "status": "Unmapped",
+        "notes": "Authoritative UAD 3.6 mapping pending."
+      },
+      {
+        "fluxFieldId": "car_storage__car_storage_attachment",
+        "sourceSheet": "FOLLOW_UP",
+        "uad36Path": "",
+        "uadLabel": "",
+        "valueType": "MultiSelect",
+        "cardinality": "0..1",
+        "requiredWhen": "",
+        "enumerationMap": "",
+        "transform": "",
+        "legacyExportName": "Car Storage Attachment",
+        "status": "Unmapped",
+        "notes": "Authoritative UAD 3.6 mapping pending."
+      },
+      {
+        "fluxFieldId": "adu__rented",
+        "sourceSheet": "FOLLOW_UP",
+        "uad36Path": "",
+        "uadLabel": "",
+        "valueType": "Button",
+        "cardinality": "0..1",
+        "requiredWhen": "",
+        "enumerationMap": "",
+        "transform": "",
+        "legacyExportName": "Rented",
+        "status": "Unmapped",
+        "notes": "Authoritative UAD 3.6 mapping pending."
+      },
+      {
+        "fluxFieldId": "adu__certified",
+        "sourceSheet": "FOLLOW_UP",
+        "uad36Path": "",
+        "uadLabel": "",
+        "valueType": "Button",
+        "cardinality": "0..1",
+        "requiredWhen": "",
+        "enumerationMap": "",
+        "transform": "",
+        "legacyExportName": "Certified",
+        "status": "Unmapped",
+        "notes": "Authoritative UAD 3.6 mapping pending."
+      },
+      {
+        "fluxFieldId": "adu__permits",
+        "sourceSheet": "FOLLOW_UP",
+        "uad36Path": "",
+        "uadLabel": "",
+        "valueType": "Button",
+        "cardinality": "0..1",
+        "requiredWhen": "",
+        "enumerationMap": "",
+        "transform": "",
+        "legacyExportName": "Permits",
+        "status": "Unmapped",
+        "notes": "Authoritative UAD 3.6 mapping pending."
+      },
+      {
+        "fluxFieldId": "adu__adu_notes",
+        "sourceSheet": "FOLLOW_UP",
+        "uad36Path": "",
+        "uadLabel": "",
+        "valueType": "Text",
+        "cardinality": "0..1",
+        "requiredWhen": "",
+        "enumerationMap": "",
+        "transform": "",
+        "legacyExportName": "ADU Notes",
+        "status": "Unmapped",
+        "notes": "Authoritative UAD 3.6 mapping pending."
+      },
+      {
+        "fluxFieldId": "condo__description",
+        "sourceSheet": "FOLLOW_UP",
+        "uad36Path": "",
+        "uadLabel": "",
+        "valueType": "Button",
+        "cardinality": "0..1",
+        "requiredWhen": "",
+        "enumerationMap": "",
+        "transform": "",
+        "legacyExportName": "Description",
+        "status": "Unmapped",
+        "notes": "Authoritative UAD 3.6 mapping pending."
+      },
+      {
+        "fluxFieldId": "condo__stories",
+        "sourceSheet": "FOLLOW_UP",
+        "uad36Path": "",
+        "uadLabel": "",
+        "valueType": "Text",
+        "cardinality": "0..1",
+        "requiredWhen": "",
+        "enumerationMap": "",
+        "transform": "",
+        "legacyExportName": "Stories",
+        "status": "Unmapped",
+        "notes": "Authoritative UAD 3.6 mapping pending."
+      },
+      {
+        "fluxFieldId": "condo__buildings",
+        "sourceSheet": "FOLLOW_UP",
+        "uad36Path": "",
+        "uadLabel": "",
+        "valueType": "Counter",
+        "cardinality": "0..1",
+        "requiredWhen": "",
+        "enumerationMap": "",
+        "transform": "",
+        "legacyExportName": "Buildings",
+        "status": "Unmapped",
+        "notes": "Authoritative UAD 3.6 mapping pending."
+      },
+      {
+        "fluxFieldId": "condo__elevator",
+        "sourceSheet": "FOLLOW_UP",
+        "uad36Path": "",
+        "uadLabel": "",
+        "valueType": "Counter",
+        "cardinality": "0..1",
+        "requiredWhen": "",
+        "enumerationMap": "",
+        "transform": "",
+        "legacyExportName": "Elevator",
+        "status": "Unmapped",
+        "notes": "Authoritative UAD 3.6 mapping pending."
+      },
+      {
+        "fluxFieldId": "condo__condo_fee",
+        "sourceSheet": "FOLLOW_UP",
+        "uad36Path": "",
+        "uadLabel": "",
+        "valueType": "Text",
+        "cardinality": "0..1",
+        "requiredWhen": "",
+        "enumerationMap": "",
+        "transform": "",
+        "legacyExportName": "Condo Fee $",
+        "status": "Unmapped",
+        "notes": "Authoritative UAD 3.6 mapping pending."
+      },
+      {
+        "fluxFieldId": "condo__fee_frequency",
+        "sourceSheet": "FOLLOW_UP",
+        "uad36Path": "",
+        "uadLabel": "",
+        "valueType": "Button",
+        "cardinality": "0..1",
+        "requiredWhen": "",
+        "enumerationMap": "",
+        "transform": "",
+        "legacyExportName": "Fee Frequency",
+        "status": "Unmapped",
+        "notes": "Authoritative UAD 3.6 mapping pending."
+      },
+      {
+        "fluxFieldId": "condo__fee_includes",
+        "sourceSheet": "FOLLOW_UP",
+        "uad36Path": "",
+        "uadLabel": "",
+        "valueType": "MultiSelect",
+        "cardinality": "0..1",
+        "requiredWhen": "",
+        "enumerationMap": "",
+        "transform": "",
+        "legacyExportName": "Fee Includes",
+        "status": "Unmapped",
+        "notes": "Authoritative UAD 3.6 mapping pending."
+      },
+      {
+        "fluxFieldId": "condo__special_assessment",
+        "sourceSheet": "FOLLOW_UP",
+        "uad36Path": "",
+        "uadLabel": "",
+        "valueType": "Button",
+        "cardinality": "0..1",
+        "requiredWhen": "",
+        "enumerationMap": "",
+        "transform": "",
+        "legacyExportName": "Special Assessment",
+        "status": "Unmapped",
+        "notes": "Authoritative UAD 3.6 mapping pending."
+      },
+      {
+        "fluxFieldId": "condo__special_assessment_amount",
+        "sourceSheet": "FOLLOW_UP",
+        "uad36Path": "",
+        "uadLabel": "",
+        "valueType": "Text",
+        "cardinality": "0..1",
+        "requiredWhen": "",
+        "enumerationMap": "",
+        "transform": "",
+        "legacyExportName": "Special Assessment Amount $",
+        "status": "Unmapped",
+        "notes": "Authoritative UAD 3.6 mapping pending."
+      },
+      {
+        "fluxFieldId": "condo__special_assesment_purpose",
+        "sourceSheet": "FOLLOW_UP",
+        "uad36Path": "",
+        "uadLabel": "",
+        "valueType": "Text",
+        "cardinality": "0..1",
+        "requiredWhen": "",
+        "enumerationMap": "",
+        "transform": "",
+        "legacyExportName": "Special Assesment Purpose",
+        "status": "Unmapped",
+        "notes": "Authoritative UAD 3.6 mapping pending."
+      },
+      {
+        "fluxFieldId": "condo__special_assessment_time",
+        "sourceSheet": "FOLLOW_UP",
+        "uad36Path": "",
+        "uadLabel": "",
+        "valueType": "Text",
+        "cardinality": "0..1",
+        "requiredWhen": "",
+        "enumerationMap": "",
+        "transform": "",
+        "legacyExportName": "Special Assessment Time",
+        "status": "Unmapped",
+        "notes": "Authoritative UAD 3.6 mapping pending."
+      },
+      {
+        "fluxFieldId": "condo__parking_type",
+        "sourceSheet": "FOLLOW_UP",
+        "uad36Path": "",
+        "uadLabel": "",
+        "valueType": "MultiSelect",
+        "cardinality": "0..1",
+        "requiredWhen": "",
+        "enumerationMap": "",
+        "transform": "",
+        "legacyExportName": "Parking Type",
+        "status": "Unmapped",
+        "notes": "Authoritative UAD 3.6 mapping pending."
+      },
+      {
+        "fluxFieldId": "condo__parking_spaces",
+        "sourceSheet": "FOLLOW_UP",
+        "uad36Path": "",
+        "uadLabel": "",
+        "valueType": "Text",
+        "cardinality": "0..1",
+        "requiredWhen": "",
+        "enumerationMap": "",
+        "transform": "",
+        "legacyExportName": "Parking Spaces #",
+        "status": "Unmapped",
+        "notes": "Authoritative UAD 3.6 mapping pending."
+      },
+      {
+        "fluxFieldId": "condo__amenities",
+        "sourceSheet": "FOLLOW_UP",
+        "uad36Path": "",
+        "uadLabel": "",
+        "valueType": "MultiSelect",
+        "cardinality": "0..1",
+        "requiredWhen": "",
+        "enumerationMap": "",
+        "transform": "",
+        "legacyExportName": "Amenities",
+        "status": "Unmapped",
+        "notes": "Authoritative UAD 3.6 mapping pending."
+      },
+      {
+        "fluxFieldId": "condo__conversion",
+        "sourceSheet": "FOLLOW_UP",
+        "uad36Path": "",
+        "uadLabel": "",
+        "valueType": "Button",
+        "cardinality": "0..1",
+        "requiredWhen": "",
+        "enumerationMap": "",
+        "transform": "",
+        "legacyExportName": "Conversion",
+        "status": "Unmapped",
+        "notes": "Authoritative UAD 3.6 mapping pending."
+      },
+      {
+        "fluxFieldId": "condo__dock_space",
+        "sourceSheet": "FOLLOW_UP",
+        "uad36Path": "",
+        "uadLabel": "",
+        "valueType": "Button",
+        "cardinality": "0..1",
+        "requiredWhen": "",
+        "enumerationMap": "",
+        "transform": "",
+        "legacyExportName": "Dock Space",
+        "status": "Unmapped",
+        "notes": "Authoritative UAD 3.6 mapping pending."
+      },
+      {
+        "fluxFieldId": "condo__notes",
+        "sourceSheet": "FOLLOW_UP",
+        "uad36Path": "",
+        "uadLabel": "",
+        "valueType": "Text",
+        "cardinality": "0..1",
+        "requiredWhen": "",
+        "enumerationMap": "",
+        "transform": "",
+        "legacyExportName": "Notes",
+        "status": "Unmapped",
+        "notes": "Authoritative UAD 3.6 mapping pending."
+      },
+      {
+        "fluxFieldId": "solar_panels__ownership",
+        "sourceSheet": "FOLLOW_UP",
+        "uad36Path": "",
+        "uadLabel": "",
+        "valueType": "MultiSelect",
+        "cardinality": "0..1",
+        "requiredWhen": "",
+        "enumerationMap": "",
+        "transform": "",
+        "legacyExportName": "Ownership",
+        "status": "Unmapped",
+        "notes": "Authoritative UAD 3.6 mapping pending."
+      },
+      {
+        "fluxFieldId": "solar_panels__system",
+        "sourceSheet": "FOLLOW_UP",
+        "uad36Path": "",
+        "uadLabel": "",
+        "valueType": "MultiSelect",
+        "cardinality": "0..1",
+        "requiredWhen": "",
+        "enumerationMap": "",
+        "transform": "",
+        "legacyExportName": "System",
+        "status": "Unmapped",
+        "notes": "Authoritative UAD 3.6 mapping pending."
+      },
+      {
+        "fluxFieldId": "solar_panels__age",
+        "sourceSheet": "FOLLOW_UP",
+        "uad36Path": "",
+        "uadLabel": "",
+        "valueType": "Text",
+        "cardinality": "0..1",
+        "requiredWhen": "",
+        "enumerationMap": "",
+        "transform": "",
+        "legacyExportName": "Age",
+        "status": "Unmapped",
+        "notes": "Authoritative UAD 3.6 mapping pending."
+      },
+      {
+        "fluxFieldId": "solar_panels__capacity_kw",
+        "sourceSheet": "FOLLOW_UP",
+        "uad36Path": "",
+        "uadLabel": "",
+        "valueType": "Text",
+        "cardinality": "0..1",
+        "requiredWhen": "",
+        "enumerationMap": "",
+        "transform": "",
+        "legacyExportName": "Capacity (KW)",
+        "status": "Unmapped",
+        "notes": "Authoritative UAD 3.6 mapping pending."
+      },
+      {
+        "fluxFieldId": "roof_updated__timeframe",
+        "sourceSheet": "FOLLOW_UP",
+        "uad36Path": "",
+        "uadLabel": "",
+        "valueType": "Text",
+        "cardinality": "0..1",
+        "requiredWhen": "",
+        "enumerationMap": "",
+        "transform": "",
+        "legacyExportName": "Timeframe",
+        "status": "Unmapped",
+        "notes": "Authoritative UAD 3.6 mapping pending."
+      },
+      {
+        "fluxFieldId": "roof_updated__details",
+        "sourceSheet": "FOLLOW_UP",
+        "uad36Path": "",
+        "uadLabel": "",
+        "valueType": "Text",
+        "cardinality": "0..1",
+        "requiredWhen": "",
+        "enumerationMap": "",
+        "transform": "",
+        "legacyExportName": "Details",
+        "status": "Unmapped",
+        "notes": "Authoritative UAD 3.6 mapping pending."
+      },
+      {
+        "fluxFieldId": "gutters_updated__timeframe",
+        "sourceSheet": "FOLLOW_UP",
+        "uad36Path": "",
+        "uadLabel": "",
+        "valueType": "Text",
+        "cardinality": "0..1",
+        "requiredWhen": "",
+        "enumerationMap": "",
+        "transform": "",
+        "legacyExportName": "Timeframe",
+        "status": "Unmapped",
+        "notes": "Authoritative UAD 3.6 mapping pending."
+      },
+      {
+        "fluxFieldId": "gutters_updated__details",
+        "sourceSheet": "FOLLOW_UP",
+        "uad36Path": "",
+        "uadLabel": "",
+        "valueType": "Text",
+        "cardinality": "0..1",
+        "requiredWhen": "",
+        "enumerationMap": "",
+        "transform": "",
+        "legacyExportName": "Details",
+        "status": "Unmapped",
+        "notes": "Authoritative UAD 3.6 mapping pending."
+      },
+      {
+        "fluxFieldId": "windows_updated__timeframe",
+        "sourceSheet": "FOLLOW_UP",
+        "uad36Path": "",
+        "uadLabel": "",
+        "valueType": "Text",
+        "cardinality": "0..1",
+        "requiredWhen": "",
+        "enumerationMap": "",
+        "transform": "",
+        "legacyExportName": "Timeframe",
+        "status": "Unmapped",
+        "notes": "Authoritative UAD 3.6 mapping pending."
+      },
+      {
+        "fluxFieldId": "windows_updated__details",
+        "sourceSheet": "FOLLOW_UP",
+        "uad36Path": "",
+        "uadLabel": "",
+        "valueType": "Text",
+        "cardinality": "0..1",
+        "requiredWhen": "",
+        "enumerationMap": "",
+        "transform": "",
+        "legacyExportName": "Details",
+        "status": "Unmapped",
+        "notes": "Authoritative UAD 3.6 mapping pending."
+      },
+      {
+        "fluxFieldId": "shutters__shutters_type",
+        "sourceSheet": "FOLLOW_UP",
+        "uad36Path": "",
+        "uadLabel": "",
+        "valueType": "MultiSelect",
+        "cardinality": "0..1",
+        "requiredWhen": "",
+        "enumerationMap": "",
+        "transform": "",
+        "legacyExportName": "Shutters Type",
+        "status": "Unmapped",
+        "notes": "Authoritative UAD 3.6 mapping pending."
+      },
+      {
+        "fluxFieldId": "security_bars__safety_release",
+        "sourceSheet": "FOLLOW_UP",
+        "uad36Path": "",
+        "uadLabel": "",
+        "valueType": "Button",
+        "cardinality": "0..1",
+        "requiredWhen": "",
+        "enumerationMap": "",
+        "transform": "",
+        "legacyExportName": "Safety release",
+        "status": "Unmapped",
+        "notes": "Authoritative UAD 3.6 mapping pending."
+      },
+      {
+        "fluxFieldId": "security_bars__do_bedrooms_have_bars",
+        "sourceSheet": "FOLLOW_UP",
+        "uad36Path": "",
+        "uadLabel": "",
+        "valueType": "Button",
+        "cardinality": "0..1",
+        "requiredWhen": "",
+        "enumerationMap": "",
+        "transform": "",
+        "legacyExportName": "Do bedrooms have bars",
+        "status": "Unmapped",
+        "notes": "Authoritative UAD 3.6 mapping pending."
+      },
+      {
+        "fluxFieldId": "balcony__balcony_type",
+        "sourceSheet": "FOLLOW_UP",
+        "uad36Path": "",
+        "uadLabel": "",
+        "valueType": "MultiSelect",
+        "cardinality": "0..1",
+        "requiredWhen": "",
+        "enumerationMap": "",
+        "transform": "",
+        "legacyExportName": "Balcony type",
+        "status": "Unmapped",
+        "notes": "Authoritative UAD 3.6 mapping pending."
+      },
+      {
+        "fluxFieldId": "pool__pool_construction",
+        "sourceSheet": "FOLLOW_UP",
+        "uad36Path": "",
+        "uadLabel": "",
+        "valueType": "MultiSelect",
+        "cardinality": "0..1",
+        "requiredWhen": "",
+        "enumerationMap": "",
+        "transform": "",
+        "legacyExportName": "Pool Construction",
+        "status": "Unmapped",
+        "notes": "Authoritative UAD 3.6 mapping pending."
+      },
+      {
+        "fluxFieldId": "pool__pool_updated",
+        "sourceSheet": "FOLLOW_UP",
+        "uad36Path": "",
+        "uadLabel": "",
+        "valueType": "Button",
+        "cardinality": "0..1",
+        "requiredWhen": "",
+        "enumerationMap": "",
+        "transform": "",
+        "legacyExportName": "Pool Updated",
+        "status": "Unmapped",
+        "notes": "Authoritative UAD 3.6 mapping pending."
+      },
+      {
+        "fluxFieldId": "pool__year_updated",
+        "sourceSheet": "FOLLOW_UP",
+        "uad36Path": "",
+        "uadLabel": "",
+        "valueType": "Text",
+        "cardinality": "0..1",
+        "requiredWhen": "",
+        "enumerationMap": "",
+        "transform": "",
+        "legacyExportName": "Year Updated",
+        "status": "Unmapped",
+        "notes": "Authoritative UAD 3.6 mapping pending."
+      },
+      {
+        "fluxFieldId": "pool__scope_of_update",
+        "sourceSheet": "FOLLOW_UP",
+        "uad36Path": "",
+        "uadLabel": "",
+        "valueType": "MultiSelect",
+        "cardinality": "0..1",
+        "requiredWhen": "",
+        "enumerationMap": "",
+        "transform": "",
+        "legacyExportName": "Scope of Update",
+        "status": "Unmapped",
+        "notes": "Authoritative UAD 3.6 mapping pending."
+      },
+      {
+        "fluxFieldId": "pool__pool_amenities",
+        "sourceSheet": "FOLLOW_UP",
+        "uad36Path": "",
+        "uadLabel": "",
+        "valueType": "MultiSelect",
+        "cardinality": "0..1",
+        "requiredWhen": "",
+        "enumerationMap": "",
+        "transform": "",
+        "legacyExportName": "Pool Amenities",
+        "status": "Unmapped",
+        "notes": "Authoritative UAD 3.6 mapping pending."
+      },
+      {
+        "fluxFieldId": "kitchen_updated__timeframe",
+        "sourceSheet": "FOLLOW_UP",
+        "uad36Path": "",
+        "uadLabel": "",
+        "valueType": "Text",
+        "cardinality": "0..1",
+        "requiredWhen": "",
+        "enumerationMap": "",
+        "transform": "",
+        "legacyExportName": "Timeframe",
+        "status": "Unmapped",
+        "notes": "Authoritative UAD 3.6 mapping pending."
+      },
+      {
+        "fluxFieldId": "kitchen_updated__details",
+        "sourceSheet": "FOLLOW_UP",
+        "uad36Path": "",
+        "uadLabel": "",
+        "valueType": "Text",
+        "cardinality": "0..1",
+        "requiredWhen": "",
+        "enumerationMap": "",
+        "transform": "",
+        "legacyExportName": "Details",
+        "status": "Unmapped",
+        "notes": "Authoritative UAD 3.6 mapping pending."
+      },
+      {
+        "fluxFieldId": "bathrooms_updated__what_bathrooms_were_updated",
+        "sourceSheet": "FOLLOW_UP",
+        "uad36Path": "",
+        "uadLabel": "",
+        "valueType": "MultiSelect",
+        "cardinality": "0..1",
+        "requiredWhen": "",
+        "enumerationMap": "",
+        "transform": "",
+        "legacyExportName": "What bathrooms were updated",
+        "status": "Unmapped",
+        "notes": "Authoritative UAD 3.6 mapping pending."
+      },
+      {
+        "fluxFieldId": "bathrooms_updated__timeframe",
+        "sourceSheet": "FOLLOW_UP",
+        "uad36Path": "",
+        "uadLabel": "",
+        "valueType": "Text",
+        "cardinality": "0..1",
+        "requiredWhen": "",
+        "enumerationMap": "",
+        "transform": "",
+        "legacyExportName": "Timeframe",
+        "status": "Unmapped",
+        "notes": "Authoritative UAD 3.6 mapping pending."
+      },
+      {
+        "fluxFieldId": "bathrooms_updated__details",
+        "sourceSheet": "FOLLOW_UP",
+        "uad36Path": "",
+        "uadLabel": "",
+        "valueType": "Text",
+        "cardinality": "0..1",
+        "requiredWhen": "",
+        "enumerationMap": "",
+        "transform": "",
+        "legacyExportName": "Details",
+        "status": "Unmapped",
+        "notes": "Authoritative UAD 3.6 mapping pending."
+      },
+      {
+        "fluxFieldId": "floors_updated__timeframe",
+        "sourceSheet": "FOLLOW_UP",
+        "uad36Path": "",
+        "uadLabel": "",
+        "valueType": "Text",
+        "cardinality": "0..1",
+        "requiredWhen": "",
+        "enumerationMap": "",
+        "transform": "",
+        "legacyExportName": "Timeframe",
+        "status": "Unmapped",
+        "notes": "Authoritative UAD 3.6 mapping pending."
+      },
+      {
+        "fluxFieldId": "floors_updated__details",
+        "sourceSheet": "FOLLOW_UP",
+        "uad36Path": "",
+        "uadLabel": "",
+        "valueType": "Text",
+        "cardinality": "0..1",
+        "requiredWhen": "",
+        "enumerationMap": "",
+        "transform": "",
+        "legacyExportName": "Details",
+        "status": "Unmapped",
+        "notes": "Authoritative UAD 3.6 mapping pending."
+      },
+      {
+        "fluxFieldId": "walls_updated__timeframe",
+        "sourceSheet": "FOLLOW_UP",
+        "uad36Path": "",
+        "uadLabel": "",
+        "valueType": "Text",
+        "cardinality": "0..1",
+        "requiredWhen": "",
+        "enumerationMap": "",
+        "transform": "",
+        "legacyExportName": "Timeframe",
+        "status": "Unmapped",
+        "notes": "Authoritative UAD 3.6 mapping pending."
+      },
+      {
+        "fluxFieldId": "walls_updated__details",
+        "sourceSheet": "FOLLOW_UP",
+        "uad36Path": "",
+        "uadLabel": "",
+        "valueType": "Text",
+        "cardinality": "0..1",
+        "requiredWhen": "",
+        "enumerationMap": "",
+        "transform": "",
+        "legacyExportName": "Details",
+        "status": "Unmapped",
+        "notes": "Authoritative UAD 3.6 mapping pending."
+      },
+      {
+        "fluxFieldId": "trim_updated__timeframe",
+        "sourceSheet": "FOLLOW_UP",
+        "uad36Path": "",
+        "uadLabel": "",
+        "valueType": "Text",
+        "cardinality": "0..1",
+        "requiredWhen": "",
+        "enumerationMap": "",
+        "transform": "",
+        "legacyExportName": "Timeframe",
+        "status": "Unmapped",
+        "notes": "Authoritative UAD 3.6 mapping pending."
+      },
+      {
+        "fluxFieldId": "trim_updated__details",
+        "sourceSheet": "FOLLOW_UP",
+        "uad36Path": "",
+        "uadLabel": "",
+        "valueType": "Text",
+        "cardinality": "0..1",
+        "requiredWhen": "",
+        "enumerationMap": "",
+        "transform": "",
+        "legacyExportName": "Details",
+        "status": "Unmapped",
+        "notes": "Authoritative UAD 3.6 mapping pending."
+      },
+      {
+        "fluxFieldId": "cooling_updated__timeframe",
+        "sourceSheet": "FOLLOW_UP",
+        "uad36Path": "",
+        "uadLabel": "",
+        "valueType": "Text",
+        "cardinality": "0..1",
+        "requiredWhen": "",
+        "enumerationMap": "",
+        "transform": "",
+        "legacyExportName": "Timeframe",
+        "status": "Unmapped",
+        "notes": "Authoritative UAD 3.6 mapping pending."
+      },
+      {
+        "fluxFieldId": "cooling_updated__details",
+        "sourceSheet": "FOLLOW_UP",
+        "uad36Path": "",
+        "uadLabel": "",
+        "valueType": "Text",
+        "cardinality": "0..1",
+        "requiredWhen": "",
+        "enumerationMap": "",
+        "transform": "",
+        "legacyExportName": "Details",
+        "status": "Unmapped",
+        "notes": "Authoritative UAD 3.6 mapping pending."
       }
     ]
   }

@@ -433,7 +433,7 @@
   var AUTOSAVE_DEBOUNCE_MS = 700;
   var MIGRATED_INSPECTION_ADDRESS = 'Unsaved / Migrated Inspection';
   // The exported-file schema is versioned independently of
-  // 0.23.4.2 -- app releases and the inspection-file format can
+  // 0.23.4.4 -- app releases and the inspection-file format can
   // and will drift out of step (a future app version might still need
   // to read a schemaVersion 1 file, or refuse a newer one it doesn't
   // understand yet), so import validation checks schema/schemaVersion
@@ -441,10 +441,10 @@
   var EXPORT_SCHEMA = 'clipboard-flux-inspection';
   var EXPORT_SCHEMA_VERSION = 1;
   var SUPPORTED_SCHEMA_VERSIONS = [1];
-  // Stamped at build time exactly like every other 0.23.4.2
+  // Stamped at build time exactly like every other 0.23.4.4
   // token in this file -- informational only in the export, never
   // itself validated on import.
-  var APP_VERSION = '0.23.4.2';
+  var APP_VERSION = '0.23.4.4';
   // Same database as Milestone 14's photos -- name kept for continuity
   // even though it now also holds inspection records; renaming it would
   // mean either abandoning existing photo data or writing a whole
@@ -4138,8 +4138,8 @@
   // touched -- this only ever produces a *new*, temporary Blob for PDF
   // embedding; the original full-resolution Blob in IndexedDB is neither
   // read back into nor overwritten by this path.
-  var PDF_PHOTO_MAX_DIM = 1800;
-  var PDF_PHOTO_JPEG_QUALITY = 0.8;
+  var PDF_PHOTO_HELPERS = window.ClipboardFluxPdfPhoto;
+  var PDF_PHOTO_JPEG_QUALITY = PDF_PHOTO_HELPERS.PDF_PHOTO_JPEG_QUALITY;
 
   // Resize-if-needed + re-encode one photo Blob for PDF embedding only.
   // Reuses readImageMeta()'s <img>+object-URL decode -- the same decode
@@ -4155,9 +4155,9 @@
   // rather than fail the whole report over one bad photo.
   function optimizePhotoBlobForPdf(blob) {
     return readImageMeta(blob).then(function (meta) {
-      var scale = Math.min(1, PDF_PHOTO_MAX_DIM / Math.max(meta.width, meta.height));
-      var w = Math.max(1, Math.round(meta.width * scale));
-      var h = Math.max(1, Math.round(meta.height * scale));
+      var fitted = PDF_PHOTO_HELPERS.fitWithinMaxDimension(meta.width, meta.height);
+      var w = fitted.width;
+      var h = fitted.height;
       var canvas = document.createElement('canvas');
       canvas.width = w;
       canvas.height = h;
@@ -7471,6 +7471,46 @@
     wireBottomNav();
   }
 
+  // Scopes a per-field control lookup to `el`'s own markup, never a
+  // nested Dynamic FOLLOW_UP field's. A Dynamic FOLLOW_UP field's
+  // `.field` card renders *inside* its triggering MAIN field's own card
+  // (see fieldHtml()'s dynamicHtml placement), and dynamicHtml sits
+  // *before* that MAIN field's own Note/Photo markup in source order --
+  // so a plain `el.querySelector('[data-role="photo-library"]')` on the
+  // MAIN field silently returns the nested field's button instead of
+  // its own (querySelector always stops at the first document-order
+  // match, and the nested field's copy always comes first). The MAIN
+  // field's own control is then never reached by anything, since
+  // nothing else ever re-queries specifically for it -- confirmed live:
+  // a MAIN field with an active FOLLOW_UP group (e.g. Car Storage, once
+  // Garage/Carport/Covered is selected) never gets its own Photo
+  // Library/Take Photo/Note-toggle buttons wired at all. Foundation-like
+  // fields with no FOLLOW_UP group never hit this, which is why the
+  // failure is scoped to exactly the fields that trigger one.
+  // querySelectorAll() call sites don't have that exact failure (they
+  // return every match, not just the first, so the nested field's own
+  // later wireFields() turn still re-wires it correctly under its own
+  // id) but still transiently wire the nested field's controls under
+  // the wrong id for one pass -- scoped here too, to remove that
+  // transient wrong state rather than rely on iteration order to
+  // overwrite it before anything can observe it.
+  function fieldOwnAll(el, selector) {
+    return Array.prototype.filter.call(el.querySelectorAll(selector), function (node) {
+      return node.closest('.field') === el;
+    });
+  }
+  // Deliberately built on fieldOwnAll(), not el.querySelector() -- a
+  // nested field's own matching control always sorts before this
+  // field's in document order (see this function's own header comment),
+  // so a plain querySelector() would find and reject *that* one, then
+  // stop there and report no match at all, never reaching this field's
+  // own later in the subtree. Scanning every match and returning the
+  // first one that's actually this field's own is what fieldOwnAll()
+  // already does; this just takes its first result.
+  function fieldOwn(el, selector) {
+    return fieldOwnAll(el, selector)[0] || null;
+  }
+
   // Text/LongText update `values` on every keystroke without
   // re-rendering -- a full re-render would blow away focus and cursor
   // position mid-type. Buttons and counters re-render on click since
@@ -7505,7 +7545,7 @@
         if (ev && ev.stopPropagation) ev.stopPropagation();
       };
 
-      var textInput = el.querySelector('[data-role="text"]');
+      var textInput = fieldOwn(el, '[data-role="text"]');
       if (textInput) {
         textInput.oninput = function () {
           values[id] = textInput.value;
@@ -7529,23 +7569,23 @@
         textInput.onfocus = function () { activateFieldNoRender(id); };
       }
 
-      var textarea = el.querySelector('[data-role="textarea"]');
+      var textarea = fieldOwn(el, '[data-role="textarea"]');
       if (textarea) {
         textarea.oninput = function () { values[id] = textarea.value; saveValues(); };
         textarea.onfocus = function () { activateFieldNoRender(id); };
       }
 
-      var otherInput = el.querySelector('[data-role="other-text"]');
+      var otherInput = fieldOwn(el, '[data-role="other-text"]');
       if (otherInput) {
         otherInput.oninput = function () { otherText[id] = otherInput.value; saveOtherText(); };
       }
 
-      var noteTextarea = el.querySelector('[data-role="field-note-text"]');
+      var noteTextarea = fieldOwn(el, '[data-role="field-note-text"]');
       if (noteTextarea) {
         noteTextarea.oninput = function () { fieldNotes[id] = noteTextarea.value; saveFieldNotes(); };
       }
 
-      var moreTextBtn = el.querySelector('[data-role="more-text-toggle"]');
+      var moreTextBtn = fieldOwn(el, '[data-role="more-text-toggle"]');
       if (moreTextBtn) {
         moreTextBtn.onclick = function () {
           setActiveField(id);
@@ -7559,7 +7599,7 @@
         };
       }
 
-      var photoToggleBtn = el.querySelector('[data-role="photo-toggle"]');
+      var photoToggleBtn = fieldOwn(el, '[data-role="photo-toggle"]');
       if (photoToggleBtn) {
         photoToggleBtn.onclick = function () {
           setActiveField(id);
@@ -7579,8 +7619,8 @@
       // from the library is stored, thumbnailed, and associated with
       // the field identically to a freshly captured one, no special
       // casing by source.
-      var photoLibraryBtn = el.querySelector('[data-role="photo-library"]');
-      var photoLibraryInput = el.querySelector('[data-role="photo-library-input"]');
+      var photoLibraryBtn = fieldOwn(el, '[data-role="photo-library"]');
+      var photoLibraryInput = fieldOwn(el, '[data-role="photo-library-input"]');
       if (photoLibraryBtn && photoLibraryInput) {
         photoLibraryBtn.onclick = function () { photoLibraryInput.click(); };
         photoLibraryInput.onchange = function () {
@@ -7591,8 +7631,8 @@
         };
       }
 
-      var takePhotoBtn = el.querySelector('[data-role="take-photo"]');
-      var takePhotoInput = el.querySelector('[data-role="take-photo-input"]');
+      var takePhotoBtn = fieldOwn(el, '[data-role="take-photo"]');
+      var takePhotoInput = fieldOwn(el, '[data-role="take-photo-input"]');
       if (takePhotoBtn && takePhotoInput) {
         takePhotoBtn.onclick = function () { takePhotoInput.click(); };
         takePhotoInput.onchange = function () {
@@ -7603,13 +7643,13 @@
         };
       }
 
-      Array.prototype.forEach.call(el.querySelectorAll('[data-role="photo-view"]'), function (img) {
+      Array.prototype.forEach.call(fieldOwnAll(el, '[data-role="photo-view"]'), function (img) {
         img.onclick = function () {
           openFullPhotoViewer(id, img.dataset.photoId);
         };
       });
 
-      Array.prototype.forEach.call(el.querySelectorAll('[data-role="photo-delete"]'), function (btn) {
+      Array.prototype.forEach.call(fieldOwnAll(el, '[data-role="photo-delete"]'), function (btn) {
         btn.onclick = function () {
           // window.confirm() is the simplest possible accidental-delete
           // guard -- a native, blocking, zero-dependency dialog, exactly
@@ -7620,7 +7660,7 @@
         };
       });
 
-      Array.prototype.forEach.call(el.querySelectorAll('[data-role="option"]'), function (btn) {
+      Array.prototype.forEach.call(fieldOwnAll(el, '[data-role="option"]'), function (btn) {
         btn.onclick = function () {
           var val = btn.dataset.value;
           if (btn.dataset.multi === '1') {
@@ -7641,7 +7681,7 @@
         };
       });
 
-      var msdTrigger = el.querySelector('[data-role="msd-trigger"]');
+      var msdTrigger = fieldOwn(el, '[data-role="msd-trigger"]');
       if (msdTrigger) {
         // One tap opens the sheet -- setActiveField()/render() happen
         // inside openMsdSheet() itself, same "the control's own action
@@ -7651,7 +7691,7 @@
         msdTrigger.onclick = function () { openMsdSheet(id); };
       }
 
-      Array.prototype.forEach.call(el.querySelectorAll('[data-role="counter-delta"]'), function (btn) {
+      Array.prototype.forEach.call(fieldOwnAll(el, '[data-role="counter-delta"]'), function (btn) {
         btn.onclick = function () {
           values[id] = Math.max(0, Number(values[id] || 0) + Number(btn.dataset.delta));
           setActiveField(id);
@@ -7761,7 +7801,7 @@
     }
   });
 
-  fetch('config.json?v=0.23.4.2', { cache: 'no-store' })
+  fetch('config.json?v=0.23.4.4', { cache: 'no-store' })
     .then(function (r) {
       if (!r.ok) throw new Error('HTTP ' + r.status);
       return r.json();
