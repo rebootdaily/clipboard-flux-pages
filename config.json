@@ -100,7 +100,7 @@
   },
   "main": {
     "sheet": "MAIN",
-    "fieldCount": 120,
+    "fieldCount": 121,
     "tabs": [
       "Property",
       "Site",
@@ -188,7 +188,7 @@
         "dataVersion": 1
       },
       {
-        "id": "occupancy",
+        "id": "occupancy_type",
         "label": "Occupancy",
         "urar": "Subject",
         "tab": "Property",
@@ -213,7 +213,7 @@
         "dataVersion": 1
       },
       {
-        "id": "pud_association",
+        "id": "has_pud_association",
         "label": "PUD / Association",
         "urar": "Subject",
         "tab": "Property",
@@ -234,7 +234,7 @@
         "dataVersion": 1
       },
       {
-        "id": "access_provided",
+        "id": "access_method",
         "label": "Access Provided",
         "urar": "Subject",
         "tab": "Property",
@@ -353,7 +353,7 @@
         "dataVersion": 1
       },
       {
-        "id": "street_surface",
+        "id": "street_surface_material",
         "label": "Street Surface",
         "urar": "Site",
         "tab": "Site",
@@ -376,7 +376,7 @@
         "dataVersion": 1
       },
       {
-        "id": "street_access",
+        "id": "street_access_type",
         "label": "Street Access",
         "urar": "Site",
         "tab": "Site",
@@ -395,7 +395,7 @@
         "dataVersion": 1
       },
       {
-        "id": "alley",
+        "id": "has_alley",
         "label": "Alley",
         "urar": "Site",
         "tab": "Site",
@@ -438,7 +438,7 @@
         "dataVersion": 1
       },
       {
-        "id": "view",
+        "id": "view_type",
         "label": "View",
         "urar": "Site",
         "tab": "Site",
@@ -464,7 +464,7 @@
         "dataVersion": 1
       },
       {
-        "id": "location",
+        "id": "location_type",
         "label": "Location",
         "urar": "Site",
         "tab": "Site",
@@ -505,7 +505,7 @@
         "dataVersion": 1
       },
       {
-        "id": "electricity",
+        "id": "electricity_source_type",
         "label": "Electricity",
         "urar": "Site",
         "tab": "Utilities",
@@ -524,7 +524,7 @@
         "dataVersion": 1
       },
       {
-        "id": "water",
+        "id": "water_source_type",
         "label": "Water",
         "urar": "Site",
         "tab": "Utilities",
@@ -567,7 +567,7 @@
         "dataVersion": 1
       },
       {
-        "id": "sanitary_sewer",
+        "id": "sewer_system_type",
         "label": "Sanitary Sewer",
         "urar": "Site",
         "tab": "Utilities",
@@ -589,7 +589,7 @@
         "dataVersion": 1
       },
       {
-        "id": "utilities_notes_repairs",
+        "id": "utility_repair_notes",
         "label": "Utilities Notes/Repairs",
         "urar": "Site",
         "tab": "Utilities",
@@ -605,7 +605,7 @@
         "dataVersion": 1
       },
       {
-        "id": "driveway_surface",
+        "id": "driveway_material",
         "label": "Driveway Surface",
         "urar": "Improvements",
         "tab": "Car Storage",
@@ -632,7 +632,7 @@
         "dataVersion": 1
       },
       {
-        "id": "driveway_capacity",
+        "id": "driveway_space_count",
         "label": "Driveway Capacity",
         "urar": "Improvements",
         "tab": "Car Storage",
@@ -648,7 +648,7 @@
         "dataVersion": 1
       },
       {
-        "id": "car_storage",
+        "id": "car_storage_type",
         "label": "Car Storage",
         "urar": "Improvements",
         "tab": "Car Storage",
@@ -675,7 +675,7 @@
         "dataVersion": 1
       },
       {
-        "id": "car_storage_notes_repairs",
+        "id": "car_storage_repair_notes",
         "label": "Car Storage Notes/Repairs",
         "urar": "Improvements",
         "tab": "Car Storage",
@@ -691,7 +691,7 @@
         "dataVersion": 1
       },
       {
-        "id": "stories",
+        "id": "story_count",
         "label": "Stories",
         "urar": "Improvements",
         "tab": "Exterior",
@@ -707,7 +707,7 @@
         "dataVersion": 1
       },
       {
-        "id": "number_of_units",
+        "id": "unit_count",
         "label": "Number of Units",
         "urar": "Improvements",
         "tab": "Exterior",
@@ -723,7 +723,7 @@
         "dataVersion": 1
       },
       {
-        "id": "adu",
+        "id": "has_adu",
         "label": "ADU",
         "urar": "Improvements",
         "tab": "Exterior",
@@ -744,7 +744,7 @@
         "dataVersion": 1
       },
       {
-        "id": "design_style",
+        "id": "architectural_style",
         "label": "Design / Style",
         "urar": "Improvements",
         "tab": "Exterior",
@@ -796,7 +796,7 @@
         "dataVersion": 1
       },
       {
-        "id": "foundation",
+        "id": "foundation_type",
         "label": "Foundation",
         "urar": "Improvements",
         "tab": "Exterior",
@@ -822,7 +822,7 @@
         "dataVersion": 1
       },
       {
-        "id": "foundation_walls",
+        "id": "foundation_wall_material",
         "label": "Foundation Walls",
         "urar": "Improvements",
         "tab": "Exterior",
@@ -844,7 +844,7 @@
         "dataVersion": 1
       },
       {
-        "id": "foundation_walls_condition",
+        "id": "foundation_wall_condition",
         "label": "Foundation Walls Condition",
         "urar": "Improvements",
         "tab": "Exterior",
@@ -866,7 +866,7 @@
         "dataVersion": 1
       },
       {
-        "id": "exterior_walls",
+        "id": "exterior_wall_material",
         "label": "Exterior Walls",
         "urar": "Improvements",
         "tab": "Exterior",
@@ -890,7 +890,7 @@
         "dataVersion": 1
       },
       {
-        "id": "exterior_walls_condition",
+        "id": "exterior_wall_condition",
         "label": "Exterior Walls Condition",
         "urar": "Improvements",
         "tab": "Exterior",
@@ -912,7 +912,7 @@
         "dataVersion": 1
       },
       {
-        "id": "solar_panels",
+        "id": "has_solar_panels",
         "label": "Solar Panels",
         "urar": "Improvements",
         "tab": "Exterior",
@@ -933,7 +933,7 @@
         "dataVersion": 1
       },
       {
-        "id": "roof_surface",
+        "id": "roof_material",
         "label": "Roof Surface",
         "urar": "Improvements",
         "tab": "Exterior",
@@ -956,7 +956,7 @@
         "dataVersion": 1
       },
       {
-        "id": "roof_surface_condition",
+        "id": "roof_condition",
         "label": "Roof Surface Condition",
         "urar": "Improvements",
         "tab": "Exterior",
@@ -1001,7 +1001,7 @@
         "dataVersion": 1
       },
       {
-        "id": "gutters_downspouts",
+        "id": "gutter_downspout_presence",
         "label": "Gutters / Downspouts",
         "urar": "Improvements",
         "tab": "Exterior",
@@ -1021,7 +1021,7 @@
         "dataVersion": 1
       },
       {
-        "id": "gutters_downspouts_condition",
+        "id": "gutter_condition",
         "label": "Gutters / Downspouts Condition",
         "urar": "Improvements",
         "tab": "Exterior",
@@ -1043,7 +1043,7 @@
         "dataVersion": 1
       },
       {
-        "id": "gutters_updated",
+        "id": "gutter_updated",
         "label": "Gutters Updated",
         "urar": "Improvements",
         "tab": "Exterior",
@@ -1066,7 +1066,7 @@
         "dataVersion": 1
       },
       {
-        "id": "windows_type",
+        "id": "window_type",
         "label": "Windows Type",
         "urar": "Improvements",
         "tab": "Exterior",
@@ -1090,7 +1090,7 @@
         "dataVersion": 1
       },
       {
-        "id": "windows_type_condition",
+        "id": "window_condition",
         "label": "Windows Type Condition",
         "urar": "Improvements",
         "tab": "Exterior",
@@ -1112,7 +1112,7 @@
         "dataVersion": 1
       },
       {
-        "id": "windows_updated",
+        "id": "window_updated",
         "label": "Windows Updated",
         "urar": "Improvements",
         "tab": "Exterior",
@@ -1135,7 +1135,7 @@
         "dataVersion": 1
       },
       {
-        "id": "windows_impact",
+        "id": "window_impact_rated",
         "label": "Windows Impact",
         "urar": "Improvements",
         "tab": "Exterior",
@@ -1155,7 +1155,7 @@
         "dataVersion": 1
       },
       {
-        "id": "screens",
+        "id": "screen_material",
         "label": "Screens",
         "urar": "Improvements",
         "tab": "Exterior",
@@ -1176,7 +1176,7 @@
         "dataVersion": 1
       },
       {
-        "id": "screens_condition",
+        "id": "screen_condition",
         "label": "Screens Condition",
         "urar": "Improvements",
         "tab": "Exterior",
@@ -1198,7 +1198,7 @@
         "dataVersion": 1
       },
       {
-        "id": "shutters",
+        "id": "has_shutters",
         "label": "Shutters",
         "urar": "Improvements",
         "tab": "Exterior",
@@ -1221,7 +1221,7 @@
         "dataVersion": 1
       },
       {
-        "id": "security_bars",
+        "id": "has_security_bars",
         "label": "Security Bars",
         "urar": "Improvements",
         "tab": "Exterior",
@@ -1244,8 +1244,8 @@
         "dataVersion": 1
       },
       {
-        "id": "storm_sash_insulated",
-        "label": "Storm Sash / Insulated",
+        "id": "storm_sash_presence",
+        "label": "Storm Sash",
         "urar": "Improvements",
         "tab": "Exterior",
         "type": "Button",
@@ -1264,7 +1264,27 @@
         "dataVersion": 1
       },
       {
-        "id": "fireplace",
+        "id": "insulated_glazing_presence",
+        "label": "Insulated Glazing",
+        "urar": "Improvements",
+        "tab": "Exterior",
+        "type": "Button",
+        "options": [
+          "Yes",
+          "No",
+          "Partial"
+        ],
+        "followUpTrigger": [],
+        "followUpGroup": "",
+        "reminder": "",
+        "status": "Implemented",
+        "uad36Path": "",
+        "legacyExportName": "",
+        "requiredWhen": "",
+        "dataVersion": 1
+      },
+      {
+        "id": "has_fireplace",
         "label": "Fireplace",
         "urar": "Improvements",
         "tab": "Exterior",
@@ -1283,7 +1303,7 @@
         "dataVersion": 1
       },
       {
-        "id": "exterior_notes_repairs",
+        "id": "exterior_repair_notes",
         "label": "Exterior Notes/Repairs",
         "urar": "Improvements",
         "tab": "Exterior",
@@ -1299,7 +1319,7 @@
         "dataVersion": 1
       },
       {
-        "id": "heating",
+        "id": "heating_type",
         "label": "Heating",
         "urar": "Improvements",
         "tab": "HVAC / Mechanical",
@@ -1320,7 +1340,7 @@
         "dataVersion": 1
       },
       {
-        "id": "cooling",
+        "id": "cooling_type",
         "label": "Cooling",
         "urar": "Improvements",
         "tab": "HVAC / Mechanical",
@@ -1364,7 +1384,7 @@
         "dataVersion": 1
       },
       {
-        "id": "fence",
+        "id": "fence_material",
         "label": "Fence",
         "urar": "Improvements",
         "tab": "Amenities",
@@ -1411,7 +1431,7 @@
         "dataVersion": 1
       },
       {
-        "id": "porch",
+        "id": "porch_type",
         "label": "Porch",
         "urar": "Improvements",
         "tab": "Amenities",
@@ -1456,7 +1476,7 @@
         "dataVersion": 1
       },
       {
-        "id": "patio",
+        "id": "patio_type",
         "label": "Patio",
         "urar": "Improvements",
         "tab": "Amenities",
@@ -1501,7 +1521,7 @@
         "dataVersion": 1
       },
       {
-        "id": "patio_attachment",
+        "id": "patio_attachment_type",
         "label": "Patio Attachment",
         "urar": "Improvements",
         "tab": "Amenities",
@@ -1520,7 +1540,7 @@
         "dataVersion": 1
       },
       {
-        "id": "deck",
+        "id": "deck_material",
         "label": "Deck",
         "urar": "Improvements",
         "tab": "Amenities",
@@ -1569,7 +1589,7 @@
         "dataVersion": 1
       },
       {
-        "id": "balcony",
+        "id": "has_balcony",
         "label": "Balcony",
         "urar": "Improvements",
         "tab": "Amenities",
@@ -1590,7 +1610,7 @@
         "dataVersion": 1
       },
       {
-        "id": "pool",
+        "id": "has_pool",
         "label": "Pool",
         "urar": "Improvements",
         "tab": "Amenities",
@@ -1611,7 +1631,7 @@
         "dataVersion": 1
       },
       {
-        "id": "other_amenities_extras",
+        "id": "other_amenities",
         "label": "Other Amenities / Extras",
         "urar": "Improvements",
         "tab": "Amenities",
@@ -1634,7 +1654,7 @@
         "dataVersion": 1
       },
       {
-        "id": "outdoor_patio_notes_repairs",
+        "id": "outdoor_repair_notes",
         "label": "Outdoor/Patio Notes/Repairs",
         "urar": "Improvements",
         "tab": "Amenities",
@@ -1650,7 +1670,7 @@
         "dataVersion": 1
       },
       {
-        "id": "living_room",
+        "id": "living_room_count",
         "label": "Living Room",
         "urar": "Improvements",
         "tab": "Rooms",
@@ -1666,7 +1686,7 @@
         "dataVersion": 1
       },
       {
-        "id": "dining_room",
+        "id": "dining_room_count",
         "label": "Dining Room",
         "urar": "Improvements",
         "tab": "Rooms",
@@ -1682,7 +1702,7 @@
         "dataVersion": 1
       },
       {
-        "id": "dining_area",
+        "id": "dining_area_count",
         "label": "Dining Area",
         "urar": "Improvements",
         "tab": "Rooms",
@@ -1698,7 +1718,7 @@
         "dataVersion": 1
       },
       {
-        "id": "family_room",
+        "id": "family_room_count",
         "label": "Family Room",
         "urar": "Improvements",
         "tab": "Rooms",
@@ -1714,7 +1734,7 @@
         "dataVersion": 1
       },
       {
-        "id": "breakfast_area",
+        "id": "breakfast_area_count",
         "label": "Breakfast Area",
         "urar": "Improvements",
         "tab": "Rooms",
@@ -1730,7 +1750,7 @@
         "dataVersion": 1
       },
       {
-        "id": "kitchen",
+        "id": "kitchen_count",
         "label": "Kitchen",
         "urar": "Improvements",
         "tab": "Rooms",
@@ -1746,7 +1766,7 @@
         "dataVersion": 1
       },
       {
-        "id": "den",
+        "id": "den_count",
         "label": "Den",
         "urar": "Improvements",
         "tab": "Rooms",
@@ -1762,7 +1782,7 @@
         "dataVersion": 1
       },
       {
-        "id": "bedrooms",
+        "id": "bedroom_count",
         "label": "Bedrooms",
         "urar": "Improvements",
         "tab": "Rooms",
@@ -1778,8 +1798,8 @@
         "dataVersion": 1
       },
       {
-        "id": "bathrooms",
-        "label": "Bathrooms",
+        "id": "full_bath_count",
+        "label": "Full Baths",
         "urar": "Improvements",
         "tab": "Rooms",
         "type": "Counter",
@@ -1794,7 +1814,7 @@
         "dataVersion": 1
       },
       {
-        "id": "half_bath",
+        "id": "half_bath_count",
         "label": "Half Bath",
         "urar": "Improvements",
         "tab": "Rooms",
@@ -1810,7 +1830,7 @@
         "dataVersion": 1
       },
       {
-        "id": "smoke_detectors",
+        "id": "smoke_detector_count",
         "label": "Smoke Detectors",
         "urar": "Improvements",
         "tab": "Rooms",
@@ -1826,7 +1846,7 @@
         "dataVersion": 1
       },
       {
-        "id": "rooms_notes_repairs",
+        "id": "room_repair_notes",
         "label": "Rooms Notes/Repairs",
         "urar": "Improvements",
         "tab": "Rooms",
@@ -1842,7 +1862,7 @@
         "dataVersion": 1
       },
       {
-        "id": "floors",
+        "id": "floor_material",
         "label": "Floors",
         "urar": "Improvements",
         "tab": "Interior",
@@ -1869,7 +1889,7 @@
         "dataVersion": 1
       },
       {
-        "id": "floors_condition",
+        "id": "floor_condition",
         "label": "Floors Condition",
         "urar": "Improvements",
         "tab": "Interior",
@@ -1891,7 +1911,7 @@
         "dataVersion": 1
       },
       {
-        "id": "floors_updated",
+        "id": "floor_updated",
         "label": "Floors Updated",
         "urar": "Improvements",
         "tab": "Interior",
@@ -1914,7 +1934,7 @@
         "dataVersion": 1
       },
       {
-        "id": "ceiling_style",
+        "id": "ceiling_type",
         "label": "Ceiling Style",
         "urar": "Improvements",
         "tab": "Interior",
@@ -1981,7 +2001,7 @@
         "dataVersion": 1
       },
       {
-        "id": "walls",
+        "id": "interior_wall_material",
         "label": "Walls",
         "urar": "Improvements",
         "tab": "Interior",
@@ -2006,7 +2026,7 @@
         "dataVersion": 1
       },
       {
-        "id": "walls_condition",
+        "id": "interior_wall_condition",
         "label": "Walls Condition",
         "urar": "Improvements",
         "tab": "Interior",
@@ -2028,7 +2048,7 @@
         "dataVersion": 1
       },
       {
-        "id": "walls_updated",
+        "id": "interior_wall_updated",
         "label": "Walls Updated",
         "urar": "Improvements",
         "tab": "Interior",
@@ -2051,7 +2071,7 @@
         "dataVersion": 1
       },
       {
-        "id": "trim_finish",
+        "id": "trim_material",
         "label": "Trim / Finish",
         "urar": "Improvements",
         "tab": "Interior",
@@ -2072,7 +2092,7 @@
         "dataVersion": 1
       },
       {
-        "id": "trim_finish_condition",
+        "id": "trim_condition",
         "label": "Trim / Finish Condition",
         "urar": "Improvements",
         "tab": "Interior",
@@ -2094,7 +2114,7 @@
         "dataVersion": 1
       },
       {
-        "id": "trim_finish_updated",
+        "id": "trim_updated",
         "label": "Trim / Finish Updated",
         "urar": "Improvements",
         "tab": "Interior",
@@ -2117,7 +2137,7 @@
         "dataVersion": 1
       },
       {
-        "id": "attic",
+        "id": "attic_access_type",
         "label": "Attic",
         "urar": "Improvements",
         "tab": "Interior",
@@ -2138,7 +2158,7 @@
         "dataVersion": 1
       },
       {
-        "id": "interior_other",
+        "id": "interior_other_notes",
         "label": "Interior Other",
         "urar": "Improvements",
         "tab": "Interior",
@@ -2177,7 +2197,7 @@
         "dataVersion": 1
       },
       {
-        "id": "refrigerator",
+        "id": "refrigerator_count",
         "label": "Refrigerator",
         "urar": "Improvements",
         "tab": "Kitchen",
@@ -2193,7 +2213,7 @@
         "dataVersion": 1
       },
       {
-        "id": "range",
+        "id": "range_count",
         "label": "Range",
         "urar": "Improvements",
         "tab": "Kitchen",
@@ -2209,7 +2229,7 @@
         "dataVersion": 1
       },
       {
-        "id": "oven",
+        "id": "oven_count",
         "label": "Oven",
         "urar": "Improvements",
         "tab": "Kitchen",
@@ -2225,7 +2245,7 @@
         "dataVersion": 1
       },
       {
-        "id": "dishwasher",
+        "id": "dishwasher_count",
         "label": "Dishwasher",
         "urar": "Improvements",
         "tab": "Kitchen",
@@ -2241,7 +2261,7 @@
         "dataVersion": 1
       },
       {
-        "id": "disposal",
+        "id": "disposal_count",
         "label": "Disposal",
         "urar": "Improvements",
         "tab": "Kitchen",
@@ -2257,7 +2277,7 @@
         "dataVersion": 1
       },
       {
-        "id": "microwave",
+        "id": "microwave_count",
         "label": "Microwave",
         "urar": "Improvements",
         "tab": "Kitchen",
@@ -2273,7 +2293,7 @@
         "dataVersion": 1
       },
       {
-        "id": "range_hood",
+        "id": "range_hood_count",
         "label": "Range Hood",
         "urar": "Improvements",
         "tab": "Kitchen",
@@ -2289,7 +2309,7 @@
         "dataVersion": 1
       },
       {
-        "id": "beverage_cooler",
+        "id": "beverage_cooler_count",
         "label": "Beverage Cooler",
         "urar": "Improvements",
         "tab": "Kitchen",
@@ -2305,7 +2325,7 @@
         "dataVersion": 1
       },
       {
-        "id": "appliances_other",
+        "id": "other_appliance_notes",
         "label": "Appliances Other",
         "urar": "Improvements",
         "tab": "Kitchen",
@@ -2321,7 +2341,7 @@
         "dataVersion": 1
       },
       {
-        "id": "clothes_washer",
+        "id": "clothes_washer_count",
         "label": "Clothes Washer",
         "urar": "Improvements",
         "tab": "Kitchen",
@@ -2337,7 +2357,7 @@
         "dataVersion": 1
       },
       {
-        "id": "clothes_dryer",
+        "id": "clothes_dryer_count",
         "label": "Clothes Dryer",
         "urar": "Improvements",
         "tab": "Kitchen",
@@ -2353,7 +2373,7 @@
         "dataVersion": 1
       },
       {
-        "id": "wet_bar",
+        "id": "wet_bar_count",
         "label": "Wet Bar",
         "urar": "Improvements",
         "tab": "Kitchen",
@@ -2385,7 +2405,7 @@
         "dataVersion": 1
       },
       {
-        "id": "bathrooms_updated",
+        "id": "bathroom_updated",
         "label": "Bathrooms Updated",
         "urar": "Improvements",
         "tab": "Bathrooms",
@@ -2408,7 +2428,7 @@
         "dataVersion": 1
       },
       {
-        "id": "bath_floor",
+        "id": "bathroom_floor_material",
         "label": "Bath Floor",
         "urar": "Improvements",
         "tab": "Bathrooms",
@@ -2435,7 +2455,7 @@
         "dataVersion": 1
       },
       {
-        "id": "bath_floor_condition",
+        "id": "bathroom_floor_condition",
         "label": "Bath Floor Condition",
         "urar": "Improvements",
         "tab": "Bathrooms",
@@ -2457,7 +2477,7 @@
         "dataVersion": 1
       },
       {
-        "id": "bath_floor_updated",
+        "id": "bathroom_floor_updated",
         "label": "Bath Floor Updated",
         "urar": "Improvements",
         "tab": "Bathrooms",
@@ -2480,7 +2500,7 @@
         "dataVersion": 1
       },
       {
-        "id": "bath_wainscot",
+        "id": "bathroom_wainscot_material",
         "label": "Bath Wainscot",
         "urar": "Improvements",
         "tab": "Bathrooms",
@@ -2507,7 +2527,7 @@
         "dataVersion": 1
       },
       {
-        "id": "bath_wainscot_condition",
+        "id": "bathroom_wainscot_condition",
         "label": "Bath Wainscot Condition",
         "urar": "Improvements",
         "tab": "Bathrooms",
@@ -2529,7 +2549,7 @@
         "dataVersion": 1
       },
       {
-        "id": "bath_wainscot_updated",
+        "id": "bathroom_wainscot_updated",
         "label": "Bath Wainscot Updated",
         "urar": "Improvements",
         "tab": "Bathrooms",
@@ -2552,7 +2572,7 @@
         "dataVersion": 1
       },
       {
-        "id": "bathrooms_notes",
+        "id": "bathroom_notes",
         "label": "Bathrooms Notes",
         "urar": "Improvements",
         "tab": "Bathrooms",
@@ -2575,13 +2595,13 @@
   },
   "followUp": {
     "sheet": "FOLLOW_UP",
-    "questionCount": 77,
+    "questionCount": 76,
     "groups": [
       {
         "group": "occupancy_vacant",
         "questions": [
           {
-            "id": "occupancy_vacant__electricity_on",
+            "id": "occupancy_electricity_on",
             "group": "occupancy_vacant",
             "label": "Electricity on?",
             "type": "Button",
@@ -2590,7 +2610,7 @@
               "No"
             ],
             "destination": "Exit Interview",
-            "showWhenQuestion": "",
+            "showWhenFieldId": "",
             "showWhenValue": [],
             "showWhenQuestionId": null,
             "showWhenInvalid": false,
@@ -2601,7 +2621,7 @@
             "dataVersion": 1
           },
           {
-            "id": "occupancy_vacant__water_on",
+            "id": "occupancy_water_on",
             "group": "occupancy_vacant",
             "label": "Water on?",
             "type": "Button",
@@ -2610,7 +2630,7 @@
               "No"
             ],
             "destination": "Exit Interview",
-            "showWhenQuestion": "",
+            "showWhenFieldId": "",
             "showWhenValue": [],
             "showWhenQuestionId": null,
             "showWhenInvalid": false,
@@ -2626,13 +2646,13 @@
         "group": "pud_association",
         "questions": [
           {
-            "id": "pud_association__association_fee",
+            "id": "association_fee_amount",
             "group": "pud_association",
             "label": "Association Fee",
             "type": "Currency",
             "options": [],
             "destination": "Exit Interview",
-            "showWhenQuestion": "",
+            "showWhenFieldId": "",
             "showWhenValue": [],
             "showWhenQuestionId": null,
             "showWhenInvalid": false,
@@ -2643,7 +2663,7 @@
             "dataVersion": 1
           },
           {
-            "id": "pud_association__fee_frequency",
+            "id": "association_fee_frequency",
             "group": "pud_association",
             "label": "Fee Frequency",
             "type": "Button",
@@ -2654,7 +2674,7 @@
               "Other"
             ],
             "destination": "Exit Interview",
-            "showWhenQuestion": "",
+            "showWhenFieldId": "",
             "showWhenValue": [],
             "showWhenQuestionId": null,
             "showWhenInvalid": false,
@@ -2665,7 +2685,7 @@
             "dataVersion": 1
           },
           {
-            "id": "pud_association__amenities_included",
+            "id": "association_amenities",
             "group": "pud_association",
             "label": "Amenities Included",
             "type": "MultiSelect",
@@ -2680,7 +2700,7 @@
               "Other"
             ],
             "destination": "Exit Interview",
-            "showWhenQuestion": "",
+            "showWhenFieldId": "",
             "showWhenValue": [],
             "showWhenQuestionId": null,
             "showWhenInvalid": false,
@@ -2691,7 +2711,7 @@
             "dataVersion": 1
           },
           {
-            "id": "pud_association__special_assessment",
+            "id": "association_special_assessment",
             "group": "pud_association",
             "label": "Special Assessment",
             "type": "Button",
@@ -2700,7 +2720,7 @@
               "No"
             ],
             "destination": "Exit Interview",
-            "showWhenQuestion": "",
+            "showWhenFieldId": "",
             "showWhenValue": [],
             "showWhenQuestionId": null,
             "showWhenInvalid": false,
@@ -2711,17 +2731,17 @@
             "dataVersion": 1
           },
           {
-            "id": "pud_association__special_assessment_fee",
+            "id": "association_special_assessment_amount",
             "group": "pud_association",
             "label": "Special Assessment Fee",
             "type": "Currency",
             "options": [],
             "destination": "Exit Interview",
-            "showWhenQuestion": "Special Assessment",
+            "showWhenFieldId": "association_special_assessment",
             "showWhenValue": [
               "Yes"
             ],
-            "showWhenQuestionId": "pud_association__special_assessment",
+            "showWhenQuestionId": "association_special_assessment",
             "showWhenInvalid": false,
             "status": "Implemented",
             "uad36Path": "",
@@ -2730,7 +2750,7 @@
             "dataVersion": 1
           },
           {
-            "id": "pud_association__special_assessment_fee_frequency",
+            "id": "association_special_assessment_frequency",
             "group": "pud_association",
             "label": "Special Assessment Fee Frequency",
             "type": "Button",
@@ -2741,11 +2761,11 @@
               "Other"
             ],
             "destination": "Exit Interview",
-            "showWhenQuestion": "Special Assessment",
+            "showWhenFieldId": "association_special_assessment",
             "showWhenValue": [
               "Yes"
             ],
-            "showWhenQuestionId": "pud_association__special_assessment",
+            "showWhenQuestionId": "association_special_assessment",
             "showWhenInvalid": false,
             "status": "Implemented",
             "uad36Path": "",
@@ -2754,17 +2774,17 @@
             "dataVersion": 1
           },
           {
-            "id": "pud_association__special_assessment_reason_time",
+            "id": "association_special_assessment_details",
             "group": "pud_association",
             "label": "Special Assessment Reason / Time",
             "type": "Text",
             "options": [],
             "destination": "Exit Interview",
-            "showWhenQuestion": "Special Assessment",
+            "showWhenFieldId": "association_special_assessment",
             "showWhenValue": [
               "Yes"
             ],
-            "showWhenQuestionId": "pud_association__special_assessment",
+            "showWhenQuestionId": "association_special_assessment",
             "showWhenInvalid": false,
             "status": "Implemented",
             "uad36Path": "",
@@ -2773,13 +2793,13 @@
             "dataVersion": 1
           },
           {
-            "id": "pud_association__pud_comments",
+            "id": "association_notes",
             "group": "pud_association",
             "label": "PUD Comments",
             "type": "Text",
             "options": [],
             "destination": "Exit Interview",
-            "showWhenQuestion": "",
+            "showWhenFieldId": "",
             "showWhenValue": [],
             "showWhenQuestionId": null,
             "showWhenInvalid": false,
@@ -2795,7 +2815,7 @@
         "group": "manufactured",
         "questions": [
           {
-            "id": "manufactured__number_of_sections",
+            "id": "manufactured_home_section_count",
             "group": "manufactured",
             "label": "Number of Sections",
             "type": "Button",
@@ -2806,7 +2826,7 @@
               "Other"
             ],
             "destination": "Dynamic",
-            "showWhenQuestion": "",
+            "showWhenFieldId": "",
             "showWhenValue": [],
             "showWhenQuestionId": null,
             "showWhenInvalid": false,
@@ -2817,13 +2837,13 @@
             "dataVersion": 1
           },
           {
-            "id": "manufactured__manufac_s_vin_s",
+            "id": "manufactured_home_vins",
             "group": "manufactured",
             "label": "Manufac#'s/VIN#'s",
             "type": "Text",
             "options": [],
             "destination": "Dynamic",
-            "showWhenQuestion": "",
+            "showWhenFieldId": "",
             "showWhenValue": [],
             "showWhenQuestionId": null,
             "showWhenInvalid": false,
@@ -2834,13 +2854,13 @@
             "dataVersion": 1
           },
           {
-            "id": "manufactured__hud_certification_label",
+            "id": "manufactured_home_hud_label",
             "group": "manufactured",
             "label": "HUD Certification Label",
             "type": "Text",
             "options": [],
             "destination": "Dynamic",
-            "showWhenQuestion": "",
+            "showWhenFieldId": "",
             "showWhenValue": [],
             "showWhenQuestionId": null,
             "showWhenInvalid": false,
@@ -2851,13 +2871,13 @@
             "dataVersion": 1
           },
           {
-            "id": "manufactured__manufacturer_s_name",
+            "id": "manufactured_home_manufacturer",
             "group": "manufactured",
             "label": "Manufacturer's Name",
             "type": "Text",
             "options": [],
             "destination": "Dynamic",
-            "showWhenQuestion": "",
+            "showWhenFieldId": "",
             "showWhenValue": [],
             "showWhenQuestionId": null,
             "showWhenInvalid": false,
@@ -2868,13 +2888,13 @@
             "dataVersion": 1
           },
           {
-            "id": "manufactured__trade_model",
+            "id": "manufactured_home_model",
             "group": "manufactured",
             "label": "Trade/Model",
             "type": "Text",
             "options": [],
             "destination": "Dynamic",
-            "showWhenQuestion": "",
+            "showWhenFieldId": "",
             "showWhenValue": [],
             "showWhenQuestionId": null,
             "showWhenInvalid": false,
@@ -2885,30 +2905,13 @@
             "dataVersion": 1
           },
           {
-            "id": "manufactured__manufacture_year",
-            "group": "manufactured",
-            "label": "Manufacture Year",
-            "type": "Text",
-            "options": [],
-            "destination": "Dynamic",
-            "showWhenQuestion": "",
-            "showWhenValue": [],
-            "showWhenQuestionId": null,
-            "showWhenInvalid": false,
-            "status": "Implemented",
-            "uad36Path": "",
-            "legacyExportName": "Manufacture Year",
-            "requiredWhen": "",
-            "dataVersion": 1
-          },
-          {
-            "id": "manufactured__skirting",
+            "id": "manufactured_home_skirting",
             "group": "manufactured",
             "label": "Skirting",
             "type": "Text",
             "options": [],
             "destination": "Dynamic",
-            "showWhenQuestion": "",
+            "showWhenFieldId": "",
             "showWhenValue": [],
             "showWhenQuestionId": null,
             "showWhenInvalid": false,
@@ -2924,7 +2927,7 @@
         "group": "alley",
         "questions": [
           {
-            "id": "alley__alley_surface",
+            "id": "alley_surface_material",
             "group": "alley",
             "label": "Alley Surface",
             "type": "MultiSelect",
@@ -2937,7 +2940,7 @@
               "Other"
             ],
             "destination": "Dynamic",
-            "showWhenQuestion": "",
+            "showWhenFieldId": "",
             "showWhenValue": [],
             "showWhenQuestionId": null,
             "showWhenInvalid": false,
@@ -2948,7 +2951,7 @@
             "dataVersion": 1
           },
           {
-            "id": "alley__alley_access",
+            "id": "alley_access_type",
             "group": "alley",
             "label": "Alley Access",
             "type": "Button",
@@ -2957,7 +2960,7 @@
               "Private"
             ],
             "destination": "Dynamic",
-            "showWhenQuestion": "",
+            "showWhenFieldId": "",
             "showWhenValue": [],
             "showWhenQuestionId": null,
             "showWhenInvalid": false,
@@ -2973,7 +2976,7 @@
         "group": "gas",
         "questions": [
           {
-            "id": "gas__gas_service",
+            "id": "gas_service_type",
             "group": "gas",
             "label": "Gas Service",
             "type": "Button",
@@ -2983,7 +2986,7 @@
               "Other"
             ],
             "destination": "Dynamic",
-            "showWhenQuestion": "",
+            "showWhenFieldId": "",
             "showWhenValue": [],
             "showWhenQuestionId": null,
             "showWhenInvalid": false,
@@ -2999,13 +3002,13 @@
         "group": "car_storage",
         "questions": [
           {
-            "id": "car_storage__garage_spaces",
+            "id": "garage_space_count",
             "group": "car_storage",
             "label": "# Garage Spaces",
             "type": "Counter",
             "options": [],
             "destination": "Dynamic",
-            "showWhenQuestion": "",
+            "showWhenFieldId": "",
             "showWhenValue": [],
             "showWhenQuestionId": null,
             "showWhenInvalid": false,
@@ -3016,13 +3019,13 @@
             "dataVersion": 1
           },
           {
-            "id": "car_storage__carport_spaces",
+            "id": "carport_space_count",
             "group": "car_storage",
             "label": "# Carport Spaces",
             "type": "Counter",
             "options": [],
             "destination": "Dynamic",
-            "showWhenQuestion": "",
+            "showWhenFieldId": "",
             "showWhenValue": [],
             "showWhenQuestionId": null,
             "showWhenInvalid": false,
@@ -3033,13 +3036,13 @@
             "dataVersion": 1
           },
           {
-            "id": "car_storage__covered_spaces",
+            "id": "covered_space_count",
             "group": "car_storage",
             "label": "# Covered Spaces",
             "type": "Counter",
             "options": [],
             "destination": "Dynamic",
-            "showWhenQuestion": "",
+            "showWhenFieldId": "",
             "showWhenValue": [],
             "showWhenQuestionId": null,
             "showWhenInvalid": false,
@@ -3050,7 +3053,7 @@
             "dataVersion": 1
           },
           {
-            "id": "car_storage__car_storage_attachment",
+            "id": "car_storage_attachment_type",
             "group": "car_storage",
             "label": "Car Storage Attachment",
             "type": "MultiSelect",
@@ -3061,7 +3064,7 @@
               "Other"
             ],
             "destination": "Dynamic",
-            "showWhenQuestion": "",
+            "showWhenFieldId": "",
             "showWhenValue": [],
             "showWhenQuestionId": null,
             "showWhenInvalid": false,
@@ -3077,7 +3080,7 @@
         "group": "adu",
         "questions": [
           {
-            "id": "adu__rented",
+            "id": "adu_rented",
             "group": "adu",
             "label": "Rented",
             "type": "Button",
@@ -3086,7 +3089,7 @@
               "No"
             ],
             "destination": "Dynamic",
-            "showWhenQuestion": "",
+            "showWhenFieldId": "",
             "showWhenValue": [],
             "showWhenQuestionId": null,
             "showWhenInvalid": false,
@@ -3097,7 +3100,7 @@
             "dataVersion": 1
           },
           {
-            "id": "adu__certified",
+            "id": "adu_certified",
             "group": "adu",
             "label": "Certified",
             "type": "Button",
@@ -3106,7 +3109,7 @@
               "No"
             ],
             "destination": "Dynamic",
-            "showWhenQuestion": "",
+            "showWhenFieldId": "",
             "showWhenValue": [],
             "showWhenQuestionId": null,
             "showWhenInvalid": false,
@@ -3117,7 +3120,7 @@
             "dataVersion": 1
           },
           {
-            "id": "adu__permits",
+            "id": "adu_permits",
             "group": "adu",
             "label": "Permits",
             "type": "Button",
@@ -3126,7 +3129,7 @@
               "No"
             ],
             "destination": "Dynamic",
-            "showWhenQuestion": "",
+            "showWhenFieldId": "",
             "showWhenValue": [],
             "showWhenQuestionId": null,
             "showWhenInvalid": false,
@@ -3137,13 +3140,13 @@
             "dataVersion": 1
           },
           {
-            "id": "adu__adu_notes",
+            "id": "adu_notes",
             "group": "adu",
             "label": "ADU Notes",
             "type": "Text",
             "options": [],
             "destination": "Dynamic",
-            "showWhenQuestion": "",
+            "showWhenFieldId": "",
             "showWhenValue": [],
             "showWhenQuestionId": null,
             "showWhenInvalid": false,
@@ -3159,7 +3162,7 @@
         "group": "condo",
         "questions": [
           {
-            "id": "condo__description",
+            "id": "condo_building_type",
             "group": "condo",
             "label": "Description",
             "type": "Button",
@@ -3171,7 +3174,7 @@
               "Other"
             ],
             "destination": "Exit Interview",
-            "showWhenQuestion": "",
+            "showWhenFieldId": "",
             "showWhenValue": [],
             "showWhenQuestionId": null,
             "showWhenInvalid": false,
@@ -3182,13 +3185,13 @@
             "dataVersion": 1
           },
           {
-            "id": "condo__stories",
+            "id": "condo_story_count",
             "group": "condo",
             "label": "Stories",
             "type": "Text",
             "options": [],
             "destination": "Exit Interview",
-            "showWhenQuestion": "",
+            "showWhenFieldId": "",
             "showWhenValue": [],
             "showWhenQuestionId": null,
             "showWhenInvalid": false,
@@ -3199,13 +3202,13 @@
             "dataVersion": 1
           },
           {
-            "id": "condo__buildings",
+            "id": "condo_building_count",
             "group": "condo",
             "label": "Buildings",
             "type": "Counter",
             "options": [],
             "destination": "Exit Interview",
-            "showWhenQuestion": "",
+            "showWhenFieldId": "",
             "showWhenValue": [],
             "showWhenQuestionId": null,
             "showWhenInvalid": false,
@@ -3216,13 +3219,13 @@
             "dataVersion": 1
           },
           {
-            "id": "condo__elevator",
+            "id": "condo_elevator_count",
             "group": "condo",
             "label": "Elevator",
             "type": "Counter",
             "options": [],
             "destination": "Exit Interview",
-            "showWhenQuestion": "",
+            "showWhenFieldId": "",
             "showWhenValue": [],
             "showWhenQuestionId": null,
             "showWhenInvalid": false,
@@ -3233,13 +3236,13 @@
             "dataVersion": 1
           },
           {
-            "id": "condo__condo_fee",
+            "id": "condo_fee_amount",
             "group": "condo",
             "label": "Condo Fee $",
             "type": "Text",
             "options": [],
             "destination": "Exit Interview",
-            "showWhenQuestion": "",
+            "showWhenFieldId": "",
             "showWhenValue": [],
             "showWhenQuestionId": null,
             "showWhenInvalid": false,
@@ -3250,7 +3253,7 @@
             "dataVersion": 1
           },
           {
-            "id": "condo__fee_frequency",
+            "id": "condo_fee_frequency",
             "group": "condo",
             "label": "Fee Frequency",
             "type": "Button",
@@ -3261,7 +3264,7 @@
               "Other"
             ],
             "destination": "Exit Interview",
-            "showWhenQuestion": "",
+            "showWhenFieldId": "",
             "showWhenValue": [],
             "showWhenQuestionId": null,
             "showWhenInvalid": false,
@@ -3272,7 +3275,7 @@
             "dataVersion": 1
           },
           {
-            "id": "condo__fee_includes",
+            "id": "condo_fee_includes",
             "group": "condo",
             "label": "Fee Includes",
             "type": "MultiSelect",
@@ -3284,7 +3287,7 @@
               "Other"
             ],
             "destination": "Exit Interview",
-            "showWhenQuestion": "",
+            "showWhenFieldId": "",
             "showWhenValue": [],
             "showWhenQuestionId": null,
             "showWhenInvalid": false,
@@ -3295,7 +3298,7 @@
             "dataVersion": 1
           },
           {
-            "id": "condo__special_assessment",
+            "id": "condo_special_assessment",
             "group": "condo",
             "label": "Special Assessment",
             "type": "Button",
@@ -3304,7 +3307,7 @@
               "No"
             ],
             "destination": "Exit Interview",
-            "showWhenQuestion": "",
+            "showWhenFieldId": "",
             "showWhenValue": [],
             "showWhenQuestionId": null,
             "showWhenInvalid": false,
@@ -3315,13 +3318,13 @@
             "dataVersion": 1
           },
           {
-            "id": "condo__special_assessment_amount",
+            "id": "condo_special_assessment_amount",
             "group": "condo",
             "label": "Special Assessment Amount $",
             "type": "Text",
             "options": [],
             "destination": "Exit Interview",
-            "showWhenQuestion": "",
+            "showWhenFieldId": "",
             "showWhenValue": [],
             "showWhenQuestionId": null,
             "showWhenInvalid": false,
@@ -3332,13 +3335,13 @@
             "dataVersion": 1
           },
           {
-            "id": "condo__special_assesment_purpose",
+            "id": "condo_special_assessment_purpose",
             "group": "condo",
             "label": "Special Assesment Purpose",
             "type": "Text",
             "options": [],
             "destination": "Exit Interview",
-            "showWhenQuestion": "",
+            "showWhenFieldId": "",
             "showWhenValue": [],
             "showWhenQuestionId": null,
             "showWhenInvalid": false,
@@ -3349,13 +3352,13 @@
             "dataVersion": 1
           },
           {
-            "id": "condo__special_assessment_time",
+            "id": "condo_special_assessment_timeframe",
             "group": "condo",
             "label": "Special Assessment Time",
             "type": "Text",
             "options": [],
             "destination": "Exit Interview",
-            "showWhenQuestion": "",
+            "showWhenFieldId": "",
             "showWhenValue": [],
             "showWhenQuestionId": null,
             "showWhenInvalid": false,
@@ -3366,7 +3369,7 @@
             "dataVersion": 1
           },
           {
-            "id": "condo__parking_type",
+            "id": "condo_parking_type",
             "group": "condo",
             "label": "Parking Type",
             "type": "MultiSelect",
@@ -3377,7 +3380,7 @@
               "Other"
             ],
             "destination": "Exit Interview",
-            "showWhenQuestion": "",
+            "showWhenFieldId": "",
             "showWhenValue": [],
             "showWhenQuestionId": null,
             "showWhenInvalid": false,
@@ -3388,13 +3391,13 @@
             "dataVersion": 1
           },
           {
-            "id": "condo__parking_spaces",
+            "id": "condo_parking_space_count",
             "group": "condo",
             "label": "Parking Spaces #",
             "type": "Text",
             "options": [],
             "destination": "Exit Interview",
-            "showWhenQuestion": "",
+            "showWhenFieldId": "",
             "showWhenValue": [],
             "showWhenQuestionId": null,
             "showWhenInvalid": false,
@@ -3405,7 +3408,7 @@
             "dataVersion": 1
           },
           {
-            "id": "condo__amenities",
+            "id": "condo_amenities",
             "group": "condo",
             "label": "Amenities",
             "type": "MultiSelect",
@@ -3417,7 +3420,7 @@
               "Other"
             ],
             "destination": "Exit Interview",
-            "showWhenQuestion": "",
+            "showWhenFieldId": "",
             "showWhenValue": [],
             "showWhenQuestionId": null,
             "showWhenInvalid": false,
@@ -3428,7 +3431,7 @@
             "dataVersion": 1
           },
           {
-            "id": "condo__conversion",
+            "id": "condo_converted",
             "group": "condo",
             "label": "Conversion",
             "type": "Button",
@@ -3436,7 +3439,7 @@
               "Yes:No"
             ],
             "destination": "Exit Interview",
-            "showWhenQuestion": "",
+            "showWhenFieldId": "",
             "showWhenValue": [],
             "showWhenQuestionId": null,
             "showWhenInvalid": false,
@@ -3447,7 +3450,7 @@
             "dataVersion": 1
           },
           {
-            "id": "condo__dock_space",
+            "id": "condo_dock_space",
             "group": "condo",
             "label": "Dock Space",
             "type": "Button",
@@ -3455,7 +3458,7 @@
               "Yes:No"
             ],
             "destination": "Exit Interview",
-            "showWhenQuestion": "",
+            "showWhenFieldId": "",
             "showWhenValue": [],
             "showWhenQuestionId": null,
             "showWhenInvalid": false,
@@ -3466,13 +3469,13 @@
             "dataVersion": 1
           },
           {
-            "id": "condo__notes",
+            "id": "condo_notes",
             "group": "condo",
             "label": "Notes",
             "type": "Text",
             "options": [],
             "destination": "Exit Interview",
-            "showWhenQuestion": "",
+            "showWhenFieldId": "",
             "showWhenValue": [],
             "showWhenQuestionId": null,
             "showWhenInvalid": false,
@@ -3488,7 +3491,7 @@
         "group": "solar_panels",
         "questions": [
           {
-            "id": "solar_panels__ownership",
+            "id": "solar_panel_ownership_type",
             "group": "solar_panels",
             "label": "Ownership",
             "type": "MultiSelect",
@@ -3500,7 +3503,7 @@
               "Other"
             ],
             "destination": "Exit Interview",
-            "showWhenQuestion": "",
+            "showWhenFieldId": "",
             "showWhenValue": [],
             "showWhenQuestionId": null,
             "showWhenInvalid": false,
@@ -3511,7 +3514,7 @@
             "dataVersion": 1
           },
           {
-            "id": "solar_panels__system",
+            "id": "solar_panel_system_type",
             "group": "solar_panels",
             "label": "System",
             "type": "MultiSelect",
@@ -3520,7 +3523,7 @@
               "Water Heater"
             ],
             "destination": "Exit Interview",
-            "showWhenQuestion": "",
+            "showWhenFieldId": "",
             "showWhenValue": [],
             "showWhenQuestionId": null,
             "showWhenInvalid": false,
@@ -3531,13 +3534,13 @@
             "dataVersion": 1
           },
           {
-            "id": "solar_panels__age",
+            "id": "solar_panel_age_years",
             "group": "solar_panels",
             "label": "Age",
             "type": "Text",
             "options": [],
             "destination": "Exit Interview",
-            "showWhenQuestion": "",
+            "showWhenFieldId": "",
             "showWhenValue": [],
             "showWhenQuestionId": null,
             "showWhenInvalid": false,
@@ -3548,13 +3551,13 @@
             "dataVersion": 1
           },
           {
-            "id": "solar_panels__capacity_kw",
+            "id": "solar_panel_capacity_kw",
             "group": "solar_panels",
             "label": "Capacity (KW)",
             "type": "Text",
             "options": [],
             "destination": "Exit Interview",
-            "showWhenQuestion": "",
+            "showWhenFieldId": "",
             "showWhenValue": [],
             "showWhenQuestionId": null,
             "showWhenInvalid": false,
@@ -3570,13 +3573,13 @@
         "group": "roof_updated",
         "questions": [
           {
-            "id": "roof_updated__timeframe",
+            "id": "roof_update_timeframe",
             "group": "roof_updated",
             "label": "Timeframe",
             "type": "Text",
             "options": [],
             "destination": "Exit Interview",
-            "showWhenQuestion": "",
+            "showWhenFieldId": "",
             "showWhenValue": [],
             "showWhenQuestionId": null,
             "showWhenInvalid": false,
@@ -3587,13 +3590,13 @@
             "dataVersion": 1
           },
           {
-            "id": "roof_updated__details",
+            "id": "roof_update_details",
             "group": "roof_updated",
             "label": "Details",
             "type": "Text",
             "options": [],
             "destination": "Exit Interview",
-            "showWhenQuestion": "",
+            "showWhenFieldId": "",
             "showWhenValue": [],
             "showWhenQuestionId": null,
             "showWhenInvalid": false,
@@ -3609,13 +3612,13 @@
         "group": "gutters_updated",
         "questions": [
           {
-            "id": "gutters_updated__timeframe",
+            "id": "gutter_update_timeframe",
             "group": "gutters_updated",
             "label": "Timeframe",
             "type": "Text",
             "options": [],
             "destination": "Exit Interview",
-            "showWhenQuestion": "",
+            "showWhenFieldId": "",
             "showWhenValue": [],
             "showWhenQuestionId": null,
             "showWhenInvalid": false,
@@ -3626,13 +3629,13 @@
             "dataVersion": 1
           },
           {
-            "id": "gutters_updated__details",
+            "id": "gutter_update_details",
             "group": "gutters_updated",
             "label": "Details",
             "type": "Text",
             "options": [],
             "destination": "Exit Interview",
-            "showWhenQuestion": "",
+            "showWhenFieldId": "",
             "showWhenValue": [],
             "showWhenQuestionId": null,
             "showWhenInvalid": false,
@@ -3648,13 +3651,13 @@
         "group": "windows_updated",
         "questions": [
           {
-            "id": "windows_updated__timeframe",
+            "id": "window_update_timeframe",
             "group": "windows_updated",
             "label": "Timeframe",
             "type": "Text",
             "options": [],
             "destination": "Exit Interview",
-            "showWhenQuestion": "",
+            "showWhenFieldId": "",
             "showWhenValue": [],
             "showWhenQuestionId": null,
             "showWhenInvalid": false,
@@ -3665,13 +3668,13 @@
             "dataVersion": 1
           },
           {
-            "id": "windows_updated__details",
+            "id": "window_update_details",
             "group": "windows_updated",
             "label": "Details",
             "type": "Text",
             "options": [],
             "destination": "Exit Interview",
-            "showWhenQuestion": "",
+            "showWhenFieldId": "",
             "showWhenValue": [],
             "showWhenQuestionId": null,
             "showWhenInvalid": false,
@@ -3687,7 +3690,7 @@
         "group": "shutters",
         "questions": [
           {
-            "id": "shutters__shutters_type",
+            "id": "shutter_type",
             "group": "shutters",
             "label": "Shutters Type",
             "type": "MultiSelect",
@@ -3698,7 +3701,7 @@
               "Other"
             ],
             "destination": "Dynamic",
-            "showWhenQuestion": "",
+            "showWhenFieldId": "",
             "showWhenValue": [],
             "showWhenQuestionId": null,
             "showWhenInvalid": false,
@@ -3714,7 +3717,7 @@
         "group": "security_bars",
         "questions": [
           {
-            "id": "security_bars__safety_release",
+            "id": "security_bar_safety_release",
             "group": "security_bars",
             "label": "Safety release",
             "type": "Button",
@@ -3724,7 +3727,7 @@
               "Partial"
             ],
             "destination": "Dynamic",
-            "showWhenQuestion": "",
+            "showWhenFieldId": "",
             "showWhenValue": [],
             "showWhenQuestionId": null,
             "showWhenInvalid": false,
@@ -3735,7 +3738,7 @@
             "dataVersion": 1
           },
           {
-            "id": "security_bars__do_bedrooms_have_bars",
+            "id": "security_bar_bedroom_coverage",
             "group": "security_bars",
             "label": "Do bedrooms have bars",
             "type": "Button",
@@ -3745,7 +3748,7 @@
               "Partial"
             ],
             "destination": "Dynamic",
-            "showWhenQuestion": "",
+            "showWhenFieldId": "",
             "showWhenValue": [],
             "showWhenQuestionId": null,
             "showWhenInvalid": false,
@@ -3761,7 +3764,7 @@
         "group": "balcony",
         "questions": [
           {
-            "id": "balcony__balcony_type",
+            "id": "balcony_type",
             "group": "balcony",
             "label": "Balcony type",
             "type": "MultiSelect",
@@ -3772,7 +3775,7 @@
               "Other"
             ],
             "destination": "Dynamic",
-            "showWhenQuestion": "",
+            "showWhenFieldId": "",
             "showWhenValue": [],
             "showWhenQuestionId": null,
             "showWhenInvalid": false,
@@ -3788,7 +3791,7 @@
         "group": "pool",
         "questions": [
           {
-            "id": "pool__pool_construction",
+            "id": "pool_material",
             "group": "pool",
             "label": "Pool Construction",
             "type": "MultiSelect",
@@ -3798,7 +3801,7 @@
               "Other"
             ],
             "destination": "Dynamic",
-            "showWhenQuestion": "",
+            "showWhenFieldId": "",
             "showWhenValue": [],
             "showWhenQuestionId": null,
             "showWhenInvalid": false,
@@ -3809,7 +3812,7 @@
             "dataVersion": 1
           },
           {
-            "id": "pool__pool_updated",
+            "id": "pool_updated",
             "group": "pool",
             "label": "Pool Updated",
             "type": "Button",
@@ -3819,7 +3822,7 @@
               "Partial"
             ],
             "destination": "Dynamic",
-            "showWhenQuestion": "",
+            "showWhenFieldId": "",
             "showWhenValue": [],
             "showWhenQuestionId": null,
             "showWhenInvalid": false,
@@ -3830,18 +3833,18 @@
             "dataVersion": 1
           },
           {
-            "id": "pool__year_updated",
+            "id": "pool_update_year",
             "group": "pool",
             "label": "Year Updated",
             "type": "Text",
             "options": [],
             "destination": "Dynamic",
-            "showWhenQuestion": "Pool Updated",
+            "showWhenFieldId": "pool_updated",
             "showWhenValue": [
               "Yes",
               "Partial"
             ],
-            "showWhenQuestionId": "pool__pool_updated",
+            "showWhenQuestionId": "pool_updated",
             "showWhenInvalid": false,
             "status": "Implemented",
             "uad36Path": "",
@@ -3850,7 +3853,7 @@
             "dataVersion": 1
           },
           {
-            "id": "pool__scope_of_update",
+            "id": "pool_update_scope",
             "group": "pool",
             "label": "Scope of Update",
             "type": "MultiSelect",
@@ -3861,12 +3864,12 @@
               "Other"
             ],
             "destination": "Dynamic",
-            "showWhenQuestion": "Pool Updated",
+            "showWhenFieldId": "pool_updated",
             "showWhenValue": [
               "Yes",
               "Partial"
             ],
-            "showWhenQuestionId": "pool__pool_updated",
+            "showWhenQuestionId": "pool_updated",
             "showWhenInvalid": false,
             "status": "Implemented",
             "uad36Path": "",
@@ -3875,7 +3878,7 @@
             "dataVersion": 1
           },
           {
-            "id": "pool__pool_amenities",
+            "id": "pool_amenities",
             "group": "pool",
             "label": "Pool Amenities",
             "type": "MultiSelect",
@@ -3887,7 +3890,7 @@
               "Other"
             ],
             "destination": "Dynamic",
-            "showWhenQuestion": "",
+            "showWhenFieldId": "",
             "showWhenValue": [],
             "showWhenQuestionId": null,
             "showWhenInvalid": false,
@@ -3903,13 +3906,13 @@
         "group": "kitchen_updated",
         "questions": [
           {
-            "id": "kitchen_updated__timeframe",
+            "id": "kitchen_update_timeframe",
             "group": "kitchen_updated",
             "label": "Timeframe",
             "type": "Text",
             "options": [],
             "destination": "Exit Interview",
-            "showWhenQuestion": "",
+            "showWhenFieldId": "",
             "showWhenValue": [],
             "showWhenQuestionId": null,
             "showWhenInvalid": false,
@@ -3920,13 +3923,13 @@
             "dataVersion": 1
           },
           {
-            "id": "kitchen_updated__details",
+            "id": "kitchen_update_details",
             "group": "kitchen_updated",
             "label": "Details",
             "type": "Text",
             "options": [],
             "destination": "Exit Interview",
-            "showWhenQuestion": "",
+            "showWhenFieldId": "",
             "showWhenValue": [],
             "showWhenQuestionId": null,
             "showWhenInvalid": false,
@@ -3942,7 +3945,7 @@
         "group": "bathrooms_updated",
         "questions": [
           {
-            "id": "bathrooms_updated__what_bathrooms_were_updated",
+            "id": "bathroom_update_scope",
             "group": "bathrooms_updated",
             "label": "What bathrooms were updated",
             "type": "MultiSelect",
@@ -3956,7 +3959,7 @@
               "Other"
             ],
             "destination": "Exit Interview",
-            "showWhenQuestion": "",
+            "showWhenFieldId": "",
             "showWhenValue": [],
             "showWhenQuestionId": null,
             "showWhenInvalid": false,
@@ -3967,13 +3970,13 @@
             "dataVersion": 1
           },
           {
-            "id": "bathrooms_updated__timeframe",
+            "id": "bathroom_update_timeframe",
             "group": "bathrooms_updated",
             "label": "Timeframe",
             "type": "Text",
             "options": [],
             "destination": "Exit Interview",
-            "showWhenQuestion": "",
+            "showWhenFieldId": "",
             "showWhenValue": [],
             "showWhenQuestionId": null,
             "showWhenInvalid": false,
@@ -3984,13 +3987,13 @@
             "dataVersion": 1
           },
           {
-            "id": "bathrooms_updated__details",
+            "id": "bathroom_update_details",
             "group": "bathrooms_updated",
             "label": "Details",
             "type": "Text",
             "options": [],
             "destination": "Exit Interview",
-            "showWhenQuestion": "",
+            "showWhenFieldId": "",
             "showWhenValue": [],
             "showWhenQuestionId": null,
             "showWhenInvalid": false,
@@ -4006,13 +4009,13 @@
         "group": "floors_updated",
         "questions": [
           {
-            "id": "floors_updated__timeframe",
+            "id": "floor_update_timeframe",
             "group": "floors_updated",
             "label": "Timeframe",
             "type": "Text",
             "options": [],
             "destination": "Exit Interview",
-            "showWhenQuestion": "",
+            "showWhenFieldId": "",
             "showWhenValue": [],
             "showWhenQuestionId": null,
             "showWhenInvalid": false,
@@ -4023,13 +4026,13 @@
             "dataVersion": 1
           },
           {
-            "id": "floors_updated__details",
+            "id": "floor_update_details",
             "group": "floors_updated",
             "label": "Details",
             "type": "Text",
             "options": [],
             "destination": "Exit Interview",
-            "showWhenQuestion": "",
+            "showWhenFieldId": "",
             "showWhenValue": [],
             "showWhenQuestionId": null,
             "showWhenInvalid": false,
@@ -4045,13 +4048,13 @@
         "group": "walls_updated",
         "questions": [
           {
-            "id": "walls_updated__timeframe",
+            "id": "interior_wall_update_timeframe",
             "group": "walls_updated",
             "label": "Timeframe",
             "type": "Text",
             "options": [],
             "destination": "Exit Interview",
-            "showWhenQuestion": "",
+            "showWhenFieldId": "",
             "showWhenValue": [],
             "showWhenQuestionId": null,
             "showWhenInvalid": false,
@@ -4062,13 +4065,13 @@
             "dataVersion": 1
           },
           {
-            "id": "walls_updated__details",
+            "id": "interior_wall_update_details",
             "group": "walls_updated",
             "label": "Details",
             "type": "Text",
             "options": [],
             "destination": "Exit Interview",
-            "showWhenQuestion": "",
+            "showWhenFieldId": "",
             "showWhenValue": [],
             "showWhenQuestionId": null,
             "showWhenInvalid": false,
@@ -4084,13 +4087,13 @@
         "group": "trim_updated",
         "questions": [
           {
-            "id": "trim_updated__timeframe",
+            "id": "trim_update_timeframe",
             "group": "trim_updated",
             "label": "Timeframe",
             "type": "Text",
             "options": [],
             "destination": "Exit Interview",
-            "showWhenQuestion": "",
+            "showWhenFieldId": "",
             "showWhenValue": [],
             "showWhenQuestionId": null,
             "showWhenInvalid": false,
@@ -4101,13 +4104,13 @@
             "dataVersion": 1
           },
           {
-            "id": "trim_updated__details",
+            "id": "trim_update_details",
             "group": "trim_updated",
             "label": "Details",
             "type": "Text",
             "options": [],
             "destination": "Exit Interview",
-            "showWhenQuestion": "",
+            "showWhenFieldId": "",
             "showWhenValue": [],
             "showWhenQuestionId": null,
             "showWhenInvalid": false,
@@ -4123,13 +4126,13 @@
         "group": "cooling_updated",
         "questions": [
           {
-            "id": "cooling_updated__timeframe",
+            "id": "cooling_update_timeframe",
             "group": "cooling_updated",
             "label": "Timeframe",
             "type": "Text",
             "options": [],
             "destination": "Exit Interview",
-            "showWhenQuestion": "",
+            "showWhenFieldId": "",
             "showWhenValue": [],
             "showWhenQuestionId": null,
             "showWhenInvalid": false,
@@ -4140,13 +4143,13 @@
             "dataVersion": 1
           },
           {
-            "id": "cooling_updated__details",
+            "id": "cooling_update_details",
             "group": "cooling_updated",
             "label": "Details",
             "type": "Text",
             "options": [],
             "destination": "Exit Interview",
-            "showWhenQuestion": "",
+            "showWhenFieldId": "",
             "showWhenValue": [],
             "showWhenQuestionId": null,
             "showWhenInvalid": false,
@@ -4342,7 +4345,7 @@
         "notes": "Authoritative UAD 3.6 mapping pending."
       },
       {
-        "fluxFieldId": "occupancy",
+        "fluxFieldId": "occupancy_type",
         "sourceSheet": "MAIN",
         "uad36Path": "",
         "uadLabel": "",
@@ -4356,7 +4359,7 @@
         "notes": "Authoritative UAD 3.6 mapping pending."
       },
       {
-        "fluxFieldId": "pud_association",
+        "fluxFieldId": "has_pud_association",
         "sourceSheet": "MAIN",
         "uad36Path": "",
         "uadLabel": "",
@@ -4370,7 +4373,7 @@
         "notes": "Authoritative UAD 3.6 mapping pending."
       },
       {
-        "fluxFieldId": "access_provided",
+        "fluxFieldId": "access_method",
         "sourceSheet": "MAIN",
         "uad36Path": "",
         "uadLabel": "",
@@ -4454,7 +4457,7 @@
         "notes": "Authoritative UAD 3.6 mapping pending."
       },
       {
-        "fluxFieldId": "street_surface",
+        "fluxFieldId": "street_surface_material",
         "sourceSheet": "MAIN",
         "uad36Path": "",
         "uadLabel": "",
@@ -4468,7 +4471,7 @@
         "notes": "Authoritative UAD 3.6 mapping pending."
       },
       {
-        "fluxFieldId": "street_access",
+        "fluxFieldId": "street_access_type",
         "sourceSheet": "MAIN",
         "uad36Path": "",
         "uadLabel": "",
@@ -4482,7 +4485,7 @@
         "notes": "Authoritative UAD 3.6 mapping pending."
       },
       {
-        "fluxFieldId": "alley",
+        "fluxFieldId": "has_alley",
         "sourceSheet": "MAIN",
         "uad36Path": "",
         "uadLabel": "",
@@ -4510,7 +4513,7 @@
         "notes": "Authoritative UAD 3.6 mapping pending."
       },
       {
-        "fluxFieldId": "view",
+        "fluxFieldId": "view_type",
         "sourceSheet": "MAIN",
         "uad36Path": "",
         "uadLabel": "",
@@ -4524,7 +4527,7 @@
         "notes": "Authoritative UAD 3.6 mapping pending."
       },
       {
-        "fluxFieldId": "location",
+        "fluxFieldId": "location_type",
         "sourceSheet": "MAIN",
         "uad36Path": "",
         "uadLabel": "",
@@ -4552,7 +4555,7 @@
         "notes": "Authoritative UAD 3.6 mapping pending."
       },
       {
-        "fluxFieldId": "electricity",
+        "fluxFieldId": "electricity_source_type",
         "sourceSheet": "MAIN",
         "uad36Path": "",
         "uadLabel": "",
@@ -4566,7 +4569,7 @@
         "notes": "Authoritative UAD 3.6 mapping pending."
       },
       {
-        "fluxFieldId": "water",
+        "fluxFieldId": "water_source_type",
         "sourceSheet": "MAIN",
         "uad36Path": "",
         "uadLabel": "",
@@ -4594,7 +4597,7 @@
         "notes": "Authoritative UAD 3.6 mapping pending."
       },
       {
-        "fluxFieldId": "sanitary_sewer",
+        "fluxFieldId": "sewer_system_type",
         "sourceSheet": "MAIN",
         "uad36Path": "",
         "uadLabel": "",
@@ -4608,7 +4611,7 @@
         "notes": "Authoritative UAD 3.6 mapping pending."
       },
       {
-        "fluxFieldId": "utilities_notes_repairs",
+        "fluxFieldId": "utility_repair_notes",
         "sourceSheet": "MAIN",
         "uad36Path": "",
         "uadLabel": "",
@@ -4622,7 +4625,7 @@
         "notes": "Authoritative UAD 3.6 mapping pending."
       },
       {
-        "fluxFieldId": "driveway_surface",
+        "fluxFieldId": "driveway_material",
         "sourceSheet": "MAIN",
         "uad36Path": "",
         "uadLabel": "",
@@ -4636,7 +4639,7 @@
         "notes": "Authoritative UAD 3.6 mapping pending."
       },
       {
-        "fluxFieldId": "driveway_capacity",
+        "fluxFieldId": "driveway_space_count",
         "sourceSheet": "MAIN",
         "uad36Path": "",
         "uadLabel": "",
@@ -4650,7 +4653,7 @@
         "notes": "Authoritative UAD 3.6 mapping pending."
       },
       {
-        "fluxFieldId": "car_storage",
+        "fluxFieldId": "car_storage_type",
         "sourceSheet": "MAIN",
         "uad36Path": "",
         "uadLabel": "",
@@ -4664,7 +4667,7 @@
         "notes": "Authoritative UAD 3.6 mapping pending."
       },
       {
-        "fluxFieldId": "car_storage_notes_repairs",
+        "fluxFieldId": "car_storage_repair_notes",
         "sourceSheet": "MAIN",
         "uad36Path": "",
         "uadLabel": "",
@@ -4678,7 +4681,7 @@
         "notes": "Authoritative UAD 3.6 mapping pending."
       },
       {
-        "fluxFieldId": "stories",
+        "fluxFieldId": "story_count",
         "sourceSheet": "MAIN",
         "uad36Path": "",
         "uadLabel": "",
@@ -4692,7 +4695,7 @@
         "notes": "Authoritative UAD 3.6 mapping pending."
       },
       {
-        "fluxFieldId": "number_of_units",
+        "fluxFieldId": "unit_count",
         "sourceSheet": "MAIN",
         "uad36Path": "",
         "uadLabel": "",
@@ -4706,7 +4709,7 @@
         "notes": "Authoritative UAD 3.6 mapping pending."
       },
       {
-        "fluxFieldId": "adu",
+        "fluxFieldId": "has_adu",
         "sourceSheet": "MAIN",
         "uad36Path": "",
         "uadLabel": "",
@@ -4720,7 +4723,7 @@
         "notes": "Authoritative UAD 3.6 mapping pending."
       },
       {
-        "fluxFieldId": "design_style",
+        "fluxFieldId": "architectural_style",
         "sourceSheet": "MAIN",
         "uad36Path": "",
         "uadLabel": "",
@@ -4748,7 +4751,7 @@
         "notes": "Authoritative UAD 3.6 mapping pending."
       },
       {
-        "fluxFieldId": "foundation",
+        "fluxFieldId": "foundation_type",
         "sourceSheet": "MAIN",
         "uad36Path": "",
         "uadLabel": "",
@@ -4762,7 +4765,7 @@
         "notes": "Authoritative UAD 3.6 mapping pending."
       },
       {
-        "fluxFieldId": "foundation_walls",
+        "fluxFieldId": "foundation_wall_material",
         "sourceSheet": "MAIN",
         "uad36Path": "",
         "uadLabel": "",
@@ -4776,7 +4779,7 @@
         "notes": "Authoritative UAD 3.6 mapping pending."
       },
       {
-        "fluxFieldId": "foundation_walls_condition",
+        "fluxFieldId": "foundation_wall_condition",
         "sourceSheet": "MAIN",
         "uad36Path": "",
         "uadLabel": "",
@@ -4790,7 +4793,7 @@
         "notes": "Authoritative UAD 3.6 mapping pending."
       },
       {
-        "fluxFieldId": "exterior_walls",
+        "fluxFieldId": "exterior_wall_material",
         "sourceSheet": "MAIN",
         "uad36Path": "",
         "uadLabel": "",
@@ -4804,7 +4807,7 @@
         "notes": "Authoritative UAD 3.6 mapping pending."
       },
       {
-        "fluxFieldId": "exterior_walls_condition",
+        "fluxFieldId": "exterior_wall_condition",
         "sourceSheet": "MAIN",
         "uad36Path": "",
         "uadLabel": "",
@@ -4818,7 +4821,7 @@
         "notes": "Authoritative UAD 3.6 mapping pending."
       },
       {
-        "fluxFieldId": "solar_panels",
+        "fluxFieldId": "has_solar_panels",
         "sourceSheet": "MAIN",
         "uad36Path": "",
         "uadLabel": "",
@@ -4832,7 +4835,7 @@
         "notes": "Authoritative UAD 3.6 mapping pending."
       },
       {
-        "fluxFieldId": "roof_surface",
+        "fluxFieldId": "roof_material",
         "sourceSheet": "MAIN",
         "uad36Path": "",
         "uadLabel": "",
@@ -4846,7 +4849,7 @@
         "notes": "Authoritative UAD 3.6 mapping pending."
       },
       {
-        "fluxFieldId": "roof_surface_condition",
+        "fluxFieldId": "roof_condition",
         "sourceSheet": "MAIN",
         "uad36Path": "",
         "uadLabel": "",
@@ -4874,7 +4877,7 @@
         "notes": "Authoritative UAD 3.6 mapping pending."
       },
       {
-        "fluxFieldId": "gutters_downspouts",
+        "fluxFieldId": "gutter_downspout_presence",
         "sourceSheet": "MAIN",
         "uad36Path": "",
         "uadLabel": "",
@@ -4888,7 +4891,7 @@
         "notes": "Authoritative UAD 3.6 mapping pending."
       },
       {
-        "fluxFieldId": "gutters_downspouts_condition",
+        "fluxFieldId": "gutter_condition",
         "sourceSheet": "MAIN",
         "uad36Path": "",
         "uadLabel": "",
@@ -4902,7 +4905,7 @@
         "notes": "Authoritative UAD 3.6 mapping pending."
       },
       {
-        "fluxFieldId": "gutters_updated",
+        "fluxFieldId": "gutter_updated",
         "sourceSheet": "MAIN",
         "uad36Path": "",
         "uadLabel": "",
@@ -4916,7 +4919,7 @@
         "notes": "Authoritative UAD 3.6 mapping pending."
       },
       {
-        "fluxFieldId": "windows_type",
+        "fluxFieldId": "window_type",
         "sourceSheet": "MAIN",
         "uad36Path": "",
         "uadLabel": "",
@@ -4930,7 +4933,7 @@
         "notes": "Authoritative UAD 3.6 mapping pending."
       },
       {
-        "fluxFieldId": "windows_type_condition",
+        "fluxFieldId": "window_condition",
         "sourceSheet": "MAIN",
         "uad36Path": "",
         "uadLabel": "",
@@ -4944,7 +4947,7 @@
         "notes": "Authoritative UAD 3.6 mapping pending."
       },
       {
-        "fluxFieldId": "windows_updated",
+        "fluxFieldId": "window_updated",
         "sourceSheet": "MAIN",
         "uad36Path": "",
         "uadLabel": "",
@@ -4958,7 +4961,7 @@
         "notes": "Authoritative UAD 3.6 mapping pending."
       },
       {
-        "fluxFieldId": "windows_impact",
+        "fluxFieldId": "window_impact_rated",
         "sourceSheet": "MAIN",
         "uad36Path": "",
         "uadLabel": "",
@@ -4972,7 +4975,7 @@
         "notes": "Authoritative UAD 3.6 mapping pending."
       },
       {
-        "fluxFieldId": "screens",
+        "fluxFieldId": "screen_material",
         "sourceSheet": "MAIN",
         "uad36Path": "",
         "uadLabel": "",
@@ -4986,7 +4989,7 @@
         "notes": "Authoritative UAD 3.6 mapping pending."
       },
       {
-        "fluxFieldId": "screens_condition",
+        "fluxFieldId": "screen_condition",
         "sourceSheet": "MAIN",
         "uad36Path": "",
         "uadLabel": "",
@@ -5000,7 +5003,7 @@
         "notes": "Authoritative UAD 3.6 mapping pending."
       },
       {
-        "fluxFieldId": "shutters",
+        "fluxFieldId": "has_shutters",
         "sourceSheet": "MAIN",
         "uad36Path": "",
         "uadLabel": "",
@@ -5014,7 +5017,7 @@
         "notes": "Authoritative UAD 3.6 mapping pending."
       },
       {
-        "fluxFieldId": "security_bars",
+        "fluxFieldId": "has_security_bars",
         "sourceSheet": "MAIN",
         "uad36Path": "",
         "uadLabel": "",
@@ -5028,7 +5031,7 @@
         "notes": "Authoritative UAD 3.6 mapping pending."
       },
       {
-        "fluxFieldId": "storm_sash_insulated",
+        "fluxFieldId": "storm_sash_presence",
         "sourceSheet": "MAIN",
         "uad36Path": "",
         "uadLabel": "",
@@ -5042,7 +5045,7 @@
         "notes": "Authoritative UAD 3.6 mapping pending."
       },
       {
-        "fluxFieldId": "fireplace",
+        "fluxFieldId": "has_fireplace",
         "sourceSheet": "MAIN",
         "uad36Path": "",
         "uadLabel": "",
@@ -5056,7 +5059,7 @@
         "notes": "Authoritative UAD 3.6 mapping pending."
       },
       {
-        "fluxFieldId": "exterior_notes_repairs",
+        "fluxFieldId": "exterior_repair_notes",
         "sourceSheet": "MAIN",
         "uad36Path": "",
         "uadLabel": "",
@@ -5070,7 +5073,7 @@
         "notes": "Authoritative UAD 3.6 mapping pending."
       },
       {
-        "fluxFieldId": "heating",
+        "fluxFieldId": "heating_type",
         "sourceSheet": "MAIN",
         "uad36Path": "",
         "uadLabel": "",
@@ -5084,7 +5087,7 @@
         "notes": "Authoritative UAD 3.6 mapping pending."
       },
       {
-        "fluxFieldId": "cooling",
+        "fluxFieldId": "cooling_type",
         "sourceSheet": "MAIN",
         "uad36Path": "",
         "uadLabel": "",
@@ -5112,7 +5115,7 @@
         "notes": "Authoritative UAD 3.6 mapping pending."
       },
       {
-        "fluxFieldId": "fence",
+        "fluxFieldId": "fence_material",
         "sourceSheet": "MAIN",
         "uad36Path": "",
         "uadLabel": "",
@@ -5140,7 +5143,7 @@
         "notes": "Authoritative UAD 3.6 mapping pending."
       },
       {
-        "fluxFieldId": "porch",
+        "fluxFieldId": "porch_type",
         "sourceSheet": "MAIN",
         "uad36Path": "",
         "uadLabel": "",
@@ -5168,7 +5171,7 @@
         "notes": "Authoritative UAD 3.6 mapping pending."
       },
       {
-        "fluxFieldId": "patio",
+        "fluxFieldId": "patio_type",
         "sourceSheet": "MAIN",
         "uad36Path": "",
         "uadLabel": "",
@@ -5196,7 +5199,7 @@
         "notes": "Authoritative UAD 3.6 mapping pending."
       },
       {
-        "fluxFieldId": "patio_attachment",
+        "fluxFieldId": "patio_attachment_type",
         "sourceSheet": "MAIN",
         "uad36Path": "",
         "uadLabel": "",
@@ -5210,7 +5213,7 @@
         "notes": "Authoritative UAD 3.6 mapping pending."
       },
       {
-        "fluxFieldId": "deck",
+        "fluxFieldId": "deck_material",
         "sourceSheet": "MAIN",
         "uad36Path": "",
         "uadLabel": "",
@@ -5238,7 +5241,7 @@
         "notes": "Authoritative UAD 3.6 mapping pending."
       },
       {
-        "fluxFieldId": "balcony",
+        "fluxFieldId": "has_balcony",
         "sourceSheet": "MAIN",
         "uad36Path": "",
         "uadLabel": "",
@@ -5252,7 +5255,7 @@
         "notes": "Authoritative UAD 3.6 mapping pending."
       },
       {
-        "fluxFieldId": "pool",
+        "fluxFieldId": "has_pool",
         "sourceSheet": "MAIN",
         "uad36Path": "",
         "uadLabel": "",
@@ -5266,7 +5269,7 @@
         "notes": "Authoritative UAD 3.6 mapping pending."
       },
       {
-        "fluxFieldId": "other_amenities_extras",
+        "fluxFieldId": "other_amenities",
         "sourceSheet": "MAIN",
         "uad36Path": "",
         "uadLabel": "",
@@ -5280,7 +5283,7 @@
         "notes": "Authoritative UAD 3.6 mapping pending."
       },
       {
-        "fluxFieldId": "outdoor_patio_notes_repairs",
+        "fluxFieldId": "outdoor_repair_notes",
         "sourceSheet": "MAIN",
         "uad36Path": "",
         "uadLabel": "",
@@ -5294,7 +5297,7 @@
         "notes": "Authoritative UAD 3.6 mapping pending."
       },
       {
-        "fluxFieldId": "living_room",
+        "fluxFieldId": "living_room_count",
         "sourceSheet": "MAIN",
         "uad36Path": "",
         "uadLabel": "",
@@ -5308,7 +5311,7 @@
         "notes": "Authoritative UAD 3.6 mapping pending."
       },
       {
-        "fluxFieldId": "dining_room",
+        "fluxFieldId": "dining_room_count",
         "sourceSheet": "MAIN",
         "uad36Path": "",
         "uadLabel": "",
@@ -5322,7 +5325,7 @@
         "notes": "Authoritative UAD 3.6 mapping pending."
       },
       {
-        "fluxFieldId": "dining_area",
+        "fluxFieldId": "dining_area_count",
         "sourceSheet": "MAIN",
         "uad36Path": "",
         "uadLabel": "",
@@ -5336,7 +5339,7 @@
         "notes": "Authoritative UAD 3.6 mapping pending."
       },
       {
-        "fluxFieldId": "family_room",
+        "fluxFieldId": "family_room_count",
         "sourceSheet": "MAIN",
         "uad36Path": "",
         "uadLabel": "",
@@ -5350,7 +5353,7 @@
         "notes": "Authoritative UAD 3.6 mapping pending."
       },
       {
-        "fluxFieldId": "breakfast_area",
+        "fluxFieldId": "breakfast_area_count",
         "sourceSheet": "MAIN",
         "uad36Path": "",
         "uadLabel": "",
@@ -5364,7 +5367,7 @@
         "notes": "Authoritative UAD 3.6 mapping pending."
       },
       {
-        "fluxFieldId": "kitchen",
+        "fluxFieldId": "kitchen_count",
         "sourceSheet": "MAIN",
         "uad36Path": "",
         "uadLabel": "",
@@ -5378,7 +5381,7 @@
         "notes": "Authoritative UAD 3.6 mapping pending."
       },
       {
-        "fluxFieldId": "den",
+        "fluxFieldId": "den_count",
         "sourceSheet": "MAIN",
         "uad36Path": "",
         "uadLabel": "",
@@ -5392,7 +5395,7 @@
         "notes": "Authoritative UAD 3.6 mapping pending."
       },
       {
-        "fluxFieldId": "bedrooms",
+        "fluxFieldId": "bedroom_count",
         "sourceSheet": "MAIN",
         "uad36Path": "",
         "uadLabel": "",
@@ -5406,7 +5409,7 @@
         "notes": "Authoritative UAD 3.6 mapping pending."
       },
       {
-        "fluxFieldId": "bathrooms",
+        "fluxFieldId": "full_bath_count",
         "sourceSheet": "MAIN",
         "uad36Path": "",
         "uadLabel": "",
@@ -5420,7 +5423,7 @@
         "notes": "Authoritative UAD 3.6 mapping pending."
       },
       {
-        "fluxFieldId": "half_bath",
+        "fluxFieldId": "half_bath_count",
         "sourceSheet": "MAIN",
         "uad36Path": "",
         "uadLabel": "",
@@ -5434,7 +5437,7 @@
         "notes": "Authoritative UAD 3.6 mapping pending."
       },
       {
-        "fluxFieldId": "smoke_detectors",
+        "fluxFieldId": "smoke_detector_count",
         "sourceSheet": "MAIN",
         "uad36Path": "",
         "uadLabel": "",
@@ -5448,7 +5451,7 @@
         "notes": "Authoritative UAD 3.6 mapping pending."
       },
       {
-        "fluxFieldId": "rooms_notes_repairs",
+        "fluxFieldId": "room_repair_notes",
         "sourceSheet": "MAIN",
         "uad36Path": "",
         "uadLabel": "",
@@ -5462,7 +5465,7 @@
         "notes": "Authoritative UAD 3.6 mapping pending."
       },
       {
-        "fluxFieldId": "floors",
+        "fluxFieldId": "floor_material",
         "sourceSheet": "MAIN",
         "uad36Path": "",
         "uadLabel": "",
@@ -5476,7 +5479,7 @@
         "notes": "Authoritative UAD 3.6 mapping pending."
       },
       {
-        "fluxFieldId": "floors_condition",
+        "fluxFieldId": "floor_condition",
         "sourceSheet": "MAIN",
         "uad36Path": "",
         "uadLabel": "",
@@ -5490,7 +5493,7 @@
         "notes": "Authoritative UAD 3.6 mapping pending."
       },
       {
-        "fluxFieldId": "floors_updated",
+        "fluxFieldId": "floor_updated",
         "sourceSheet": "MAIN",
         "uad36Path": "",
         "uadLabel": "",
@@ -5504,7 +5507,7 @@
         "notes": "Authoritative UAD 3.6 mapping pending."
       },
       {
-        "fluxFieldId": "ceiling_style",
+        "fluxFieldId": "ceiling_type",
         "sourceSheet": "MAIN",
         "uad36Path": "",
         "uadLabel": "",
@@ -5546,7 +5549,7 @@
         "notes": "Authoritative UAD 3.6 mapping pending."
       },
       {
-        "fluxFieldId": "walls",
+        "fluxFieldId": "interior_wall_material",
         "sourceSheet": "MAIN",
         "uad36Path": "",
         "uadLabel": "",
@@ -5560,7 +5563,7 @@
         "notes": "Authoritative UAD 3.6 mapping pending."
       },
       {
-        "fluxFieldId": "walls_condition",
+        "fluxFieldId": "interior_wall_condition",
         "sourceSheet": "MAIN",
         "uad36Path": "",
         "uadLabel": "",
@@ -5574,7 +5577,7 @@
         "notes": "Authoritative UAD 3.6 mapping pending."
       },
       {
-        "fluxFieldId": "walls_updated",
+        "fluxFieldId": "interior_wall_updated",
         "sourceSheet": "MAIN",
         "uad36Path": "",
         "uadLabel": "",
@@ -5588,7 +5591,7 @@
         "notes": "Authoritative UAD 3.6 mapping pending."
       },
       {
-        "fluxFieldId": "trim_finish",
+        "fluxFieldId": "trim_material",
         "sourceSheet": "MAIN",
         "uad36Path": "",
         "uadLabel": "",
@@ -5602,7 +5605,7 @@
         "notes": "Authoritative UAD 3.6 mapping pending."
       },
       {
-        "fluxFieldId": "trim_finish_condition",
+        "fluxFieldId": "trim_condition",
         "sourceSheet": "MAIN",
         "uad36Path": "",
         "uadLabel": "",
@@ -5616,7 +5619,7 @@
         "notes": "Authoritative UAD 3.6 mapping pending."
       },
       {
-        "fluxFieldId": "trim_finish_updated",
+        "fluxFieldId": "trim_updated",
         "sourceSheet": "MAIN",
         "uad36Path": "",
         "uadLabel": "",
@@ -5630,7 +5633,7 @@
         "notes": "Authoritative UAD 3.6 mapping pending."
       },
       {
-        "fluxFieldId": "attic",
+        "fluxFieldId": "attic_access_type",
         "sourceSheet": "MAIN",
         "uad36Path": "",
         "uadLabel": "",
@@ -5644,7 +5647,7 @@
         "notes": "Authoritative UAD 3.6 mapping pending."
       },
       {
-        "fluxFieldId": "interior_other",
+        "fluxFieldId": "interior_other_notes",
         "sourceSheet": "MAIN",
         "uad36Path": "",
         "uadLabel": "",
@@ -5672,7 +5675,7 @@
         "notes": "Authoritative UAD 3.6 mapping pending."
       },
       {
-        "fluxFieldId": "refrigerator",
+        "fluxFieldId": "refrigerator_count",
         "sourceSheet": "MAIN",
         "uad36Path": "",
         "uadLabel": "",
@@ -5686,7 +5689,7 @@
         "notes": "Authoritative UAD 3.6 mapping pending."
       },
       {
-        "fluxFieldId": "range",
+        "fluxFieldId": "range_count",
         "sourceSheet": "MAIN",
         "uad36Path": "",
         "uadLabel": "",
@@ -5700,7 +5703,7 @@
         "notes": "Authoritative UAD 3.6 mapping pending."
       },
       {
-        "fluxFieldId": "oven",
+        "fluxFieldId": "oven_count",
         "sourceSheet": "MAIN",
         "uad36Path": "",
         "uadLabel": "",
@@ -5714,7 +5717,7 @@
         "notes": "Authoritative UAD 3.6 mapping pending."
       },
       {
-        "fluxFieldId": "dishwasher",
+        "fluxFieldId": "dishwasher_count",
         "sourceSheet": "MAIN",
         "uad36Path": "",
         "uadLabel": "",
@@ -5728,7 +5731,7 @@
         "notes": "Authoritative UAD 3.6 mapping pending."
       },
       {
-        "fluxFieldId": "disposal",
+        "fluxFieldId": "disposal_count",
         "sourceSheet": "MAIN",
         "uad36Path": "",
         "uadLabel": "",
@@ -5742,7 +5745,7 @@
         "notes": "Authoritative UAD 3.6 mapping pending."
       },
       {
-        "fluxFieldId": "microwave",
+        "fluxFieldId": "microwave_count",
         "sourceSheet": "MAIN",
         "uad36Path": "",
         "uadLabel": "",
@@ -5756,7 +5759,7 @@
         "notes": "Authoritative UAD 3.6 mapping pending."
       },
       {
-        "fluxFieldId": "range_hood",
+        "fluxFieldId": "range_hood_count",
         "sourceSheet": "MAIN",
         "uad36Path": "",
         "uadLabel": "",
@@ -5770,7 +5773,7 @@
         "notes": "Authoritative UAD 3.6 mapping pending."
       },
       {
-        "fluxFieldId": "beverage_cooler",
+        "fluxFieldId": "beverage_cooler_count",
         "sourceSheet": "MAIN",
         "uad36Path": "",
         "uadLabel": "",
@@ -5784,7 +5787,7 @@
         "notes": "Authoritative UAD 3.6 mapping pending."
       },
       {
-        "fluxFieldId": "appliances_other",
+        "fluxFieldId": "other_appliance_notes",
         "sourceSheet": "MAIN",
         "uad36Path": "",
         "uadLabel": "",
@@ -5798,7 +5801,7 @@
         "notes": "Authoritative UAD 3.6 mapping pending."
       },
       {
-        "fluxFieldId": "clothes_washer",
+        "fluxFieldId": "clothes_washer_count",
         "sourceSheet": "MAIN",
         "uad36Path": "",
         "uadLabel": "",
@@ -5812,7 +5815,7 @@
         "notes": "Authoritative UAD 3.6 mapping pending."
       },
       {
-        "fluxFieldId": "clothes_dryer",
+        "fluxFieldId": "clothes_dryer_count",
         "sourceSheet": "MAIN",
         "uad36Path": "",
         "uadLabel": "",
@@ -5826,7 +5829,7 @@
         "notes": "Authoritative UAD 3.6 mapping pending."
       },
       {
-        "fluxFieldId": "wet_bar",
+        "fluxFieldId": "wet_bar_count",
         "sourceSheet": "MAIN",
         "uad36Path": "",
         "uadLabel": "",
@@ -5854,7 +5857,7 @@
         "notes": "Authoritative UAD 3.6 mapping pending."
       },
       {
-        "fluxFieldId": "bathrooms_updated",
+        "fluxFieldId": "bathroom_updated",
         "sourceSheet": "MAIN",
         "uad36Path": "",
         "uadLabel": "",
@@ -5868,7 +5871,7 @@
         "notes": "Authoritative UAD 3.6 mapping pending."
       },
       {
-        "fluxFieldId": "bath_floor",
+        "fluxFieldId": "bathroom_floor_material",
         "sourceSheet": "MAIN",
         "uad36Path": "",
         "uadLabel": "",
@@ -5882,7 +5885,7 @@
         "notes": "Authoritative UAD 3.6 mapping pending."
       },
       {
-        "fluxFieldId": "bath_floor_condition",
+        "fluxFieldId": "bathroom_floor_condition",
         "sourceSheet": "MAIN",
         "uad36Path": "",
         "uadLabel": "",
@@ -5896,7 +5899,7 @@
         "notes": "Authoritative UAD 3.6 mapping pending."
       },
       {
-        "fluxFieldId": "bath_floor_updated",
+        "fluxFieldId": "bathroom_floor_updated",
         "sourceSheet": "MAIN",
         "uad36Path": "",
         "uadLabel": "",
@@ -5910,7 +5913,7 @@
         "notes": "Authoritative UAD 3.6 mapping pending."
       },
       {
-        "fluxFieldId": "bath_wainscot",
+        "fluxFieldId": "bathroom_wainscot_material",
         "sourceSheet": "MAIN",
         "uad36Path": "",
         "uadLabel": "",
@@ -5924,7 +5927,7 @@
         "notes": "Authoritative UAD 3.6 mapping pending."
       },
       {
-        "fluxFieldId": "bath_wainscot_condition",
+        "fluxFieldId": "bathroom_wainscot_condition",
         "sourceSheet": "MAIN",
         "uad36Path": "",
         "uadLabel": "",
@@ -5938,7 +5941,7 @@
         "notes": "Authoritative UAD 3.6 mapping pending."
       },
       {
-        "fluxFieldId": "bath_wainscot_updated",
+        "fluxFieldId": "bathroom_wainscot_updated",
         "sourceSheet": "MAIN",
         "uad36Path": "",
         "uadLabel": "",
@@ -5952,7 +5955,7 @@
         "notes": "Authoritative UAD 3.6 mapping pending."
       },
       {
-        "fluxFieldId": "bathrooms_notes",
+        "fluxFieldId": "bathroom_notes",
         "sourceSheet": "MAIN",
         "uad36Path": "",
         "uadLabel": "",
@@ -5966,7 +5969,7 @@
         "notes": "Authoritative UAD 3.6 mapping pending."
       },
       {
-        "fluxFieldId": "occupancy_vacant__electricity_on",
+        "fluxFieldId": "occupancy_electricity_on",
         "sourceSheet": "FOLLOW_UP",
         "uad36Path": "",
         "uadLabel": "",
@@ -5980,7 +5983,7 @@
         "notes": "Authoritative UAD 3.6 mapping pending."
       },
       {
-        "fluxFieldId": "occupancy_vacant__water_on",
+        "fluxFieldId": "occupancy_water_on",
         "sourceSheet": "FOLLOW_UP",
         "uad36Path": "",
         "uadLabel": "",
@@ -5994,7 +5997,7 @@
         "notes": "Authoritative UAD 3.6 mapping pending."
       },
       {
-        "fluxFieldId": "pud_association__association_fee",
+        "fluxFieldId": "association_fee_amount",
         "sourceSheet": "FOLLOW_UP",
         "uad36Path": "",
         "uadLabel": "",
@@ -6008,7 +6011,7 @@
         "notes": "Authoritative UAD 3.6 mapping pending."
       },
       {
-        "fluxFieldId": "pud_association__fee_frequency",
+        "fluxFieldId": "association_fee_frequency",
         "sourceSheet": "FOLLOW_UP",
         "uad36Path": "",
         "uadLabel": "",
@@ -6022,7 +6025,7 @@
         "notes": "Authoritative UAD 3.6 mapping pending."
       },
       {
-        "fluxFieldId": "pud_association__amenities_included",
+        "fluxFieldId": "association_amenities",
         "sourceSheet": "FOLLOW_UP",
         "uad36Path": "",
         "uadLabel": "",
@@ -6036,7 +6039,7 @@
         "notes": "Authoritative UAD 3.6 mapping pending."
       },
       {
-        "fluxFieldId": "pud_association__special_assessment",
+        "fluxFieldId": "association_special_assessment",
         "sourceSheet": "FOLLOW_UP",
         "uad36Path": "",
         "uadLabel": "",
@@ -6050,7 +6053,7 @@
         "notes": "Authoritative UAD 3.6 mapping pending."
       },
       {
-        "fluxFieldId": "pud_association__special_assessment_fee",
+        "fluxFieldId": "association_special_assessment_amount",
         "sourceSheet": "FOLLOW_UP",
         "uad36Path": "",
         "uadLabel": "",
@@ -6064,7 +6067,7 @@
         "notes": "Authoritative UAD 3.6 mapping pending."
       },
       {
-        "fluxFieldId": "pud_association__special_assessment_fee_frequency",
+        "fluxFieldId": "association_special_assessment_frequency",
         "sourceSheet": "FOLLOW_UP",
         "uad36Path": "",
         "uadLabel": "",
@@ -6078,7 +6081,7 @@
         "notes": "Authoritative UAD 3.6 mapping pending."
       },
       {
-        "fluxFieldId": "pud_association__special_assessment_reason_time",
+        "fluxFieldId": "association_special_assessment_details",
         "sourceSheet": "FOLLOW_UP",
         "uad36Path": "",
         "uadLabel": "",
@@ -6092,7 +6095,7 @@
         "notes": "Authoritative UAD 3.6 mapping pending."
       },
       {
-        "fluxFieldId": "pud_association__pud_comments",
+        "fluxFieldId": "association_notes",
         "sourceSheet": "FOLLOW_UP",
         "uad36Path": "",
         "uadLabel": "",
@@ -6106,7 +6109,7 @@
         "notes": "Authoritative UAD 3.6 mapping pending."
       },
       {
-        "fluxFieldId": "manufactured__number_of_sections",
+        "fluxFieldId": "manufactured_home_section_count",
         "sourceSheet": "FOLLOW_UP",
         "uad36Path": "",
         "uadLabel": "",
@@ -6120,7 +6123,7 @@
         "notes": "Authoritative UAD 3.6 mapping pending."
       },
       {
-        "fluxFieldId": "manufactured__manufac_s_vin_s",
+        "fluxFieldId": "manufactured_home_vins",
         "sourceSheet": "FOLLOW_UP",
         "uad36Path": "",
         "uadLabel": "",
@@ -6134,7 +6137,7 @@
         "notes": "Authoritative UAD 3.6 mapping pending."
       },
       {
-        "fluxFieldId": "manufactured__hud_certification_label",
+        "fluxFieldId": "manufactured_home_hud_label",
         "sourceSheet": "FOLLOW_UP",
         "uad36Path": "",
         "uadLabel": "",
@@ -6148,7 +6151,7 @@
         "notes": "Authoritative UAD 3.6 mapping pending."
       },
       {
-        "fluxFieldId": "manufactured__manufacturer_s_name",
+        "fluxFieldId": "manufactured_home_manufacturer",
         "sourceSheet": "FOLLOW_UP",
         "uad36Path": "",
         "uadLabel": "",
@@ -6162,7 +6165,7 @@
         "notes": "Authoritative UAD 3.6 mapping pending."
       },
       {
-        "fluxFieldId": "manufactured__trade_model",
+        "fluxFieldId": "manufactured_home_model",
         "sourceSheet": "FOLLOW_UP",
         "uad36Path": "",
         "uadLabel": "",
@@ -6176,21 +6179,7 @@
         "notes": "Authoritative UAD 3.6 mapping pending."
       },
       {
-        "fluxFieldId": "manufactured__manufacture_year",
-        "sourceSheet": "FOLLOW_UP",
-        "uad36Path": "",
-        "uadLabel": "",
-        "valueType": "Text",
-        "cardinality": "0..1",
-        "requiredWhen": "",
-        "enumerationMap": "",
-        "transform": "",
-        "legacyExportName": "Manufacture Year",
-        "status": "Unmapped",
-        "notes": "Authoritative UAD 3.6 mapping pending."
-      },
-      {
-        "fluxFieldId": "manufactured__skirting",
+        "fluxFieldId": "manufactured_home_skirting",
         "sourceSheet": "FOLLOW_UP",
         "uad36Path": "",
         "uadLabel": "",
@@ -6204,7 +6193,7 @@
         "notes": "Authoritative UAD 3.6 mapping pending."
       },
       {
-        "fluxFieldId": "alley__alley_surface",
+        "fluxFieldId": "alley_surface_material",
         "sourceSheet": "FOLLOW_UP",
         "uad36Path": "",
         "uadLabel": "",
@@ -6218,7 +6207,7 @@
         "notes": "Authoritative UAD 3.6 mapping pending."
       },
       {
-        "fluxFieldId": "alley__alley_access",
+        "fluxFieldId": "alley_access_type",
         "sourceSheet": "FOLLOW_UP",
         "uad36Path": "",
         "uadLabel": "",
@@ -6232,7 +6221,7 @@
         "notes": "Authoritative UAD 3.6 mapping pending."
       },
       {
-        "fluxFieldId": "gas__gas_service",
+        "fluxFieldId": "gas_service_type",
         "sourceSheet": "FOLLOW_UP",
         "uad36Path": "",
         "uadLabel": "",
@@ -6246,7 +6235,7 @@
         "notes": "Authoritative UAD 3.6 mapping pending."
       },
       {
-        "fluxFieldId": "car_storage__garage_spaces",
+        "fluxFieldId": "garage_space_count",
         "sourceSheet": "FOLLOW_UP",
         "uad36Path": "",
         "uadLabel": "",
@@ -6260,7 +6249,7 @@
         "notes": "Authoritative UAD 3.6 mapping pending."
       },
       {
-        "fluxFieldId": "car_storage__carport_spaces",
+        "fluxFieldId": "carport_space_count",
         "sourceSheet": "FOLLOW_UP",
         "uad36Path": "",
         "uadLabel": "",
@@ -6274,7 +6263,7 @@
         "notes": "Authoritative UAD 3.6 mapping pending."
       },
       {
-        "fluxFieldId": "car_storage__covered_spaces",
+        "fluxFieldId": "covered_space_count",
         "sourceSheet": "FOLLOW_UP",
         "uad36Path": "",
         "uadLabel": "",
@@ -6288,7 +6277,7 @@
         "notes": "Authoritative UAD 3.6 mapping pending."
       },
       {
-        "fluxFieldId": "car_storage__car_storage_attachment",
+        "fluxFieldId": "car_storage_attachment_type",
         "sourceSheet": "FOLLOW_UP",
         "uad36Path": "",
         "uadLabel": "",
@@ -6302,7 +6291,7 @@
         "notes": "Authoritative UAD 3.6 mapping pending."
       },
       {
-        "fluxFieldId": "adu__rented",
+        "fluxFieldId": "adu_rented",
         "sourceSheet": "FOLLOW_UP",
         "uad36Path": "",
         "uadLabel": "",
@@ -6316,7 +6305,7 @@
         "notes": "Authoritative UAD 3.6 mapping pending."
       },
       {
-        "fluxFieldId": "adu__certified",
+        "fluxFieldId": "adu_certified",
         "sourceSheet": "FOLLOW_UP",
         "uad36Path": "",
         "uadLabel": "",
@@ -6330,7 +6319,7 @@
         "notes": "Authoritative UAD 3.6 mapping pending."
       },
       {
-        "fluxFieldId": "adu__permits",
+        "fluxFieldId": "adu_permits",
         "sourceSheet": "FOLLOW_UP",
         "uad36Path": "",
         "uadLabel": "",
@@ -6344,7 +6333,7 @@
         "notes": "Authoritative UAD 3.6 mapping pending."
       },
       {
-        "fluxFieldId": "adu__adu_notes",
+        "fluxFieldId": "adu_notes",
         "sourceSheet": "FOLLOW_UP",
         "uad36Path": "",
         "uadLabel": "",
@@ -6358,7 +6347,7 @@
         "notes": "Authoritative UAD 3.6 mapping pending."
       },
       {
-        "fluxFieldId": "condo__description",
+        "fluxFieldId": "condo_building_type",
         "sourceSheet": "FOLLOW_UP",
         "uad36Path": "",
         "uadLabel": "",
@@ -6372,7 +6361,7 @@
         "notes": "Authoritative UAD 3.6 mapping pending."
       },
       {
-        "fluxFieldId": "condo__stories",
+        "fluxFieldId": "condo_story_count",
         "sourceSheet": "FOLLOW_UP",
         "uad36Path": "",
         "uadLabel": "",
@@ -6386,7 +6375,7 @@
         "notes": "Authoritative UAD 3.6 mapping pending."
       },
       {
-        "fluxFieldId": "condo__buildings",
+        "fluxFieldId": "condo_building_count",
         "sourceSheet": "FOLLOW_UP",
         "uad36Path": "",
         "uadLabel": "",
@@ -6400,7 +6389,7 @@
         "notes": "Authoritative UAD 3.6 mapping pending."
       },
       {
-        "fluxFieldId": "condo__elevator",
+        "fluxFieldId": "condo_elevator_count",
         "sourceSheet": "FOLLOW_UP",
         "uad36Path": "",
         "uadLabel": "",
@@ -6414,7 +6403,7 @@
         "notes": "Authoritative UAD 3.6 mapping pending."
       },
       {
-        "fluxFieldId": "condo__condo_fee",
+        "fluxFieldId": "condo_fee_amount",
         "sourceSheet": "FOLLOW_UP",
         "uad36Path": "",
         "uadLabel": "",
@@ -6428,7 +6417,7 @@
         "notes": "Authoritative UAD 3.6 mapping pending."
       },
       {
-        "fluxFieldId": "condo__fee_frequency",
+        "fluxFieldId": "condo_fee_frequency",
         "sourceSheet": "FOLLOW_UP",
         "uad36Path": "",
         "uadLabel": "",
@@ -6442,7 +6431,7 @@
         "notes": "Authoritative UAD 3.6 mapping pending."
       },
       {
-        "fluxFieldId": "condo__fee_includes",
+        "fluxFieldId": "condo_fee_includes",
         "sourceSheet": "FOLLOW_UP",
         "uad36Path": "",
         "uadLabel": "",
@@ -6456,7 +6445,7 @@
         "notes": "Authoritative UAD 3.6 mapping pending."
       },
       {
-        "fluxFieldId": "condo__special_assessment",
+        "fluxFieldId": "condo_special_assessment",
         "sourceSheet": "FOLLOW_UP",
         "uad36Path": "",
         "uadLabel": "",
@@ -6470,7 +6459,7 @@
         "notes": "Authoritative UAD 3.6 mapping pending."
       },
       {
-        "fluxFieldId": "condo__special_assessment_amount",
+        "fluxFieldId": "condo_special_assessment_amount",
         "sourceSheet": "FOLLOW_UP",
         "uad36Path": "",
         "uadLabel": "",
@@ -6484,7 +6473,7 @@
         "notes": "Authoritative UAD 3.6 mapping pending."
       },
       {
-        "fluxFieldId": "condo__special_assesment_purpose",
+        "fluxFieldId": "condo_special_assessment_purpose",
         "sourceSheet": "FOLLOW_UP",
         "uad36Path": "",
         "uadLabel": "",
@@ -6498,7 +6487,7 @@
         "notes": "Authoritative UAD 3.6 mapping pending."
       },
       {
-        "fluxFieldId": "condo__special_assessment_time",
+        "fluxFieldId": "condo_special_assessment_timeframe",
         "sourceSheet": "FOLLOW_UP",
         "uad36Path": "",
         "uadLabel": "",
@@ -6512,7 +6501,7 @@
         "notes": "Authoritative UAD 3.6 mapping pending."
       },
       {
-        "fluxFieldId": "condo__parking_type",
+        "fluxFieldId": "condo_parking_type",
         "sourceSheet": "FOLLOW_UP",
         "uad36Path": "",
         "uadLabel": "",
@@ -6526,7 +6515,7 @@
         "notes": "Authoritative UAD 3.6 mapping pending."
       },
       {
-        "fluxFieldId": "condo__parking_spaces",
+        "fluxFieldId": "condo_parking_space_count",
         "sourceSheet": "FOLLOW_UP",
         "uad36Path": "",
         "uadLabel": "",
@@ -6540,7 +6529,7 @@
         "notes": "Authoritative UAD 3.6 mapping pending."
       },
       {
-        "fluxFieldId": "condo__amenities",
+        "fluxFieldId": "condo_amenities",
         "sourceSheet": "FOLLOW_UP",
         "uad36Path": "",
         "uadLabel": "",
@@ -6554,7 +6543,7 @@
         "notes": "Authoritative UAD 3.6 mapping pending."
       },
       {
-        "fluxFieldId": "condo__conversion",
+        "fluxFieldId": "condo_converted",
         "sourceSheet": "FOLLOW_UP",
         "uad36Path": "",
         "uadLabel": "",
@@ -6568,7 +6557,7 @@
         "notes": "Authoritative UAD 3.6 mapping pending."
       },
       {
-        "fluxFieldId": "condo__dock_space",
+        "fluxFieldId": "condo_dock_space",
         "sourceSheet": "FOLLOW_UP",
         "uad36Path": "",
         "uadLabel": "",
@@ -6582,7 +6571,7 @@
         "notes": "Authoritative UAD 3.6 mapping pending."
       },
       {
-        "fluxFieldId": "condo__notes",
+        "fluxFieldId": "condo_notes",
         "sourceSheet": "FOLLOW_UP",
         "uad36Path": "",
         "uadLabel": "",
@@ -6596,7 +6585,7 @@
         "notes": "Authoritative UAD 3.6 mapping pending."
       },
       {
-        "fluxFieldId": "solar_panels__ownership",
+        "fluxFieldId": "solar_panel_ownership_type",
         "sourceSheet": "FOLLOW_UP",
         "uad36Path": "",
         "uadLabel": "",
@@ -6610,7 +6599,7 @@
         "notes": "Authoritative UAD 3.6 mapping pending."
       },
       {
-        "fluxFieldId": "solar_panels__system",
+        "fluxFieldId": "solar_panel_system_type",
         "sourceSheet": "FOLLOW_UP",
         "uad36Path": "",
         "uadLabel": "",
@@ -6624,7 +6613,7 @@
         "notes": "Authoritative UAD 3.6 mapping pending."
       },
       {
-        "fluxFieldId": "solar_panels__age",
+        "fluxFieldId": "solar_panel_age_years",
         "sourceSheet": "FOLLOW_UP",
         "uad36Path": "",
         "uadLabel": "",
@@ -6638,7 +6627,7 @@
         "notes": "Authoritative UAD 3.6 mapping pending."
       },
       {
-        "fluxFieldId": "solar_panels__capacity_kw",
+        "fluxFieldId": "solar_panel_capacity_kw",
         "sourceSheet": "FOLLOW_UP",
         "uad36Path": "",
         "uadLabel": "",
@@ -6652,7 +6641,7 @@
         "notes": "Authoritative UAD 3.6 mapping pending."
       },
       {
-        "fluxFieldId": "roof_updated__timeframe",
+        "fluxFieldId": "roof_update_timeframe",
         "sourceSheet": "FOLLOW_UP",
         "uad36Path": "",
         "uadLabel": "",
@@ -6666,7 +6655,7 @@
         "notes": "Authoritative UAD 3.6 mapping pending."
       },
       {
-        "fluxFieldId": "roof_updated__details",
+        "fluxFieldId": "roof_update_details",
         "sourceSheet": "FOLLOW_UP",
         "uad36Path": "",
         "uadLabel": "",
@@ -6680,7 +6669,7 @@
         "notes": "Authoritative UAD 3.6 mapping pending."
       },
       {
-        "fluxFieldId": "gutters_updated__timeframe",
+        "fluxFieldId": "gutter_update_timeframe",
         "sourceSheet": "FOLLOW_UP",
         "uad36Path": "",
         "uadLabel": "",
@@ -6694,7 +6683,7 @@
         "notes": "Authoritative UAD 3.6 mapping pending."
       },
       {
-        "fluxFieldId": "gutters_updated__details",
+        "fluxFieldId": "gutter_update_details",
         "sourceSheet": "FOLLOW_UP",
         "uad36Path": "",
         "uadLabel": "",
@@ -6708,7 +6697,7 @@
         "notes": "Authoritative UAD 3.6 mapping pending."
       },
       {
-        "fluxFieldId": "windows_updated__timeframe",
+        "fluxFieldId": "window_update_timeframe",
         "sourceSheet": "FOLLOW_UP",
         "uad36Path": "",
         "uadLabel": "",
@@ -6722,7 +6711,7 @@
         "notes": "Authoritative UAD 3.6 mapping pending."
       },
       {
-        "fluxFieldId": "windows_updated__details",
+        "fluxFieldId": "window_update_details",
         "sourceSheet": "FOLLOW_UP",
         "uad36Path": "",
         "uadLabel": "",
@@ -6736,7 +6725,7 @@
         "notes": "Authoritative UAD 3.6 mapping pending."
       },
       {
-        "fluxFieldId": "shutters__shutters_type",
+        "fluxFieldId": "shutter_type",
         "sourceSheet": "FOLLOW_UP",
         "uad36Path": "",
         "uadLabel": "",
@@ -6750,7 +6739,7 @@
         "notes": "Authoritative UAD 3.6 mapping pending."
       },
       {
-        "fluxFieldId": "security_bars__safety_release",
+        "fluxFieldId": "security_bar_safety_release",
         "sourceSheet": "FOLLOW_UP",
         "uad36Path": "",
         "uadLabel": "",
@@ -6764,7 +6753,7 @@
         "notes": "Authoritative UAD 3.6 mapping pending."
       },
       {
-        "fluxFieldId": "security_bars__do_bedrooms_have_bars",
+        "fluxFieldId": "security_bar_bedroom_coverage",
         "sourceSheet": "FOLLOW_UP",
         "uad36Path": "",
         "uadLabel": "",
@@ -6778,7 +6767,7 @@
         "notes": "Authoritative UAD 3.6 mapping pending."
       },
       {
-        "fluxFieldId": "balcony__balcony_type",
+        "fluxFieldId": "balcony_type",
         "sourceSheet": "FOLLOW_UP",
         "uad36Path": "",
         "uadLabel": "",
@@ -6792,7 +6781,7 @@
         "notes": "Authoritative UAD 3.6 mapping pending."
       },
       {
-        "fluxFieldId": "pool__pool_construction",
+        "fluxFieldId": "pool_material",
         "sourceSheet": "FOLLOW_UP",
         "uad36Path": "",
         "uadLabel": "",
@@ -6806,7 +6795,7 @@
         "notes": "Authoritative UAD 3.6 mapping pending."
       },
       {
-        "fluxFieldId": "pool__pool_updated",
+        "fluxFieldId": "pool_updated",
         "sourceSheet": "FOLLOW_UP",
         "uad36Path": "",
         "uadLabel": "",
@@ -6820,7 +6809,7 @@
         "notes": "Authoritative UAD 3.6 mapping pending."
       },
       {
-        "fluxFieldId": "pool__year_updated",
+        "fluxFieldId": "pool_update_year",
         "sourceSheet": "FOLLOW_UP",
         "uad36Path": "",
         "uadLabel": "",
@@ -6834,7 +6823,7 @@
         "notes": "Authoritative UAD 3.6 mapping pending."
       },
       {
-        "fluxFieldId": "pool__scope_of_update",
+        "fluxFieldId": "pool_update_scope",
         "sourceSheet": "FOLLOW_UP",
         "uad36Path": "",
         "uadLabel": "",
@@ -6848,7 +6837,7 @@
         "notes": "Authoritative UAD 3.6 mapping pending."
       },
       {
-        "fluxFieldId": "pool__pool_amenities",
+        "fluxFieldId": "pool_amenities",
         "sourceSheet": "FOLLOW_UP",
         "uad36Path": "",
         "uadLabel": "",
@@ -6862,7 +6851,7 @@
         "notes": "Authoritative UAD 3.6 mapping pending."
       },
       {
-        "fluxFieldId": "kitchen_updated__timeframe",
+        "fluxFieldId": "kitchen_update_timeframe",
         "sourceSheet": "FOLLOW_UP",
         "uad36Path": "",
         "uadLabel": "",
@@ -6876,7 +6865,7 @@
         "notes": "Authoritative UAD 3.6 mapping pending."
       },
       {
-        "fluxFieldId": "kitchen_updated__details",
+        "fluxFieldId": "kitchen_update_details",
         "sourceSheet": "FOLLOW_UP",
         "uad36Path": "",
         "uadLabel": "",
@@ -6890,7 +6879,7 @@
         "notes": "Authoritative UAD 3.6 mapping pending."
       },
       {
-        "fluxFieldId": "bathrooms_updated__what_bathrooms_were_updated",
+        "fluxFieldId": "bathroom_update_scope",
         "sourceSheet": "FOLLOW_UP",
         "uad36Path": "",
         "uadLabel": "",
@@ -6904,7 +6893,7 @@
         "notes": "Authoritative UAD 3.6 mapping pending."
       },
       {
-        "fluxFieldId": "bathrooms_updated__timeframe",
+        "fluxFieldId": "bathroom_update_timeframe",
         "sourceSheet": "FOLLOW_UP",
         "uad36Path": "",
         "uadLabel": "",
@@ -6918,7 +6907,7 @@
         "notes": "Authoritative UAD 3.6 mapping pending."
       },
       {
-        "fluxFieldId": "bathrooms_updated__details",
+        "fluxFieldId": "bathroom_update_details",
         "sourceSheet": "FOLLOW_UP",
         "uad36Path": "",
         "uadLabel": "",
@@ -6932,7 +6921,7 @@
         "notes": "Authoritative UAD 3.6 mapping pending."
       },
       {
-        "fluxFieldId": "floors_updated__timeframe",
+        "fluxFieldId": "floor_update_timeframe",
         "sourceSheet": "FOLLOW_UP",
         "uad36Path": "",
         "uadLabel": "",
@@ -6946,7 +6935,7 @@
         "notes": "Authoritative UAD 3.6 mapping pending."
       },
       {
-        "fluxFieldId": "floors_updated__details",
+        "fluxFieldId": "floor_update_details",
         "sourceSheet": "FOLLOW_UP",
         "uad36Path": "",
         "uadLabel": "",
@@ -6960,7 +6949,7 @@
         "notes": "Authoritative UAD 3.6 mapping pending."
       },
       {
-        "fluxFieldId": "walls_updated__timeframe",
+        "fluxFieldId": "interior_wall_update_timeframe",
         "sourceSheet": "FOLLOW_UP",
         "uad36Path": "",
         "uadLabel": "",
@@ -6974,7 +6963,7 @@
         "notes": "Authoritative UAD 3.6 mapping pending."
       },
       {
-        "fluxFieldId": "walls_updated__details",
+        "fluxFieldId": "interior_wall_update_details",
         "sourceSheet": "FOLLOW_UP",
         "uad36Path": "",
         "uadLabel": "",
@@ -6988,7 +6977,7 @@
         "notes": "Authoritative UAD 3.6 mapping pending."
       },
       {
-        "fluxFieldId": "trim_updated__timeframe",
+        "fluxFieldId": "trim_update_timeframe",
         "sourceSheet": "FOLLOW_UP",
         "uad36Path": "",
         "uadLabel": "",
@@ -7002,7 +6991,7 @@
         "notes": "Authoritative UAD 3.6 mapping pending."
       },
       {
-        "fluxFieldId": "trim_updated__details",
+        "fluxFieldId": "trim_update_details",
         "sourceSheet": "FOLLOW_UP",
         "uad36Path": "",
         "uadLabel": "",
@@ -7016,7 +7005,7 @@
         "notes": "Authoritative UAD 3.6 mapping pending."
       },
       {
-        "fluxFieldId": "cooling_updated__timeframe",
+        "fluxFieldId": "cooling_update_timeframe",
         "sourceSheet": "FOLLOW_UP",
         "uad36Path": "",
         "uadLabel": "",
@@ -7030,7 +7019,7 @@
         "notes": "Authoritative UAD 3.6 mapping pending."
       },
       {
-        "fluxFieldId": "cooling_updated__details",
+        "fluxFieldId": "cooling_update_details",
         "sourceSheet": "FOLLOW_UP",
         "uad36Path": "",
         "uadLabel": "",
@@ -7040,6 +7029,20 @@
         "enumerationMap": "",
         "transform": "",
         "legacyExportName": "Details",
+        "status": "Unmapped",
+        "notes": "Authoritative UAD 3.6 mapping pending."
+      },
+      {
+        "fluxFieldId": "insulated_glazing_presence",
+        "sourceSheet": "MAIN",
+        "uad36Path": "",
+        "uadLabel": "",
+        "valueType": "Button",
+        "cardinality": "0..1",
+        "requiredWhen": "",
+        "enumerationMap": "",
+        "transform": "",
+        "legacyExportName": "",
         "status": "Unmapped",
         "notes": "Authoritative UAD 3.6 mapping pending."
       }
