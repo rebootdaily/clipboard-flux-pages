@@ -100,7 +100,7 @@
   },
   "main": {
     "sheet": "MAIN",
-    "fieldCount": 121,
+    "fieldCount": 122,
     "tabs": [
       "Property",
       "Site",
@@ -124,10 +124,26 @@
         "options": [],
         "followUpTrigger": [],
         "followUpGroup": "",
-        "reminder": "Include unit number",
+        "reminder": "",
         "status": "Implemented",
         "uad36Path": "",
         "legacyExportName": "Address",
+        "requiredWhen": "",
+        "dataVersion": 1
+      },
+      {
+        "id": "unit_number",
+        "label": "Unit #",
+        "urar": "Subject",
+        "tab": "Property",
+        "type": "Text",
+        "options": [],
+        "followUpTrigger": [],
+        "followUpGroup": "",
+        "reminder": "",
+        "status": "Implemented",
+        "uad36Path": "",
+        "legacyExportName": "Unit Number",
         "requiredWhen": "",
         "dataVersion": 1
       },
@@ -4286,7 +4302,9 @@
       "Partial": 0,
       "Unmapped": 197
     },
-    "missingFluxFieldIds": [],
+    "missingFluxFieldIds": [
+      "unit_number"
+    ],
     "rows": [
       {
         "fluxFieldId": "address",
