@@ -34,13 +34,17 @@ everything on the device.
 2. The report is laid out in TOTAL form order. Tap any line to copy it, then
    paste it into the matching TOTAL field. **Copy section** copies a whole
    block, for example for an addendum.
-3. Drag the `photos` folder files into TOTAL's photo pages. The files are
+3. Import `Field Notes.pdf` into TOTAL (its PDF import) to keep the field notes with the report.
+4. Drag the `photos` folder files into TOTAL's photo pages. The files are
    already named by label, for example `01 Front.jpg`. Insert `Sketch.png` as
    the building sketch.
+
+The **Save PDF** button on the Report screen makes just the PDF, without the rest of the package.
 
 ## What's in the package
 | File | Contents |
 | --- | --- |
+| `Field Notes.pdf` | Report, sketch and photos (6 per page) in one PDF, ready for TOTAL's PDF import or as a workfile exhibit |
 | `Report.txt` | Everything you collected, in form order |
 | `Data.csv` | Section / Field / Value, which opens in Excel |
 | `inspection.json` | The full record, used for re-importing |

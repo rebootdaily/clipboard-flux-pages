@@ -1,10 +1,14 @@
 // Field Lite offline cache. Serves the saved copy instantly (works with no
 // signal), and refreshes it in the background whenever the network is up.
-const CACHE = 'fieldlite-v1';
+const CACHE = 'fieldlite-v2';
 const FILES = ['./', 'index.html', 'manifest.json', 'icon.svg', 'icon-192.png', 'icon-512.png'];
 
 self.addEventListener('install', e => {
-  e.waitUntil(caches.open(CACHE).then(c => c.addAll(FILES)).then(() => self.skipWaiting()));
+  e.waitUntil(caches.open(CACHE).then(async c => {
+    await c.addAll(FILES);
+    // PDF library lives in the main app's vendor folder; cache it too, but don't fail install without it.
+    try { await c.add('../vendor/html2pdf.bundle.min.js'); } catch (_) {}
+  }).then(() => self.skipWaiting()));
 });
 self.addEventListener('activate', e => {
   e.waitUntil(caches.keys().then(keys => Promise.all(keys.filter(k => k !== CACHE).map(k => caches.delete(k)))).then(() => self.clients.claim()));

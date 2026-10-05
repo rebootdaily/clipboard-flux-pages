@@ -661,8 +661,8 @@ async function showReport(){
   $('#tabs').classList.add('hide');$('#bar').classList.add('hide');$('#repBtn').textContent='Edit';
   const data=reportData(),ph=(await photosFor(cur.id)).sort((a,b)=>a.ts-b.ts);
   $('#main').innerHTML=`<div class="card noprint"><h2>Send to office / TOTAL</h2>
-    <div class="row"><button class="btn pri" id="exZip">Export package (.zip)</button><button class="btn" id="exCopy">Copy all text</button><button class="btn" id="exPrint">Print / PDF</button></div>
-    <p class="muted">Package = report text, spreadsheet (CSV), data file, sketch image and all photos named by label. On the office PC, open this app, Import the package, then tap any line below to copy it and paste into TOTAL. Drag the photos folder into TOTAL's photo pages and insert Sketch.png as the building sketch.</p></div>
+    <div class="row"><button class="btn pri" id="exZip">Export package (.zip)</button><button class="btn" id="exCopy">Copy all text</button><button class="btn" id="exPdf">Save PDF</button></div>
+    <p class="muted">Package = Field Notes PDF (for TOTAL's PDF import), report text, spreadsheet (CSV), data file, sketch image and all photos named by label. On the office PC, open this app, Import the package, then tap any line below to copy it and paste into TOTAL. Drag the photos folder into TOTAL's photo pages and insert Sketch.png as the building sketch.</p></div>
   <div class="card rep"><h2 style="font-size:17px">${esc(cur.f.addr||'(no address)')}${cur.f.unit?' #'+esc(cur.f.unit):''}</h2>
     <p class="muted noprint">Tap a line to copy its value.</p>
     ${data.map((s,si)=>`<div class="sec"><h3>${esc(s.title)} <button class="btn sm noprint" data-cs="${si}">Copy section</button></h3>${s.rows.map(([k,v],ri)=>`<div class="kv" data-s="${si}" data-r="${ri}"><div class="k">${esc(k)}</div><div class="v">${esc(v)}</div></div>`).join('')}</div>`).join('')}
@@ -674,7 +674,7 @@ async function showReport(){
     if(kv){const [k,v]=data[+kv.dataset.s].rows[+kv.dataset.r];await copy(v);kv.classList.add('cp');setTimeout(()=>kv.classList.remove('cp'),500);toast('Copied: '+k);}
     else if(cs){const s=data[+cs.dataset.cs];await copy(s.rows.map(([k,v])=>`${k}: ${v}`).join('\n'));toast('Section copied');}
     else if(e.target.id==='exCopy'){await copy(reportText());toast('All text copied');}
-    else if(e.target.id==='exPrint'){window.print();}
+    else if(e.target.id==='exPdf'){toast('Building PDF…');try{const pdf=await buildPdf();await deliver(new Blob([pdf],{type:'application/pdf'}),pkgName('pdf'));}catch(err){alert('PDF failed: '+err.message);}}
     else if(e.target.id==='exZip'){exportZip();}
   };
 }
@@ -718,12 +718,12 @@ function readZip(buf){ // returns {name: Uint8Array}; supports stored (uncompres
 }
 const safe=s=>String(s||'').replace(/[^\w\- #.]+/g,'_').replace(/\s+/g,' ').trim().slice(0,60);
 function csvOf(data){const q=v=>'"'+String(v).replace(/"/g,'""')+'"';return 'Section,Field,Value\r\n'+data.flatMap(s=>s.rows.map(([k,v])=>[s.title,k,v].map(q).join(','))).join('\r\n')+'\r\n';}
-async function svgToPng(svg){
+async function svgToPng(svg,type='image/png'){
   const img=new Image();const url=URL.createObjectURL(new Blob([svg],{type:'image/svg+xml'}));
   await new Promise((r,j)=>{img.onload=r;img.onerror=j;img.src=url;});
   const c=document.createElement('canvas');const k=Math.min(1,2400/Math.max(img.width,img.height));c.width=img.width*k;c.height=img.height*k;
   const g=c.getContext('2d');g.fillStyle='#fff';g.fillRect(0,0,c.width,c.height);g.drawImage(img,0,0,c.width,c.height);URL.revokeObjectURL(url);
-  return new Uint8Array(await (await new Promise(r=>c.toBlob(r,'image/png'))).arrayBuffer());
+  return new Uint8Array(await (await new Promise(r=>c.toBlob(r,type,0.9))).arrayBuffer());
 }
 async function exportZip(){
   toast('Building package…');
@@ -736,14 +736,68 @@ async function exportZip(){
   files.push({name:'inspection.json',data:enc.encode(JSON.stringify(json,null,1))});
   if(cur.sketch.areas.length){const svg=sketchSVG(true);files.push({name:'Sketch.svg',data:enc.encode(svg)});try{files.push({name:'Sketch.png',data:await svgToPng(svg)});}catch(_){}}
   for(const x of photoIndex)files.push({name:x.name,data:new Uint8Array(await x.p.blob.arrayBuffer())});
-  const zip=makeZip(files);
-  const fname=`${safe(cur.f.addr||'Inspection')}${cur.f.unit?' '+safe(cur.f.unit):''} ${cur.f.insp_date||today()}.zip`;
-  const file=new File([zip],fname,{type:'application/zip'});
+  try{files.unshift({name:'Field Notes.pdf',data:await buildPdf()});}catch(err){console.warn('PDF skipped',err);}
+  await deliver(makeZip(files),pkgName('zip'));
+}
+function pkgName(ext){return `${safe(cur.f.addr||'Inspection')}${cur.f.unit?' '+safe(cur.f.unit):''} ${cur.f.insp_date||today()}.${ext}`;}
+async function deliver(blob,fname){
+  // Phones get the share sheet (AirDrop, Mail, Files); computers get a download.
+  const file=new File([blob],fname,{type:blob.type});
   if(navigator.canShare&&navigator.canShare({files:[file]})&&/Mobi|Android|iPhone|iPad/i.test(navigator.userAgent)){
     try{await navigator.share({files:[file],title:fname});return;}catch(err){if(err.name==='AbortError')return;}
   }
-  const a=document.createElement('a');a.href=URL.createObjectURL(zip);a.download=fname;document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove();},2000);
-  toast('Package saved');
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=fname;document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove();},2000);
+  toast('Saved '+fname);
+}
+
+/* ---------- PDF (uses the html2pdf bundle already shipped in ../vendor for its jsPDF) ---------- */
+async function newPdfDoc(){
+  if(!window.html2pdf)await new Promise((res,rej)=>{const sc=document.createElement('script');sc.src='../vendor/html2pdf.bundle.min.js';sc.onload=res;sc.onerror=()=>rej(new Error('PDF library not available offline yet - open the app once with signal'));document.head.appendChild(sc);});
+  // html2pdf doesn't expose jsPDF globally; render an empty element to get a fresh blank letter-size document.
+  const el=document.createElement('div');
+  return await window.html2pdf().set({margin:0,jsPDF:{unit:'pt',format:'letter',orientation:'portrait'}}).from(el).toPdf().get('pdf');
+}
+async function imgSize(blob){try{const b=await createImageBitmap(blob);const r=[b.width,b.height];b.close&&b.close();return r;}catch(_){return [4,3];}}
+async function buildPdf(){
+  const doc=await newPdfDoc();
+  const W=612,H=792,M=40,LW=170;let y=M;
+  const need=h=>{if(y+h>H-M){doc.addPage();y=M;}};
+  const title=(cur.f.addr||'(no address)')+(cur.f.unit?' #'+cur.f.unit:'');
+  doc.setFont('helvetica','bold');doc.setFontSize(16);doc.text(title,M,y+12);y+=22;
+  doc.setFont('helvetica','normal');doc.setFontSize(10);doc.setTextColor(90);
+  doc.text(`${TYPES[cur.type]}  |  Inspected ${cur.f.insp_date||''}  |  Field notes`,M,y+8);y+=22;doc.setTextColor(0);
+  for(const sec of reportData()){
+    need(40);doc.setFillColor(31,78,121);doc.rect(M,y,W-2*M,18,'F');doc.setTextColor(255);doc.setFont('helvetica','bold');doc.setFontSize(11);
+    doc.text(sec.title.toUpperCase(),M+6,y+13);doc.setTextColor(0);y+=24;
+    doc.setFontSize(10);
+    for(const [k,v] of sec.rows){
+      const kl=doc.splitTextToSize(k,LW-8),vl=doc.splitTextToSize(String(v),W-2*M-LW);
+      const h=Math.max(kl.length,vl.length)*12+4;need(h);
+      doc.setFont('helvetica','normal');doc.setTextColor(90);doc.text(kl,M,y+9);
+      doc.setTextColor(0);doc.setFont('helvetica','bold');doc.text(vl,M+LW,y+9);
+      y+=h;doc.setDrawColor(220);doc.line(M,y-2,W-M,y-2);
+    }
+    y+=8;
+  }
+  if(cur.sketch.areas.length){
+    const jpg=await svgToPng(sketchSVG(true),'image/jpeg');const [iw,ih]=await imgSize(new Blob([jpg],{type:'image/jpeg'}));
+    doc.addPage();y=M;doc.setFont('helvetica','bold');doc.setFontSize(13);doc.text('Building Sketch',M,y+12);y+=22;
+    const t=sketchTotals();doc.setFont('helvetica','normal');doc.setFontSize(10);doc.text(Object.entries(t).map(([k,v])=>`${k}: ${v.toLocaleString()} sf`).join('    '),M,y+8);y+=18;
+    const k=Math.min((W-2*M)/iw,(H-M-y)/ih);doc.addImage(jpg,'JPEG',M,y,iw*k,ih*k);
+  }
+  const ph=(await photosFor(cur.id)).sort((a,b)=>a.ts-b.ts);
+  const cw=(W-2*M-12)/2,ch=(H-2*M-30)/3-20;
+  for(let i=0;i<ph.length;i++){
+    if(i%6===0){doc.addPage();doc.setFont('helvetica','bold');doc.setFontSize(13);doc.text(i?'Photographs (cont.)':'Photographs',M,M+12);}
+    const col=i%2,row=Math.floor((i%6)/2),x=M+col*(cw+12),yy=M+30+row*(ch+20);
+    const [iw,ih]=await imgSize(ph[i].blob);const k=Math.min(cw/iw,ch/ih);
+    const data=new Uint8Array(await ph[i].blob.arrayBuffer());
+    doc.addImage(data,'JPEG',x+(cw-iw*k)/2,yy+(ch-ih*k)/2,iw*k,ih*k);
+    doc.setFont('helvetica','normal');doc.setFontSize(10);doc.text(ph[i].label,x+cw/2,yy+ch+13,{align:'center'});
+  }
+  const n=doc.getNumberOfPages();
+  for(let i=1;i<=n;i++){doc.setPage(i);doc.setFontSize(8);doc.setTextColor(120);doc.text(`${title} - page ${i} of ${n}`,W/2,H-20,{align:'center'});doc.setTextColor(0);}
+  return new Uint8Array(doc.output('arraybuffer'));
 }
 async function importFiles(list){
   try{
