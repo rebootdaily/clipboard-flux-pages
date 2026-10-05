@@ -4295,16 +4295,14 @@
   },
   "uad36Map": {
     "sheet": "UAD 3.6 MAP",
-    "rowCount": 197,
+    "rowCount": 198,
     "statusCounts": {
       "Mapped": 0,
       "Not Applicable": 0,
       "Partial": 0,
-      "Unmapped": 197
+      "Unmapped": 198
     },
-    "missingFluxFieldIds": [
-      "unit_number"
-    ],
+    "missingFluxFieldIds": [],
     "rows": [
       {
         "fluxFieldId": "address",
@@ -7061,6 +7059,20 @@
         "enumerationMap": "",
         "transform": "",
         "legacyExportName": "",
+        "status": "Unmapped",
+        "notes": "Authoritative UAD 3.6 mapping pending."
+      },
+      {
+        "fluxFieldId": "unit_number",
+        "sourceSheet": "MAIN",
+        "uad36Path": "",
+        "uadLabel": "",
+        "valueType": "Text",
+        "cardinality": "0..1",
+        "requiredWhen": "",
+        "enumerationMap": "",
+        "transform": "",
+        "legacyExportName": "Unit Number",
         "status": "Unmapped",
         "notes": "Authoritative UAD 3.6 mapping pending."
       }
