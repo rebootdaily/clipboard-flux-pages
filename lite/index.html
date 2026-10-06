@@ -102,6 +102,13 @@ main.sheetmode{max-width:none;padding:0 0 110px}
 .sheet.finger canvas{touch-action:none}
 .sheet .bl{position:absolute;margin:0;min-height:0;border:0;border-radius:2px;background:rgba(31,111,235,.06);color:#0b3d91;padding:0 2px;font-family:"Bradley Hand","Segoe Print","Comic Sans MS",cursive,sans-serif;font-weight:600;outline:none;resize:none;line-height:1.1;overflow:hidden;-webkit-appearance:none;appearance:none;box-shadow:none}
 .sheet .bl:focus{background:rgba(255,214,0,.28)}
+.sheet .ins{position:absolute;display:block;pointer-events:none;user-select:none;-webkit-user-select:none;-webkit-user-drag:none;box-shadow:0 0 0 1px rgba(0,0,0,.25)}
+.sheet.imgmode .ins{pointer-events:auto;z-index:6;touch-action:none;cursor:move}
+.sheet.imgmode canvas{pointer-events:none}
+.sheet .ins.sel{outline:2px dashed #e65100}
+.sheet .hd,.sheet .xb{position:absolute;z-index:7;width:28px;height:28px;border-radius:50%;border:2px solid #fff;color:#fff;font-weight:700;line-height:24px;text-align:center;touch-action:none;box-shadow:0 1px 4px rgba(0,0,0,.4)}
+.sheet .hd{background:#e65100;cursor:nwse-resize}
+.sheet .xb{background:#c62828;cursor:pointer}
 .swatch{width:30px;height:30px;border-radius:50%;border:3px solid transparent;display:inline-block}
 .swatch.on{border-color:var(--ink)}
 </style>
@@ -121,6 +128,7 @@ main.sheetmode{max-width:none;padding:0 0 110px}
 <div id="toast"></div>
 <input type="file" id="cam" accept="image/*" capture="environment" class="hide">
 <input type="file" id="lib" accept="image/*" multiple class="hide">
+<input type="file" id="insImg" accept="image/*" class="hide">
 <input type="file" id="imp" accept=".zip,application/zip,.json,application/json,image/jpeg" multiple class="hide">
 <script src="sheet.js"></script>
 <script>
@@ -134,7 +142,7 @@ main.sheetmode{max-width:none;padding:0 0 110px}
    ===================================================================== */
 
 const TABS = [
-  {id:'p1', title:'Page 1'}, {id:'p2', title:'Page 2'},
+  ...SHEET.pages.map((_,i)=>({id:'p'+(i+1), page:i+1, title:SHEET.pages.length>1?'Page '+(i+1):'Field Sheet'})),
   {id:'photo', title:'Photos'}, {id:'sketch', title:'Sketch'}, {id:'export', title:'Export'}
 ];
 const PHOTO_SHOTS = {
@@ -142,12 +150,12 @@ const PHOTO_SHOTS = {
   land:['Front','Street','Street (opposite)','Rear','Side','Address / sign','Access','Adverse','Defect']
 };
 const AREA_KINDS = ['GLA','Garage','Porch','Patio','Deck','Basement','Carport','Other'];
-const NUMERIC = /^(hoa_fee|special_assmt|driveway_cars|park_cars|solar_age|c_elev|c_fee|c_stories|c_yrblt|c_bldgs|c_spcl|m_yrblt|t_bed|t_bath|t_half|t_smk|u_\w+|hvac_n(_2)?|floors_upd(_2)?|bath_upd(_2)?)$/;
 const FIELD = Object.fromEntries(SHEET.fields.map(f => [f.id, f]));
 const OPT = Object.fromEntries(SHEET.opts.map(o => [o.id, o]));
 const OPTS_OF = {};
 SHEET.opts.forEach(o => (OPTS_OF[o.f] = OPTS_OF[o.f] || []).push(o));
-const PAGE_OPTS = {1: SHEET.opts.filter(o => o.p === 1), 2: SHEET.opts.filter(o => o.p === 2)};
+const PAGE_OPTS = {};
+SHEET.pages.forEach((_, i) => (PAGE_OPTS[i+1] = SHEET.opts.filter(o => o.p === i+1)));
 
 /* ---------- Tiny helpers ---------- */
 const $ = s => document.querySelector(s);
@@ -171,7 +179,9 @@ const dbPut=(s,v)=>tx(s,'readwrite',st=>st.put(v));
 const dbDel=(s,k)=>tx(s,'readwrite',st=>st.delete(k));
 const dbGet=(s,k)=>tx(s,'readonly',st=>st.get(k));
 const dbAll=s=>tx(s,'readonly',st=>st.getAll());
-const photosFor=id=>tx('photos','readonly',st=>st.index('insp').getAll(id));
+const allFor=id=>tx('photos','readonly',st=>st.index('insp').getAll(id));            // photos + reference images
+const photosFor=async id=>(await allFor(id)).filter(p=>p.kind!=='ref');               // field photos only
+const refsFor=async id=>(await allFor(id)).filter(p=>p.kind==='ref');                 // images inserted on the sheet
 
 /* ---------- State ---------- */
 let cur=null, tab=0, view='home', saveTimer=null;
@@ -179,8 +189,8 @@ const urls=new Map();
 function save(){clearTimeout(saveTimer);saveTimer=setTimeout(()=>{cur.updated=Date.now();dbPut('insp',cur);},300);}
 function newInsp(){return normalize({id:uid(),created:Date.now(),updated:Date.now()});}
 function normalize(i){
-  i.v=2; i.sel=i.sel||{}; i.txt=i.txt||{}; i.ink=i.ink||{1:[],2:[]}; i.ink[1]=i.ink[1]||[]; i.ink[2]=i.ink[2]||[];
-  i.sketch=i.sketch||{areas:[]}; i.date=i.date||(i.f&&i.f.insp_date)||today();
+  i.v=2; i.sel=i.sel||{}; i.txt=i.txt||{}; i.ink=i.ink||{}; SHEET.pages.forEach((_,n)=>{i.ink[n+1]=i.ink[n+1]||[];});
+  i.imgs=i.imgs||[]; i.sketch=i.sketch||{areas:[]}; i.date=i.date||(i.f&&i.f.insp_date)||today();
   if(i.f&&!i.txt.address&&i.f.addr)i.txt.address=i.f.addr;   // carry address over from the old chip form
   return i;
 }
@@ -210,7 +220,7 @@ async function showHome(){
     const o=e.target.closest('[data-open]'),d=e.target.closest('[data-del]');
     if(e.target.id==='newBtn'){cur=newInsp();await dbPut('insp',cur);tab=0;showEdit();}
     else if(o){cur=normalize(await dbGet('insp',o.dataset.open));tab=0;showEdit();}
-    else if(d){if(confirm('Delete this inspection and its photos?')){const ph=await photosFor(d.dataset.del);for(const p of ph)await dbDel('photos',p.id);await dbDel('insp',d.dataset.del);showHome();}}
+    else if(d){if(confirm('Delete this inspection and its photos?')){const ph=await allFor(d.dataset.del);for(const p of ph)await dbDel('photos',p.id);await dbDel('insp',d.dataset.del);showHome();}}
     else if(e.target.id==='impBtn')$('#imp').click();
   };
 }
@@ -222,7 +232,7 @@ function showEdit(){
   renderTabs();renderSection();
 }
 function tabProgress(t){
-  if(t.id==='p1'||t.id==='p2'){const p=t.id==='p1'?1:2;
+  if(t.page){const p=t.page;
     const n=PAGE_OPTS[p].filter(o=>cur.sel[o.id]).length+SHEET.blanks.filter(b=>b.p===p&&cur.txt[b.id]).length;return n?String(n):'';}
   if(t.id==='photo')return cur._pc?String(cur._pc):'';
   if(t.id==='sketch')return cur.sketch.areas.length?'✓':'';
@@ -238,10 +248,9 @@ function renderTabs(){
 function renderSection(){
   window.scrollTo(0,0);
   const id=TABS[tab].id;
-  $('#main').classList.toggle('sheetmode',id==='p1'||id==='p2');
+  $('#main').classList.toggle('sheetmode',!!TABS[tab].page);
   $('#main').onclick=$('#main').oninput=$('#main').onchange=null;
-  if(id==='p1')return renderSheet(1);
-  if(id==='p2')return renderSheet(2);
+  if(TABS[tab].page)return renderSheet(TABS[tab].page);
   if(id==='photo')return renderPhotos();
   if(id==='sketch')return renderSketch();
   return renderExport();
@@ -254,9 +263,10 @@ function loadBg(p){
   if(!bgImg[p]){bgImg[p]=new Promise((res,rej)=>{const i=new Image();i.onload=()=>res(i);i.onerror=rej;i.src=SHEET.pages[p-1].img;});}
   return bgImg[p];
 }
-function blankFont(b){return Math.min(11,(b.h/b.lines)*0.78);}
-function renderSheet(p){
+function blankFont(b){return Math.min(15,(b.h/b.lines)*0.74);}
+async function renderSheet(p){
   sheetPage=p;hist=[];
+  const refs=await refsFor(cur.id);refs.forEach(r=>refBlobs.set(r.id,r.blob));
   const pg=SHEET.pages[p-1];
   const W=Math.min(document.documentElement.clientWidth,1000),s=sheetScale=W/pg.w;
   $('#main').innerHTML=`
@@ -264,15 +274,18 @@ function renderSheet(p){
      <button class="btn sm ${tool==='pen'?'on':''}" data-tool="pen">&#9998; Pen</button>
      <button class="btn sm ${tool==='erase'?'on':''}" data-tool="erase">&#9003; Eraser</button>
      <button class="btn sm" id="undoBtn">&#8630; Undo</button>
+     <button class="btn sm" id="addImgBtn">&#128247; Insert image</button>
+     <button class="btn sm ${tool==='img'?'on':''}" data-tool="img">&#10021; Move / resize images</button>
      <button class="btn sm ${SET.finger?'on':''}" id="fingerBtn">Finger writes: ${SET.finger?'ON':'OFF'}</button>
      <span class="hint">${SET.finger?'Finger draws. Use two fingers to scroll.':'Circle or tap an option. Write in the shaded boxes.'}</span>
    </div>
-   <div class="sheet ${SET.finger?'finger':''}" id="sheet" style="width:${W}px;height:${Math.round(pg.h*s)}px">
+   <div class="sheet ${SET.finger?'finger':''} ${tool==='img'?'imgmode':''}" id="sheet" style="width:${W}px;height:${Math.round(pg.h*s)}px">
      <img src="${pg.img}" alt="Inspection sheet page ${p}">
+     ${cur.imgs.filter(m=>m.p===p&&refBlobs.has(m.id)).map(m=>`<img class="ins ${m.id===selImg?'sel':''}" data-ins="${m.id}" src="${refUrl(m.id)}" alt="Inserted reference image" style="left:${m.x*s}px;top:${m.y*s}px;width:${m.w*s}px;height:${m.h*s}px">`).join('')}
      <canvas id="ink"></canvas>
      ${SHEET.blanks.filter(b=>b.p===p).map(b=>{
-       const st=`left:${b.x*s}px;top:${b.y*s}px;width:${b.w*s}px;height:${b.h*s}px;font-size:${blankFont(b)*s}px`;
-       const im=NUMERIC.test(b.id)?' inputmode="decimal"':'';
+       const st=`left:${b.x*s}px;top:${b.y*s}px;width:${b.w*s}px;height:${b.h*s}px;font-size:${blankFont(b)*s}px;line-height:${b.h/b.lines*s}px`;
+       const im=b.num?' inputmode="decimal"':'';
        const lab=esc((b.of?FIELD[b.of].label+' – other':FIELD[b.id].label));
        return b.lines>1
          ?`<textarea class="bl" data-b="${b.id}" style="${st}" aria-label="${lab}" spellcheck="false">${esc(cur.txt[b.id]||'')}</textarea>`
@@ -284,10 +297,12 @@ function renderSheet(p){
   const ctx=cv.getContext('2d');ctx.setTransform(dpr*s,0,0,dpr*s,0,0);
   drawSheet(ctx,p);
   attachInk(cv,ctx,p);
+  if(tool==='img')attachImages(p,s);
   $('#main').oninput=e=>{const id=e.target.dataset.b;if(!id)return;cur.txt[id]=e.target.value;if(id==='address')$('#title').textContent=e.target.value||'New inspection';save();};
   $('#main').onclick=e=>{
     const b=e.target.closest('button');if(!b)return;
-    if(b.dataset.tool){tool=b.dataset.tool;renderSheet(p);}
+    if(b.dataset.tool){tool=b.dataset.tool;selImg=null;renderSheet(p);}
+    else if(b.id==='addImgBtn'){$('#insImg').value='';$('#insImg').click();}
     else if(b.id==='undoBtn'){undo(ctx,p);}
     else if(b.id==='fingerBtn'){SET.finger=!SET.finger;saveSettings();renderSheet(p);}
   };
@@ -390,23 +405,76 @@ function attachInk(cv,ctx,p){
   cv.onpointerup=end;cv.onpointercancel=end;
 }
 let resizeT;
-window.addEventListener('resize',()=>{clearTimeout(resizeT);resizeT=setTimeout(()=>{if(view==='edit'&&/^p[12]$/.test(TABS[tab].id)&&!document.activeElement.classList.contains('bl'))renderSheet(sheetPage);},250);});
+window.addEventListener('resize',()=>{clearTimeout(resizeT);resizeT=setTimeout(()=>{if(view==='edit'&&TABS[tab].page&&!document.activeElement.classList.contains('bl'))renderSheet(sheetPage);},250);});
 
 /* The filled sheet as an image (background + circles + ink + typed text), for PDF and package. */
-async function sheetImage(p,k=2){
+const jpeg=async c=>new Uint8Array(await (await new Promise(r=>c.toBlob(r,'image/jpeg',0.85))).arrayBuffer());
+async function sheetImage(p,k=2){return jpeg(await sheetCanvas(p,k));}
+async function sheetCanvas(p,k=2){
   const pg=SHEET.pages[p-1],img=await loadBg(p);
   const c=document.createElement('canvas');c.width=pg.w*k;c.height=pg.h*k;
   const g=c.getContext('2d');g.fillStyle='#fff';g.fillRect(0,0,c.width,c.height);g.drawImage(img,0,0,c.width,c.height);
-  g.setTransform(k,0,0,k,0,0);drawSelections(g,p);for(const st of cur.ink[p])drawStroke(g,st);
+  g.setTransform(k,0,0,k,0,0);
+  for(const m of cur.imgs.filter(m=>m.p===p)){ // inserted images sit under the circles and ink, as on screen
+    const blob=refBlobs.get(m.id)||(await dbGet('photos',m.id)||{}).blob;if(!blob)continue;
+    const bm=await createImageBitmap(blob);g.drawImage(bm,m.x,m.y,m.w,m.h);bm.close&&bm.close();
+  }
+  drawSelections(g,p);for(const st of cur.ink[p])drawStroke(g,st);
   g.fillStyle='#0b3d91';
   for(const b of SHEET.blanks.filter(b=>b.p===p&&cur.txt[b.id])){
     const fs=blankFont(b);g.font=`600 ${fs}px Helvetica, Arial, sans-serif`;
     const lh=b.h/b.lines,words=String(cur.txt[b.id]).split(/\s+/);let line='',row=0;
-    const flush=()=>{g.fillText(line,b.x+2,b.y+lh*(row+1)-3,b.w-4);row++;line='';};
+    const flush=()=>{g.fillText(line,b.x+2,b.y+lh*(row+0.5)+fs*0.35,b.w-4);row++;line='';}; // vertically centred, as on screen
     for(const w of words){const t=line?line+' '+w:w;if(g.measureText(t).width>b.w-4&&line&&row<b.lines-1){flush();line=w;}else line=t;}
     if(line)flush();
   }
-  return new Uint8Array(await (await new Promise(r=>c.toBlob(r,'image/jpeg',0.85))).arrayBuffer());
+  return c;
+}
+
+/* ---------- Images inserted on the sheet (e.g. a county sketch used to verify measurements) ---------- */
+const refBlobs=new Map(), refUrls=new Map();
+let selImg=null;
+function refUrl(id){if(!refUrls.has(id))refUrls.set(id,URL.createObjectURL(refBlobs.get(id)));return refUrls.get(id);}
+$('#insImg').onchange=async e=>{
+  const f=e.target.files[0];e.target.value='';if(!f||!cur)return;
+  try{
+    toast('Adding image…');
+    const blob=await shrink(f,2400),bm=await createImageBitmap(blob),pg=SHEET.pages[sheetPage-1];
+    let w=pg.w*0.7,h=w*bm.height/bm.width;if(h>pg.h*0.6){h=pg.h*0.6;w=h*bm.width/bm.height;}bm.close&&bm.close();
+    const sh=$('#sheet'),topNow=sh?Math.max(0,(-sh.getBoundingClientRect().top)/sheetScale)+80:0;
+    const id=uid(),m={id,p:sheetPage,x:Math.round((pg.w-w)/2),y:Math.round(Math.min(topNow,pg.h-h)),w:Math.round(w),h:Math.round(h)};
+    await dbPut('photos',{id,insp:cur.id,kind:'ref',label:f.name||'Reference image',ts:Date.now(),blob});
+    refBlobs.set(id,blob);cur.imgs.push(m);save();selImg=id;tool='img';
+    await renderSheet(sheetPage);toast('Drag to move, corner to resize');
+  }catch(err){alert('Could not add the image: '+err.message);}
+};
+function attachImages(p,s){
+  const sheet=$('#sheet'),pg=SHEET.pages[p-1],clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+  const bar=m=>{ // delete + resize handles for the selected image
+    sheet.querySelectorAll('.hd,.xb').forEach(n=>n.remove());
+    const el=sheet.querySelector(`[data-ins="${m.id}"]`);if(!el)return;
+    const xb=document.createElement('div'),hd=document.createElement('div');
+    xb.className='xb';xb.textContent='✕';xb.title='Delete image';hd.className='hd';hd.textContent='⤡';hd.title='Resize';
+    const place=()=>{xb.style.left=(m.x*s+m.w*s-14)+'px';xb.style.top=(m.y*s-14)+'px';hd.style.left=(m.x*s+m.w*s-14)+'px';hd.style.top=(m.y*s+m.h*s-14)+'px';};
+    place();sheet.append(xb,hd);
+    xb.onclick=async()=>{if(!confirm('Remove this image from the sheet?'))return;cur.imgs=cur.imgs.filter(x=>x.id!==m.id);await dbDel('photos',m.id);refBlobs.delete(m.id);selImg=null;save();renderSheet(p);};
+    hd.onpointerdown=e=>{e.preventDefault();hd.setPointerCapture(e.pointerId);const w0=m.w,h0=m.h,x0=e.clientX;
+      hd.onpointermove=ev=>{const w=clamp(w0+(ev.clientX-x0)/s,40,pg.w-m.x);m.w=Math.round(w);m.h=Math.round(w*h0/w0);
+        if(m.y+m.h>pg.h){m.h=pg.h-m.y;m.w=Math.round(m.h*w0/h0);}
+        el.style.width=m.w*s+'px';el.style.height=m.h*s+'px';place();};
+      hd.onpointerup=hd.onpointercancel=()=>{hd.onpointermove=null;save();};};
+  };
+  sheet.querySelectorAll('.ins').forEach(el=>{
+    const m=cur.imgs.find(x=>x.id===el.dataset.ins);
+    el.onpointerdown=e=>{
+      e.preventDefault();selImg=m.id;sheet.querySelectorAll('.ins').forEach(n=>n.classList.toggle('sel',n===el));bar(m);
+      el.setPointerCapture(e.pointerId);const x0=e.clientX,y0=e.clientY,mx=m.x,my=m.y;
+      el.onpointermove=ev=>{m.x=Math.round(clamp(mx+(ev.clientX-x0)/s,0,pg.w-m.w));m.y=Math.round(clamp(my+(ev.clientY-y0)/s,0,pg.h-m.h));
+        el.style.left=m.x*s+'px';el.style.top=m.y*s+'px';bar(m);};
+      el.onpointerup=el.onpointercancel=()=>{el.onpointermove=null;save();};
+    };
+  });
+  const sel=cur.imgs.find(x=>x.id===selImg&&x.p===p);if(sel)bar(sel);
 }
 
 /* ---------- Report (sheet order, tap to copy) ---------- */
@@ -434,17 +502,17 @@ async function renderExport(){
   const data=reportData(),ph=(await photosFor(cur.id)).sort((a,b)=>a.ts-b.ts);cur._pc=ph.length;
   $('#main').innerHTML=`<div class="card"><h2>Send to office / TOTAL</h2>
     <div class="row"><button class="btn pri" id="exZip">Export package (.zip)</button><button class="btn" id="exPdf">Save PDF</button><button class="btn" id="exCopy">Copy all text</button></div>
-    <p class="muted">The PDF has your filled-in sheet pages, a typed summary, the sketch and the photos - ready for TOTAL's PDF import. The package adds the photos as separate files named by label, Sketch.png, a spreadsheet and the data file. On the office PC, open this app, import the package, then tap any line below to copy it into TOTAL.</p></div>
+    <p class="muted">The PDF has your filled-in field sheet, a typed summary, the sketch and the photos - ready for TOTAL's PDF import. The package adds the photos as separate files named by label, Sketch.png, a spreadsheet and the data file. On the office PC, open this app, import the package, then tap any line below to copy it into TOTAL.</p></div>
   <div class="card rep"><h2 style="font-size:17px">${esc(titleOf())}</h2>
     <p class="muted">Tap a line to copy its value.</p>
     ${data.map((s,si)=>`<div class="sec"><h3>${esc(s.title)} <button class="btn sm" data-cs="${si}">Copy section</button></h3>${s.rows.map(([k,v],ri)=>`<div class="kv" data-s="${si}" data-r="${ri}"><div class="k">${esc(k)}</div><div class="v">${esc(v)}</div></div>`).join('')}</div>`).join('')}
-    ${data.length<=1?'<p class="muted">Nothing recorded yet - circle or tap options on Page 1 and Page 2.</p>':''}
+    ${data.length<=1?'<p class="muted">Nothing recorded yet - circle or tap options on the field sheet.</p>':''}
   </div>
   <div class="card"><h2>Settings</h2>
     <div class="f"><span class="lb">Inspection date</span><input type="date" id="setDate" value="${esc(cur.date)}"></div>
     <div class="f"><span class="lb">Writing with a finger</span><button class="btn sm ${SET.finger?'pri':''}" id="setFinger">${SET.finger?'ON - finger draws, two fingers scroll':'OFF - finger taps options and scrolls (pen still writes)'}</button></div>
     <div class="f"><span class="lb">Ink colour</span><div class="row">${['#1a3fb0','#111111','#c62828','#2e7d32'].map(c=>`<button class="swatch ${SET.color===c?'on':''}" data-color="${c}" style="background:${c}" aria-label="ink ${c}"></button>`).join('')}</div></div>
-    <div class="f"><span class="lb">Clear</span><div class="row"><button class="btn sm" id="clrInk">Clear pen marks (both pages)</button><button class="btn sm warn" id="delInsp">Delete this inspection</button></div></div>
+    <div class="f"><span class="lb">Clear</span><div class="row"><button class="btn sm" id="clrInk">Clear pen marks</button><button class="btn sm warn" id="delInsp">Delete this inspection</button></div></div>
   </div>`;
   $('#main').onchange=e=>{if(e.target.id==='setDate'){cur.date=e.target.value;save();}};
   $('#main').onclick=async e=>{
@@ -456,8 +524,8 @@ async function renderExport(){
     else if(e.target.id==='exPdf'){toast('Building PDF…');try{await deliver(new Blob([await buildPdf()],{type:'application/pdf'}),pkgName('pdf'));}catch(err){alert('PDF failed: '+err.message);}}
     else if(e.target.id==='exZip'){exportZip();}
     else if(e.target.id==='setFinger'){SET.finger=!SET.finger;saveSettings();renderExport();}
-    else if(e.target.id==='clrInk'){if(confirm('Remove all pen marks? Circled options stay recorded.')){cur.ink={1:[],2:[]};save();toast('Pen marks cleared');}}
-    else if(e.target.id==='delInsp'){if(confirm('Delete this inspection and its photos?')){for(const p of await photosFor(cur.id))await dbDel('photos',p.id);await dbDel('insp',cur.id);showHome();}}
+    else if(e.target.id==='clrInk'){if(confirm('Remove all pen marks? Circled options stay recorded.')){cur.ink={};normalize(cur);save();toast('Pen marks cleared');}}
+    else if(e.target.id==='delInsp'){if(confirm('Delete this inspection and its photos?')){for(const p of await allFor(cur.id))await dbDel('photos',p.id);await dbDel('insp',cur.id);showHome();}}
   };
 }
 
@@ -489,13 +557,13 @@ async function renderPhotos(){
 }
 function photoURL(p){if(!urls.has(p.id))urls.set(p.id,URL.createObjectURL(p.blob));return urls.get(p.id);}
 function revoke(id){if(urls.has(id)){URL.revokeObjectURL(urls.get(id));urls.delete(id);}}
-async function shrink(file){
-  const MAX=1600;
+async function shrink(file,MAX=1600){
   let bmp;
   try{bmp=await createImageBitmap(file,{imageOrientation:'from-image'});}catch(_){bmp=await new Promise((res,rej)=>{const i=new Image();i.onload=()=>res(i);i.onerror=rej;i.src=URL.createObjectURL(file);});}
   const w=bmp.width,h=bmp.height,k=Math.min(1,MAX/Math.max(w,h));
   const c=document.createElement('canvas');c.width=Math.round(w*k);c.height=Math.round(h*k);
-  c.getContext('2d').drawImage(bmp,0,0,c.width,c.height);
+  const g=c.getContext('2d');g.fillStyle='#fff';g.fillRect(0,0,c.width,c.height); // transparent PNGs would turn black as JPEG
+  g.drawImage(bmp,0,0,c.width,c.height);
   return await new Promise(r=>c.toBlob(r,'image/jpeg',0.82));
 }
 async function addFiles(files){
@@ -659,14 +727,17 @@ async function exportZip(){
   const enc=new TextEncoder(),data=reportData(),ph=(await photosFor(cur.id)).sort((a,b)=>a.ts-b.ts);
   const files=[],seen={},photoIndex=[];
   ph.forEach((p,i)=>{const base=safe(p.label)||'Photo';seen[base]=(seen[base]||0)+1;const nm=`photos/${String(i+1).padStart(2,'0')} ${base}${seen[base]>1?' '+seen[base]:''}.jpg`;photoIndex.push({name:nm,label:p.label,ts:p.ts,p});});
-  const json={app:'FieldLite',v:2,insp:Object.assign({},cur,{_pc:undefined}),photos:photoIndex.map(x=>({file:x.name,label:x.label,ts:x.ts}))};
+  const refs=await refsFor(cur.id);
+  const json={app:'FieldLite',v:2,insp:Object.assign({},cur,{_pc:undefined}),photos:photoIndex.map(x=>({file:x.name,label:x.label,ts:x.ts})),
+    refs:refs.map(r=>({id:r.id,file:`refs/${r.id}.jpg`,label:r.label}))};
   try{files.push({name:'Field Notes.pdf',data:await buildPdf()});}catch(err){console.warn('PDF skipped',err);}
-  for(const p of [1,2])files.push({name:`Sheet page ${p}.jpg`,data:await sheetImage(p)});
+  for(let p=1;p<=SHEET.pages.length;p++)files.push({name:SHEET.pages.length>1?`Field sheet page ${p}.jpg`:'Field sheet.jpg',data:await sheetImage(p)});
   files.push({name:'Report.txt',data:enc.encode(reportText().replace(/\n/g,'\r\n'))});
   files.push({name:'Data.csv',data:enc.encode('﻿'+csvOf(data))});
   files.push({name:'inspection.json',data:enc.encode(JSON.stringify(json))});
   if(cur.sketch.areas.length){const svg=sketchSVG(true);files.push({name:'Sketch.svg',data:enc.encode(svg)});try{files.push({name:'Sketch.png',data:await svgToPng(svg)});}catch(_){}}
   for(const x of photoIndex)files.push({name:x.name,data:new Uint8Array(await x.p.blob.arrayBuffer())});
+  for(const r of refs)files.push({name:`refs/${r.id}.jpg`,data:new Uint8Array(await r.blob.arrayBuffer())});
   await deliver(makeZip(files),pkgName('zip'));
 }
 function pkgName(ext){return `${safe(addrOf(cur)||'Inspection')}${cur.txt.unit?' '+safe(cur.txt.unit):''} ${cur.date||today()}.${ext}`;}
@@ -690,8 +761,19 @@ async function newPdfDoc(){
 async function imgSize(blob){try{const b=await createImageBitmap(blob);const r=[b.width,b.height];b.close&&b.close();return r;}catch(_){return [4,3];}}
 async function buildPdf(){
   const doc=await newPdfDoc();
-  // Pages 1-2: the filled-in inspection sheet exactly as marked.
-  for(const p of [1,2]){if(p>1)doc.addPage([612,1008],'p');doc.addImage(await sheetImage(p),'JPEG',0,0,612,1008);}
+  // First: the filled-in inspection sheet exactly as marked, cut at its page breaks onto 8.5x14 pages.
+  let first=true;
+  for(let p=1;p<=SHEET.pages.length;p++){
+    const pg=SHEET.pages[p-1],k=2,full=await sheetCanvas(p,k),cuts=[0,...(pg.breaks||[]),pg.h];
+    const sc=Math.min((612-36)/pg.w,(1008-36)/Math.max(...cuts.slice(1).map((y,i)=>y-cuts[i])));
+    for(let i=0;i<cuts.length-1;i++){
+      const h=cuts[i+1]-cuts[i],c=document.createElement('canvas');c.width=pg.w*k;c.height=Math.round(h*k);
+      c.getContext('2d').drawImage(full,0,-cuts[i]*k);
+      if(!first)doc.addPage([612,1008],'p');first=false;
+      doc.addImage(await jpeg(c),'JPEG',(612-pg.w*sc)/2,18,pg.w*sc,h*sc);
+    }
+  }
+  const sheetPages=doc.getNumberOfPages();
   // Typed summary, sketch and photos on letter pages.
   const W=612,H=792,M=40,LW=170;let y=M;
   const newPage=()=>{doc.addPage('letter','p');y=M;};
@@ -730,7 +812,7 @@ async function buildPdf(){
     doc.setFont('helvetica','normal');doc.setFontSize(10);doc.text(ph[i].label,x+cw/2,yy+ch+13,{align:'center'});
   }
   const n=doc.getNumberOfPages();
-  for(let i=1;i<=n;i++){doc.setPage(i);const ph2=i<=2?1008:H;doc.setFontSize(8);doc.setTextColor(120);doc.text(`${title} - page ${i} of ${n}`,W/2,ph2-12,{align:'center'});doc.setTextColor(0);}
+  for(let i=1;i<=n;i++){doc.setPage(i);const ph2=i<=sheetPages?1008:H;doc.setFontSize(8);doc.setTextColor(120);doc.text(`${title} - page ${i} of ${n}`,W/2,ph2-12,{align:'center'});doc.setTextColor(0);}
   return new Uint8Array(doc.output('arraybuffer'));
 }
 
@@ -749,8 +831,9 @@ async function importFiles(list){
     const insp=normalize(j.insp);delete insp._pc;
     const exists=await dbGet('insp',insp.id);
     if(exists&&!confirm('This inspection is already on this device. Replace it with the imported copy?'))return;
-    for(const p of await photosFor(insp.id))await dbDel('photos',p.id);
+    for(const p of await allFor(insp.id))await dbDel('photos',p.id);
     for(const p of j.photos){const d=z[p.file];if(d)await dbPut('photos',{id:uid(),insp:insp.id,label:p.label,ts:p.ts,blob:new Blob([d],{type:'image/jpeg'})});}
+    for(const r of j.refs||[]){const d=z[r.file]||z['photos/'+r.file.split('/').pop()];if(d)await dbPut('photos',{id:r.id,insp:insp.id,kind:'ref',label:r.label,ts:Date.now(),blob:new Blob([d],{type:'image/jpeg'})});}
     await dbPut('insp',insp);
     cur=insp;toast('Imported');tab=TABS.length-1;showEdit();
   }catch(err){alert('Import failed: '+err.message);}

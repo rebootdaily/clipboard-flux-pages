@@ -1,7 +1,7 @@
 // Field Lite offline cache. Serves the saved copy instantly (works with no
 // signal), and refreshes it in the background whenever the network is up.
-const CACHE = 'fieldlite-v3';
-const FILES = ['./', 'index.html', 'sheet.js', 'sheet-1.png', 'sheet-2.png', 'manifest.json', 'icon.svg', 'icon-192.png', 'icon-512.png'];
+const CACHE = 'fieldlite-v5';
+const FILES = ['./', 'index.html', 'sheet.js', 'sheet-1.png', 'manifest.json', 'icon.svg', 'icon-192.png', 'icon-512.png'];
 
 self.addEventListener('install', e => {
   e.waitUntil(caches.open(CACHE).then(async c => {
