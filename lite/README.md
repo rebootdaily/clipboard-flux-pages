@@ -35,10 +35,16 @@ the first visit and keeps everything on the device.
   - Switch back to **Pen** to write or draw over it, for example to mark your own measurements. Ink and
     circles always sit on top of the image.
   - It is included in the PDF and the package, in the same place.
-- **Tools:**
-  - **Eraser** removes pen marks. Erasing a circle also un-selects what it circled.
-  - **Undo** reverses the last mark.
-  - **Finger writes** lets a finger draw on devices without a pen; scroll with two fingers.
+- **Tools** (one scrolling row above the form):
+  - **Pen** draws smooth ink. With an Apple Pencil the line gets thicker as you press harder.
+  - **Highlight** draws a wide translucent band, for example over a line on an inserted county sketch.
+    It only marks the page and never selects options.
+  - **Eraser** removes whole strokes. Erasing a circle also un-selects what it circled.
+  - **Colour dots and the line-thickness dot** change the pen or highlighter. The highlighter has its own colours.
+  - **Undo / Redo** step back and forward through marks and option selections.
+  - **Palm rejection:** while the Pencil is on the screen, and for a moment after, touches are ignored, so a
+    resting hand can't toggle options or end your stroke.
+  - **Finger** lets a finger draw on devices without a pen. Use two fingers to scroll while it is on.
 
 ## Export (in the field or at the office)
 - **Save PDF** gives you:

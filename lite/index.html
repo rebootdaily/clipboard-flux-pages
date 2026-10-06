@@ -93,7 +93,15 @@ footer#bar .btn{flex:1;max-width:200px}
 .hide{display:none!important}
 @media print{header,nav,footer,#toast,.noprint{display:none!important}body,main{background:#fff;color:#000;padding:0}.card{border:0;padding:0}.rep .kv{padding:2px 0;break-inside:avoid}.pgrid{display:grid;grid-template-columns:1fr 1fr;gap:8px}.pgrid figure{margin:0;break-inside:avoid}.pgrid img{width:100%;max-height:300px;object-fit:contain}}
 main.sheetmode{max-width:none;padding:0 0 110px}
-.tools{position:sticky;top:calc(env(safe-area-inset-top) + 92px);z-index:15;display:flex;gap:6px;align-items:center;flex-wrap:wrap;padding:6px 10px;background:var(--card);border-bottom:1px solid var(--line)}
+.tools{position:sticky;top:calc(env(safe-area-inset-top) + 92px);z-index:15;display:flex;gap:5px;align-items:center;flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;padding:6px 10px;background:var(--card);border-bottom:1px solid var(--line)}
+.tools::-webkit-scrollbar{display:none}
+.tools>*{flex:0 0 auto}
+.tools .tb{border:1px solid var(--line);background:var(--card);border-radius:10px;min-width:42px;height:38px;padding:0 9px;font-size:14px;font-weight:600;display:inline-flex;align-items:center;justify-content:center;gap:4px}
+.tools .tb.on{background:var(--pri);border-color:var(--pri);color:#fff}
+.tools .tb:disabled{opacity:.35}
+.tools .sep{width:1px;height:26px;background:var(--line);margin:0 3px}
+.tools .swatch{width:28px;height:28px;border-width:3px}
+.tools .dotsz{display:inline-block;border-radius:50%;background:currentColor}
 .tools .btn.on{background:var(--pri);border-color:var(--pri);color:#fff}
 .tools .hint{font-size:12px;color:var(--mute);flex:1;min-width:140px}
 .sheet{position:relative;margin:8px auto;background:#fff;box-shadow:0 1px 6px rgba(0,0,0,.25)}
@@ -165,7 +173,7 @@ const today = () => new Date().toISOString().slice(0,10);
 function toast(m){const t=$('#toast');t.textContent=m;t.classList.add('show');clearTimeout(toast.h);toast.h=setTimeout(()=>t.classList.remove('show'),1600);}
 
 /* ---------- Settings (per device) ---------- */
-const SET = {finger:false, color:'#1a3fb0'};
+const SET = {finger:false, color:'#1a3fb0', hl:'#ffd600', size:1};
 try{Object.assign(SET, JSON.parse(localStorage.getItem('fieldlite.settings')||'{}'));}catch(_){}
 function saveSettings(){try{localStorage.setItem('fieldlite.settings', JSON.stringify(SET));}catch(_){}}
 
@@ -257,7 +265,9 @@ function renderSection(){
 }
 
 /* ---------- Inspection sheet: circle / tap options, write in blanks ---------- */
-let tool='pen', hist=[], sheetPage=1, sheetScale=1;
+const PEN_COLORS=['#1a3fb0','#111111','#c62828','#2e7d32'], HL_COLORS=['#ffd600','#69f0ae','#ff80ab','#40c4ff'];
+const PEN_W=[0.9,1.5,2.6], HL_W=[9,14,22];
+let tool='pen', hist=[], redoStack=[], sheetPage=1, sheetScale=1;
 const bgImg={};
 function loadBg(p){
   if(!bgImg[p]){bgImg[p]=new Promise((res,rej)=>{const i=new Image();i.onload=()=>res(i);i.onerror=rej;i.src=SHEET.pages[p-1].img;});}
@@ -271,13 +281,19 @@ async function renderSheet(p){
   const W=Math.min(document.documentElement.clientWidth,1000),s=sheetScale=W/pg.w;
   $('#main').innerHTML=`
    <div class="tools">
-     <button class="btn sm ${tool==='pen'?'on':''}" data-tool="pen">&#9998; Pen</button>
-     <button class="btn sm ${tool==='erase'?'on':''}" data-tool="erase">&#9003; Eraser</button>
-     <button class="btn sm" id="undoBtn">&#8630; Undo</button>
-     <button class="btn sm" id="addImgBtn">&#128247; Insert image</button>
-     <button class="btn sm ${tool==='img'?'on':''}" data-tool="img">&#10021; Move / resize images</button>
-     <button class="btn sm ${SET.finger?'on':''}" id="fingerBtn">Finger writes: ${SET.finger?'ON':'OFF'}</button>
-     <span class="hint">${SET.finger?'Finger draws. Use two fingers to scroll.':'Circle or tap an option. Write in the shaded boxes.'}</span>
+     <button class="tb ${tool==='pen'?'on':''}" data-tool="pen" aria-label="Pen">&#9998; Pen</button>
+     <button class="tb ${tool==='hl'?'on':''}" data-tool="hl" aria-label="Highlighter">&#128396; Highlight</button>
+     <button class="tb ${tool==='erase'?'on':''}" data-tool="erase" aria-label="Eraser">&#9003;</button>
+     <span class="sep"></span>
+     ${(tool==='hl'?HL_COLORS:PEN_COLORS).map(c=>`<button class="swatch ${(tool==='hl'?SET.hl:SET.color)===c?'on':''}" data-color="${c}" style="background:${c}" aria-label="colour ${c}"></button>`).join('')}
+     <button class="tb" id="sizeBtn" aria-label="Line thickness"><span class="dotsz" style="width:${6+SET.size*5}px;height:${6+SET.size*5}px"></span></button>
+     <span class="sep"></span>
+     <button class="tb" id="undoBtn" aria-label="Undo">&#8630;</button>
+     <button class="tb" id="redoBtn" aria-label="Redo">&#8631;</button>
+     <span class="sep"></span>
+     <button class="tb" id="addImgBtn" aria-label="Insert image">&#128247; Image</button>
+     <button class="tb ${tool==='img'?'on':''}" data-tool="img" aria-label="Move or resize images">&#10021; Move</button>
+     <button class="tb ${SET.finger?'on':''}" id="fingerBtn" aria-label="Finger writes">&#9757; Finger ${SET.finger?'ON':'OFF'}</button>
    </div>
    <div class="sheet ${SET.finger?'finger':''} ${tool==='img'?'imgmode':''}" id="sheet" style="width:${W}px;height:${Math.round(pg.h*s)}px">
      <img src="${pg.img}" alt="Inspection sheet page ${p}">
@@ -294,7 +310,7 @@ async function renderSheet(p){
    </div>`;
   const cv=$('#ink'),dpr=window.devicePixelRatio||1;
   cv.width=Math.round(W*dpr);cv.height=Math.round(pg.h*s*dpr);
-  const ctx=cv.getContext('2d');ctx.setTransform(dpr*s,0,0,dpr*s,0,0);
+  const ctx=cv.getContext('2d',{desynchronized:true});ctx.setTransform(dpr*s,0,0,dpr*s,0,0);   // desynchronized = lower pen latency where supported
   drawSheet(ctx,p);
   attachInk(cv,ctx,p);
   if(tool==='img')attachImages(p,s);
@@ -304,6 +320,9 @@ async function renderSheet(p){
     if(b.dataset.tool){tool=b.dataset.tool;selImg=null;renderSheet(p);}
     else if(b.id==='addImgBtn'){$('#insImg').value='';$('#insImg').click();}
     else if(b.id==='undoBtn'){undo(ctx,p);}
+    else if(b.id==='redoBtn'){redo(ctx,p);}
+    else if(b.id==='sizeBtn'){SET.size=(SET.size+1)%3;saveSettings();renderSheet(p);}
+    else if(b.dataset.color){if(tool==='hl')SET.hl=b.dataset.color;else SET.color=b.dataset.color;saveSettings();renderSheet(p);}
     else if(b.id==='fingerBtn'){SET.finger=!SET.finger;saveSettings();renderSheet(p);}
   };
 }
@@ -315,13 +334,34 @@ function drawSelections(ctx,p){
     ctx.beginPath();ctx.ellipse(o.x+o.w/2,o.y+o.h/2,o.w/2+2,o.h/2+1.5,0,0,Math.PI*2);ctx.stroke();
   }
 }
-function drawStroke(ctx,st){
-  const pts=st.pts;if(!pts.length)return;
-  ctx.strokeStyle=st.c;ctx.lineWidth=st.w;ctx.lineCap='round';ctx.lineJoin='round';
-  ctx.beginPath();ctx.moveTo(pts[0][0],pts[0][1]);
-  if(pts.length===1)ctx.lineTo(pts[0][0]+0.01,pts[0][1]);
-  for(let i=1;i<pts.length;i++)ctx.lineTo(pts[i][0],pts[i][1]);
-  ctx.stroke();
+/* Ink: points are [x, y, pressure?]. Strokes are drawn as smooth curves through the midpoints between samples;
+   Apple Pencil strokes (st.pen) vary in width with pressure, highlighter strokes (st.k==='hl') are one wide
+   translucent path. Older strokes without pressure draw at a constant width. */
+function drawStroke(ctx,st,fromSeg=0){
+  const P=st.pts,n=P.length;if(!n)return;
+  const mid=i=>[(P[i][0]+P[i+1][0])/2,(P[i][1]+P[i+1][1])/2];
+  ctx.save();ctx.strokeStyle=st.c;ctx.fillStyle=st.c;ctx.lineJoin='round';
+  if(st.k==='hl'){
+    ctx.globalAlpha=0.35;ctx.lineCap='butt';ctx.lineWidth=st.w;ctx.beginPath();ctx.moveTo(P[0][0],P[0][1]);
+    for(let i=1;i<n-1;i++){const m=mid(i);ctx.quadraticCurveTo(P[i][0],P[i][1],m[0],m[1]);}
+    if(n>1)ctx.lineTo(P[n-1][0],P[n-1][1]);else ctx.lineTo(P[0][0]+0.01,P[0][1]);
+    ctx.stroke();ctx.restore();return;
+  }
+  ctx.lineCap='round';
+  const wAt=i=>{
+    if(!st.pen)return st.w;
+    const q=((P[Math.max(0,i-1)][2]||.5)+(P[i][2]||.5)+(P[Math.min(n-1,i+1)][2]||.5))/3;
+    return st.w*(0.4+1.2*q);
+  };
+  if(n===1){ctx.beginPath();ctx.arc(P[0][0],P[0][1],wAt(0)/2,0,Math.PI*2);ctx.fill();ctx.restore();return;}
+  for(let i=Math.max(0,fromSeg);i<n;i++){
+    ctx.lineWidth=wAt(i);ctx.beginPath();
+    if(i===0){const m=mid(0);ctx.moveTo(P[0][0],P[0][1]);ctx.lineTo(m[0],m[1]);}
+    else if(i===n-1){const m=mid(n-2);ctx.moveTo(m[0],m[1]);ctx.lineTo(P[n-1][0],P[n-1][1]);}
+    else{const a=mid(i-1),b=mid(i);ctx.moveTo(a[0],a[1]);ctx.quadraticCurveTo(P[i][0],P[i][1],b[0],b[1]);}
+    ctx.stroke();
+  }
+  ctx.restore();
 }
 function drawSheet(ctx,p){
   ctx.clearRect(0,0,SHEET.pages[p-1].w,SHEET.pages[p-1].h);
@@ -335,8 +375,10 @@ function optAt(p,x,y){
   }
   return best;
 }
-function snapshot(p){hist.push({sel:Object.assign({},cur.sel),ink:cur.ink[p].slice()});if(hist.length>60)hist.shift();}
-function undo(ctx,p){const h=hist.pop();if(!h){toast('Nothing to undo');return;}cur.sel=h.sel;cur.ink[p]=h.ink;save();drawSheet(ctx,p);renderTabs();}
+const state=p=>({sel:Object.assign({},cur.sel),ink:cur.ink[p].slice()});
+function snapshot(p){hist.push(state(p));redoStack=[];if(hist.length>60)hist.shift();}
+function undo(ctx,p){const h=hist.pop();if(!h){toast('Nothing to undo');return;}redoStack.push(state(p));cur.sel=h.sel;cur.ink[p]=h.ink;save();drawSheet(ctx,p);renderTabs();}
+function redo(ctx,p){const h=redoStack.pop();if(!h){toast('Nothing to redo');return;}hist.push(state(p));cur.sel=h.sel;cur.ink[p]=h.ink;save();drawSheet(ctx,p);renderTabs();}
 function setOpt(o,on){
   if(on&&FIELD[o.f].kind!=='multi')for(const x of OPTS_OF[o.f])delete cur.sel[x.id];
   if(on)cur.sel[o.id]=1;else delete cur.sel[o.id];
@@ -358,11 +400,17 @@ function recognise(p,st){
   return Object.values(byField).map(v=>v.o);
 }
 function attachInk(cv,ctx,p){
-  let st=null,tapStart=null;
+  let st=null,tapStart=null,scrolling=false,lastC=null,raf=0,penDown=false,lastPen=0;
+  const fingers=new Map();   // touches currently down (finger-writing mode only)
+  const centre=()=>{let x=0,y=0;fingers.forEach(f=>{x+=f.x;y+=f.y;});return {x:x/fingers.size,y:y/fingers.size};};
   const pt=e=>{const r=cv.getBoundingClientRect();return [(e.clientX-r.left)/sheetScale,(e.clientY-r.top)/sheetScale];};
   const stopStylusScroll=e=>{if([...e.touches].some(t=>t.touchType==='stylus'))e.preventDefault();};
   cv.addEventListener('touchstart',stopStylusScroll,{passive:false});
   cv.addEventListener('touchmove',stopStylusScroll,{passive:false});
+  // Palm rejection: while the Pencil is down (and just after), touches and big contact areas are ignored.
+  const palm=e=>e.pointerType==='touch'&&(penDown||Date.now()-lastPen<900||e.width>32||e.height>32);
+  const r1=v=>Math.round(v*10)/10;
+  const mk=(ev,pen)=>{const q=pt(ev).map(r1);return pen?[q[0],q[1],Math.round((ev.pressure||0.5)*100)/100]:q;};
   const draws=e=>e.pointerType==='pen'||e.pointerType==='mouse'||(e.pointerType==='touch'&&SET.finger);
   const eraseAt=([x,y])=>{
     const before=cur.ink[p].length;
@@ -370,28 +418,54 @@ function attachInk(cv,ctx,p){
     if(cur.ink[p].length!==before){drawSheet(ctx,p);save();}
   };
   cv.onpointerdown=e=>{
+    if(e.pointerType==='pen'){penDown=true;lastPen=Date.now();}
+    if(palm(e)){e.preventDefault();return;}
+    if(e.pointerType==='touch'&&SET.finger){
+      // With finger-writing on the page can't scroll natively, so two fingers scroll it by hand.
+      fingers.set(e.pointerId,{x:e.clientX,y:e.clientY});
+      if(fingers.size>=2){
+        if(st){st=null;hist.pop();drawSheet(ctx,p);}          // the first finger was a scroll, not a stroke
+        scrolling=true;lastC=centre();e.preventDefault();return;
+      }
+    }
     if(!draws(e)){tapStart={x:e.clientX,y:e.clientY,t:Date.now()};return;}
-    e.preventDefault();cv.setPointerCapture(e.pointerId);snapshot(p);
-    if(tool==='erase'){st={erase:true};eraseAt(pt(e));return;}
-    st={pts:[pt(e)],c:SET.color,w:e.pointerType==='pen'?1.4:1.6};
+    e.preventDefault();try{cv.setPointerCapture(e.pointerId);}catch(_){}snapshot(p);
+    if(tool==='erase'){st={erase:true,pid:e.pointerId};eraseAt(pt(e));return;}
+    const pen=e.pointerType==='pen';
+    st=tool==='hl'?{pts:[mk(e,false)],c:SET.hl,w:HL_W[SET.size],k:'hl',pid:e.pointerId}
+                  :{pts:[mk(e,pen)],c:SET.color,w:PEN_W[SET.size],pen,pid:e.pointerId};
+    if(st.k!=='hl')drawStroke(ctx,st);   // the dot shows immediately
   };
   cv.onpointermove=e=>{
-    if(!st)return;
+    if(fingers.has(e.pointerId)){
+      fingers.set(e.pointerId,{x:e.clientX,y:e.clientY});
+      if(scrolling){const c=centre();window.scrollBy(lastC.x-c.x,lastC.y-c.y);lastC=c;return;}
+    }
+    if(!st||e.pointerId!==st.pid)return;     // only the pointer that started the stroke can extend it
     const evs=e.getCoalescedEvents?e.getCoalescedEvents():[e];
     if(st.erase){evs.forEach(ev=>eraseAt(pt(ev)));return;}
-    const from=st.pts.length-1;
-    for(const ev of evs){const q=pt(ev),l=st.pts[st.pts.length-1];if(Math.hypot(q[0]-l[0],q[1]-l[1])>0.6)st.pts.push(q.map(v=>Math.round(v*10)/10));}
-    if(st.pts.length-1>from)drawStroke(ctx,{pts:st.pts.slice(from),c:st.c,w:st.w}); // only the new piece
+    const from=st.pts.length;
+    for(const ev of evs){const q=mk(ev,st.pen),l=st.pts[st.pts.length-1];if(Math.hypot(q[0]-l[0],q[1]-l[1])>0.5)st.pts.push(q);}
+    if(st.pts.length===from)return;
+    if(st.k==='hl'){ // one translucent path: redraw it whole (once per frame) so overlaps don't darken
+      if(!raf)raf=requestAnimationFrame(()=>{raf=0;if(st){drawSheet(ctx,p);drawStroke(ctx,st);}});
+    }else drawStroke(ctx,st,from-1);   // only the new pieces
   };
   const end=e=>{
+    if(e.pointerType==='pen'){penDown=false;lastPen=Date.now();}
+    if(fingers.delete(e.pointerId)&&scrolling){if(fingers.size<2)scrolling=st=null;return;}
     if(tapStart&&!st){
       const moved=Math.hypot(e.clientX-tapStart.x,e.clientY-tapStart.y);
       if(e.type==='pointerup'&&moved<10&&Date.now()-tapStart.t<450){const o=optAt(p,...pt(e));if(o){snapshot(p);setOpt(o,!cur.sel[o.id]);save();drawSheet(ctx,p);renderTabs();}}
       tapStart=null;return;
     }
-    if(!st)return;
-    const s=st;st=null;
+    if(!st||e.pointerId!==st.pid)return;     // a palm lifting must not end the Pencil's stroke
+    const s=st;st=null;delete s.pid;
     if(s.erase){renderTabs();return;}
+    if(s.k==='hl'){ // highlighter: ink only, never circles an option
+      if(s.pts.length<2){hist.pop();drawSheet(ctx,p);return;}
+      cur.ink[p].push(s);save();drawSheet(ctx,p);renderTabs();return;
+    }
     let len=0;for(let i=1;i<s.pts.length;i++)len+=Math.hypot(s.pts[i][0]-s.pts[i-1][0],s.pts[i][1]-s.pts[i-1][1]);
     if(len<4){ // a tap with the pen toggles the option under it
       const o=optAt(p,...s.pts[0]);
@@ -849,7 +923,12 @@ $('#nextBtn').onclick=()=>{if(tab<TABS.length-1){tab++;renderTabs();renderSectio
 (async()=>{
   await openDB();
   if(navigator.storage&&navigator.storage.persist)navigator.storage.persist().catch(()=>{});
-  if('serviceWorker' in navigator&&location.protocol!=='file:')navigator.serviceWorker.register('sw.js').catch(()=>{});
+  if('serviceWorker' in navigator&&location.protocol!=='file:'){
+    const hadController=!!navigator.serviceWorker.controller;
+    navigator.serviceWorker.register('sw.js').catch(()=>{});
+    // A new version just took over: on the home screen reload straight into it; mid-inspection wait so nothing is lost.
+    navigator.serviceWorker.addEventListener('controllerchange',()=>{if(!hadController)return;if(view==='home')location.reload();else toast('Update ready - it starts next time you open the app');});
+  }
   showHome();
 })();
 </script>
