@@ -92,13 +92,25 @@ footer#bar .btn{flex:1;max-width:200px}
 .types button{padding:16px 8px;border:1px solid var(--line);border-radius:12px;background:var(--card);font-weight:700;font-size:15px}
 .hide{display:none!important}
 @media print{header,nav,footer,#toast,.noprint{display:none!important}body,main{background:#fff;color:#000;padding:0}.card{border:0;padding:0}.rep .kv{padding:2px 0;break-inside:avoid}.pgrid{display:grid;grid-template-columns:1fr 1fr;gap:8px}.pgrid figure{margin:0;break-inside:avoid}.pgrid img{width:100%;max-height:300px;object-fit:contain}}
+main.sheetmode{max-width:none;padding:0 0 110px}
+.tools{position:sticky;top:calc(env(safe-area-inset-top) + 92px);z-index:15;display:flex;gap:6px;align-items:center;flex-wrap:wrap;padding:6px 10px;background:var(--card);border-bottom:1px solid var(--line)}
+.tools .btn.on{background:var(--pri);border-color:var(--pri);color:#fff}
+.tools .hint{font-size:12px;color:var(--mute);flex:1;min-width:140px}
+.sheet{position:relative;margin:8px auto;background:#fff;box-shadow:0 1px 6px rgba(0,0,0,.25)}
+.sheet img{display:block;width:100%;height:100%;user-select:none;-webkit-user-select:none;-webkit-user-drag:none;pointer-events:none}
+.sheet canvas{position:absolute;left:0;top:0;width:100%;height:100%;touch-action:pan-x pan-y pinch-zoom}
+.sheet.finger canvas{touch-action:none}
+.sheet .bl{position:absolute;margin:0;min-height:0;border:0;border-radius:2px;background:rgba(31,111,235,.06);color:#0b3d91;padding:0 2px;font-family:"Bradley Hand","Segoe Print","Comic Sans MS",cursive,sans-serif;font-weight:600;outline:none;resize:none;line-height:1.1;overflow:hidden;-webkit-appearance:none;appearance:none;box-shadow:none}
+.sheet .bl:focus{background:rgba(255,214,0,.28)}
+.swatch{width:30px;height:30px;border-radius:50%;border:3px solid transparent;display:inline-block}
+.swatch.on{border-color:var(--ink)}
 </style>
+
 </head>
 <body>
 <header>
   <button id="homeBtn" class="hide" aria-label="All inspections">&#9664;</button>
   <h1 id="title">Field Lite</h1>
-  <button id="repBtn" class="hide">Report</button>
 </header>
 <nav id="tabs" class="hide"></nav>
 <main id="main"></main>
@@ -110,160 +122,44 @@ footer#bar .btn{flex:1;max-width:200px}
 <input type="file" id="cam" accept="image/*" capture="environment" class="hide">
 <input type="file" id="lib" accept="image/*" multiple class="hide">
 <input type="file" id="imp" accept=".zip,application/zip,.json,application/json,image/jpeg" multiple class="hide">
+<script src="sheet.js"></script>
 <script>
 'use strict';
 /* =====================================================================
-   Field Lite - appraisal inspection data collector.
-   Everything is stored on the device (IndexedDB); nothing is sent
-   anywhere. One self-contained file, works offline once loaded.
+   Field Lite - appraisal inspection collector built on the appraiser's
+   own paper inspection sheet (sheet.js / sheet-N.png, generated from
+   InspectionSheet.pdf). Circle or tap an option to record it; write in
+   the blanks (Apple Pencil Scribble / pen handwriting becomes text).
+   Everything is stored on the device (IndexedDB); works offline.
    ===================================================================== */
 
-/* ---------- Property types ---------- */
-const TYPES = {
-  sfr:   'Single-Family Detached',
-  th:    'Townhouse / Attached',
-  condo: 'Condominium',
-  multi: '2-4 Family',
-  land:  'Vacant Land'
-};
-const improved = t => t !== 'land';
-
-/* ---------- Choice lists ---------- */
-const COND = [
-  ['C1','New / never occupied'],['C2','No deferred maint., like new'],['C3','Well maintained, normal wear'],
-  ['C4','Minor deferred maint.'],['C5','Obvious deferred maint.'],['C6','Substantial damage']];
-const QUAL = [
-  ['Q1','Custom, exceptional'],['Q2','Custom, high quality'],['Q3','Above standard'],
-  ['Q4','Standard / builder grade'],['Q5','Economy, plain'],['Q6','Basic, substandard']];
-const UPD = ['Not updated','Updated < 1 yr ago','Updated 1-5 yrs ago','Updated 6-10 yrs ago','Updated 11-15 yrs ago','Updated > 15 yrs ago','Remodeled < 1 yr ago','Remodeled 1-5 yrs ago','Remodeled 6-10 yrs ago','Remodeled 11-15 yrs ago','Unknown'];
-const MATL_COND = ['Good','Average','Fair','Poor'];
-
-/* Field types: one (single chip), multi (chips), cond, qual, upd, text, num, count, note
-   `when` limits a field to some property types. */
-const SECTIONS = [
- {id:'gen', title:'General', fields:[
-  {id:'addr',  l:'Address', t:'text'},
-  {id:'unit',  l:'Unit #', t:'text', when:['condo','th','multi']},
-  {id:'file',  l:'File / Order #', t:'text'},
-  {id:'insp_date', l:'Inspection date', t:'date'},
-  {id:'occ',   l:'Occupant', t:'one', o:['Owner','Tenant','Vacant'], when:'imp'},
-  {id:'present', l:'Present at inspection', t:'multi', o:['Owner','Tenant','Agent','Nobody','Other party']},
-  {id:'access', l:'Inspection limits', t:'multi', o:['Full interior & exterior','Exterior only','Areas not accessible','Weather limited','Occupied - personal items']},
- ]},
- {id:'site', title:'Site', fields:[
-  {id:'topo', l:'Topography', t:'one', o:['Level','Gentle slope','Sloping','Steep','Below street','Above street']},
-  {id:'shape', l:'Shape', t:'one', o:['Rectangular','Irregular','Corner lot','Cul-de-sac','Flag lot','Pie shaped']},
-  {id:'lotsize', l:'Lot size (if known)', t:'text'},
-  {id:'view', l:'View', t:'multi', o:['Residential','Water','Golf','Park','Wooded','Pastoral','Mountain','City skyline','Busy road','Commercial','Industrial','Power lines']},
-  {id:'loc', l:'Location', t:'multi', o:['Residential','Busy road','Commercial','Industrial','Water front','Golf course','Railroad','Highway','Airport noise','Power lines','School adjacent','Landfill']},
-  {id:'util', l:'Utilities', t:'multi', o:['Public water','Well','Public sewer','Septic','Electric','Natural gas','Propane','Solar']},
-  {id:'street', l:'Street', t:'multi', o:['Asphalt','Concrete','Gravel','Dirt','Private road','Curb/gutter','Sidewalk','Street lights','Alley']},
-  {id:'drive', l:'Driveway', t:'multi', o:['Concrete','Asphalt','Pavers','Gravel','Dirt','Circular','None']},
-  {id:'fence', l:'Fencing', t:'multi', o:['None','Wood','Vinyl/PVC','Chain link','Aluminum','Wrought iron','Block/CBS wall','Split rail','Partial','Full perimeter']},
-  {id:'landsc', l:'Landscaping', t:'one', o:['Typical','Above average','Below average','Minimal','Professionally landscaped']},
-  {id:'site_adv', l:'Site adverse conditions', t:'multi', o:['None apparent','Easement','Encroachment','Drainage issue','Standing water','Flood zone','Wetlands','Erosion','Retaining wall failing']},
- ]},
- {id:'bldg', title:'Building', when:'imp', fields:[
-  {id:'style', l:'Design / style', t:'one', o:['Ranch','Colonial','Contemporary','Cape Cod','Split level','Bi-level','Traditional','Mediterranean','Craftsman','Bungalow','Victorian','Townhouse','Garden','Mid-rise','High-rise','Duplex','Triplex','Fourplex']},
-  {id:'stories', l:'Stories', t:'one', o:['1','1.5','2','2.5','3','3+']},
-  {id:'attach', l:'Attachment', t:'one', o:['Detached','Attached','Semi-detached / end unit','Interior unit']},
-  {id:'yrblt', l:'Year built (if known)', t:'num'},
-  {id:'fnd', l:'Foundation', t:'multi', o:['Slab','Crawl space','Full basement','Partial basement','Pier & beam','Walk-out basement']},
-  {id:'bsmt_fin', l:'Basement finished', t:'one', o:['None','0%','25%','50%','75%','100%'], showIf:f=>has(f.fnd,'basement')},
-  {id:'extw', l:'Exterior walls', t:'multi', o:['CBS / stucco','Frame / stucco','Vinyl siding','Wood siding','Fiber cement','Brick','Brick veneer','Stone','Block','Aluminum siding','Log']},
-  {id:'roof', l:'Roof surface', t:'multi', o:['Asphalt shingle','Architectural shingle','Concrete tile','Clay tile','Metal standing seam','Metal 5V','Flat / built-up','Modified bitumen','TPO / membrane','Slate','Wood shake']},
-  {id:'roofshape', l:'Roof shape', t:'one', o:['Hip','Gable','Flat','Mansard','Gambrel','Combination']},
-  {id:'roofage', l:'Roof age (approx.)', t:'one', o:['New < 2 yrs','2-5 yrs','6-10 yrs','11-15 yrs','16-20 yrs','20+ yrs','Unknown']},
-  {id:'gutter', l:'Gutters', t:'one', o:['Aluminum','Vinyl','Copper','Partial','None']},
-  {id:'win', l:'Windows', t:'multi', o:['Single hung','Double hung','Casement','Sliding','Fixed','Awning','Jalousie','Aluminum','Vinyl','Wood','Fiberglass','Insulated / double pane','Impact rated','Low-E']},
-  {id:'storm', l:'Storm / disaster mitigation', t:'multi', o:['None','Impact windows','Impact doors','Impact garage door','Accordion shutters','Roll-down shutters','Panel shutters','Bahama shutters','Hurricane straps / clips','Generator (whole house)','Generator (portable hookup)','Sump pump','Elevated / flood vents','Seismic bracing','Sprinkler system','Fire-resistant roof']},
-  {id:'ext_cond', l:'Exterior condition', t:'one', o:MATL_COND},
-  {id:'car', l:'Car storage', t:'multi', o:['None','Attached garage','Detached garage','Built-in garage','Carport','Driveway','Assigned space','Covered space','Garage (condo)']},
-  {id:'car_n', l:'# of car spaces (garage/carport)', t:'count'},
- ]},
- {id:'amen', title:'Amenities', when:'imp', fields:[
-  {id:'pool', l:'Pool / spa', t:'multi', o:['None','In-ground pool','Above-ground pool','Heated pool','Salt water','Spa / hot tub','Pool screen enclosure','Pool fence','Community pool only']},
-  {id:'outdoor', l:'Patio / porch / deck', t:'multi', o:['Covered patio','Open patio','Screened porch','Enclosed porch / FL room','Front porch','Wood deck','Composite deck','Balcony','Lanai','Pavers','Summer kitchen','Fire pit','Pergola']},
-  {id:'outbldg', l:'Detached buildings', t:'multi', o:['None','Shed','Workshop','Gazebo','Detached garage','Barn','Guest house / ADU','Pool house','Greenhouse','Carport (detached)']},
-  {id:'outbldg_note', l:'Detached building details (size, use, cond.)', t:'note', showIf:f=>f.outbldg&&f.outbldg.length&&!has(f.outbldg,'None')},
-  {id:'fp_n', l:'Fireplaces', t:'count'},
-  {id:'fp_type', l:'Fireplace type', t:'multi', o:['Wood burning','Gas','Electric','Wood stove','Pellet stove'], showIf:f=>f.fp_n>0},
-  {id:'other_amen', l:'Other amenities', t:'multi', o:['Solar panels (owned)','Solar panels (leased)','Irrigation','Security system','Smart home','EV charger','Water softener','Elevator','Dock / boat lift','Seawall','Outdoor lighting','Central vacuum']},
- ]},
- {id:'proj', title:'Project', when:['condo','th'], fields:[
-  {id:'floor', l:'Unit on floor #', t:'count', when:['condo']},
-  {id:'bfloors', l:'Floors in building', t:'count'},
-  {id:'unit_loc', l:'Unit location', t:'multi', o:['End unit','Interior unit','Corner unit','Penthouse','Ground floor','Top floor','Water view','Pool view']},
-  {id:'elev', l:'Elevator', t:'one', o:['Yes','No'], when:['condo']},
-  {id:'hoa_amen', l:'HOA / project amenities', t:'multi', o:['Pool','Clubhouse','Fitness center','Tennis','Pickleball','Playground','Gated','Guard gated','Security','Dog park','Boat docks','Golf','Covered parking','Storage unit']},
-  {id:'proj_cond', l:'Common area condition', t:'one', o:MATL_COND},
- ]},
- {id:'int', title:'Interior', when:'imp', fields:[
-  {id:'floors', l:'Floors', t:'multi', o:['Tile (ceramic/porcelain)','Laminate','Luxury vinyl plank','Engineered wood','Hardwood','Carpet','Vinyl / sheet','Terrazzo','Marble','Concrete / polished']},
-  {id:'walls', l:'Walls', t:'multi', o:['Drywall','Plaster','Paneling','Shiplap']},
-  {id:'trim', l:'Trim / finish', t:'multi', o:['Wood','MDF / painted','Crown molding','Baseboards','Tray ceilings','Vaulted ceilings','High ceilings']},
-  {id:'heat', l:'Heating', t:'multi', o:['FWA','Heat pump','Baseboard','Radiant','Hot water','Electric','Gas','Oil','Mini-split','None']},
-  {id:'cool', l:'Cooling', t:'multi', o:['Central air','Heat pump','Window units','Mini-split','Evaporative','None']},
-  {id:'appl', l:'Appliances', t:'multi', o:['Range / oven','Cooktop','Wall oven','Refrigerator','Dishwasher','Disposal','Microwave','Washer','Dryer','Stainless','Gas range']},
-  {id:'attic', l:'Attic', t:'multi', o:['None','Scuttle','Drop stair','Stairs','Floor','Finished','Heated']},
-  {id:'wh', l:'Water heater', t:'multi', o:['Tank - electric','Tank - gas','Tankless','Strapped','Not strapped','Location: garage','Location: closet','Location: attic']},
-  {id:'kit_upd', l:'Kitchen update', t:'upd'},
-  {id:'kit_detail', l:'Kitchen detail', t:'multi', o:['Granite counters','Quartz counters','Laminate counters','Solid surface','New cabinets','Original cabinets','Island','Breakfast bar','Pantry','Updated appliances','Tile backsplash']},
-  {id:'bath_upd', l:'Bathroom update', t:'upd'},
-  {id:'bath_detail', l:'Bath detail', t:'multi', o:['Tile floor','Tile surround','Walk-in shower','Garden tub','Double vanity','New vanity','Original fixtures','Frameless glass','Fiberglass tub/shower']},
-  {id:'other_upd', l:'Other updates (approx. yr)', t:'multi', o:['Roof','HVAC','Water heater','Windows','Flooring','Interior paint','Exterior paint','Electrical panel','Plumbing repipe','Doors']},
-  {id:'int_cond', l:'Interior condition', t:'one', o:MATL_COND},
- ]},
- {id:'rooms', title:'Rooms', when:'imp', custom:'rooms'},
- {id:'rate', title:'Rating', when:'imp', fields:[
-  {id:'cond', l:'Overall condition (UAD)', t:'cond'},
-  {id:'qual', l:'Quality of construction (UAD)', t:'qual'},
-  {id:'func', l:'Functional utility', t:'one', o:['Typical / adequate','Superior','Functional obsolescence']},
-  {id:'func_note', l:'Functional issue', t:'multi', o:['Bedroom through bedroom','No closet in bedroom','Small kitchen','Kitchen not updated for market','Single bath for 3+ bed','Poor floor plan','Converted garage','Low ceilings','Steep stairs'], showIf:f=>f.func==='Functional obsolescence'},
- ]},
- {id:'def', title:'Defects', fields:[
-  {id:'defects', l:'Physical deficiencies', t:'multi', o:['None observed','Roof damage / leak','Ceiling water stain','Foundation crack','Settlement','Wood rot','Peeling paint','Missing flooring','Damaged drywall','Mold / mildew','Termite damage','Broken windows','HVAC inoperable','Plumbing leak','Incomplete construction','Unpermitted addition','Pool needs repair','Fence damage']},
-  {id:'hs', l:'Health & safety', t:'multi', o:['None observed','No smoke detectors','No CO detector','Exposed wiring','Missing outlet covers','Missing handrail','Trip hazard','Water heater not strapped','No TPR valve extension','Broken glass','Missing pool barrier','Open permits','Debris / hoarding']},
-  {id:'ext_adv', l:'External / adverse factors', t:'multi', o:['None apparent','Busy road','Commercial adjacent','Power lines / tower','Railroad','Highway noise','Airport noise','Landfill','Vacant / boarded neighbors','Industrial']},
-  {id:'def_note', l:'Defect notes (use mic on keyboard to dictate)', t:'note'},
- ]},
- {id:'units', title:'Units', when:['multi'], fields:[
-  {id:'nunits', l:'Number of units', t:'one', o:['2','3','4']},
-  {id:'unit_meters', l:'Separate meters', t:'multi', o:['Electric','Gas','Water','None']},
-  {id:'unit_rent', l:'Rent per unit (if known)', t:'note'},
-  {id:'adu', l:'Accessory unit', t:'one', o:['None','ADU - legal','ADU - unknown permit','Illegal unit']},
- ]},
- {id:'photo', title:'Photos', custom:'photos'},
- {id:'sketch', title:'Sketch', when:'imp', custom:'sketch'},
- {id:'notes', title:'Notes', fields:[
-  {id:'notes', l:'General notes (tap mic on your keyboard to dictate)', t:'note'},
- ]},
+const TABS = [
+  {id:'p1', title:'Page 1'}, {id:'p2', title:'Page 2'},
+  {id:'photo', title:'Photos'}, {id:'sketch', title:'Sketch'}, {id:'export', title:'Export'}
 ];
-
 const PHOTO_SHOTS = {
   imp: ['Front','Rear','Street','Side L','Side R','Address','Kitchen','Living','Dining','Family','Bath','Bedroom','Smoke detector','CO detector','Water heater','HVAC','Electric panel','Roof','Garage','Pool','Patio','Detached bldg','Defect'],
   land:['Front','Street','Street (opposite)','Rear','Side','Address / sign','Access','Adverse','Defect']
 };
-const ROOM_COLS = ['Foyer','Living','Dining','Kitchen','Den','Family','Rec','Bed','Bath','Half','Laundry','Other'];
-const LEVELS = ['Basement','Level 1','Level 2','Level 3'];
 const AREA_KINDS = ['GLA','Garage','Porch','Patio','Deck','Basement','Carport','Other'];
-// Extra fields shown on the Rooms screen
-const ROOM_FIELDS = [
-  {id:'layout', l:'Floor plan', t:'multi', o:['Open concept','Split bedroom plan','Traditional / closed','Primary suite main level','Primary suite upper level','Bonus room','In-law suite','Office / den','Loft']},
-  {id:'gla_est', l:'GLA if measured elsewhere (sf)', t:'num'}];
+const NUMERIC = /^(hoa_fee|special_assmt|driveway_cars|park_cars|solar_age|c_elev|c_fee|c_stories|c_yrblt|c_bldgs|c_spcl|m_yrblt|t_bed|t_bath|t_half|t_smk|u_\w+|hvac_n(_2)?|floors_upd(_2)?|bath_upd(_2)?)$/;
+const FIELD = Object.fromEntries(SHEET.fields.map(f => [f.id, f]));
+const OPT = Object.fromEntries(SHEET.opts.map(o => [o.id, o]));
+const OPTS_OF = {};
+SHEET.opts.forEach(o => (OPTS_OF[o.f] = OPTS_OF[o.f] || []).push(o));
+const PAGE_OPTS = {1: SHEET.opts.filter(o => o.p === 1), 2: SHEET.opts.filter(o => o.p === 2)};
 
 /* ---------- Tiny helpers ---------- */
 const $ = s => document.querySelector(s);
 const esc = s => String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-const has = (arr, sub) => Array.isArray(arr) && arr.some(v => v.toLowerCase().includes(sub.toLowerCase()));
 const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2,7);
 const today = () => new Date().toISOString().slice(0,10);
 function toast(m){const t=$('#toast');t.textContent=m;t.classList.add('show');clearTimeout(toast.h);toast.h=setTimeout(()=>t.classList.remove('show'),1600);}
-function appliesTo(when, type){
-  if(!when) return true;
-  if(when==='imp') return improved(type);
-  return when.includes(type);
-}
+
+/* ---------- Settings (per device) ---------- */
+const SET = {finger:false, color:'#1a3fb0'};
+try{Object.assign(SET, JSON.parse(localStorage.getItem('fieldlite.settings')||'{}'));}catch(_){}
+function saveSettings(){try{localStorage.setItem('fieldlite.settings', JSON.stringify(SET));}catch(_){}}
 
 /* ---------- Storage (IndexedDB) ---------- */
 let db;
@@ -278,190 +174,299 @@ const dbAll=s=>tx(s,'readonly',st=>st.getAll());
 const photosFor=id=>tx('photos','readonly',st=>st.index('insp').getAll(id));
 
 /* ---------- State ---------- */
-let cur=null;        // current inspection
-let secIdx=0;
-let view='home';     // home | edit | report
-let saveTimer=null;
-const urls=new Map(); // photo id -> object URL
+let cur=null, tab=0, view='home', saveTimer=null;
+const urls=new Map();
 function save(){clearTimeout(saveTimer);saveTimer=setTimeout(()=>{cur.updated=Date.now();dbPut('insp',cur);},300);}
-function newInsp(type){
-  return {id:uid(),created:Date.now(),updated:Date.now(),type,
-    f:{insp_date:today(),present:[],access:['Full interior & exterior']},
-    rooms:{rows: type==='multi' ? [{name:'Unit 1',c:{}},{name:'Unit 2',c:{}}] : [{name:'Level 1',c:{}}]},
-    sketch:{areas:[]}};
+function newInsp(){return normalize({id:uid(),created:Date.now(),updated:Date.now()});}
+function normalize(i){
+  i.v=2; i.sel=i.sel||{}; i.txt=i.txt||{}; i.ink=i.ink||{1:[],2:[]}; i.ink[1]=i.ink[1]||[]; i.ink[2]=i.ink[2]||[];
+  i.sketch=i.sketch||{areas:[]}; i.date=i.date||(i.f&&i.f.insp_date)||today();
+  if(i.f&&!i.txt.address&&i.f.addr)i.txt.address=i.f.addr;   // carry address over from the old chip form
+  return i;
 }
-function visibleSections(){return SECTIONS.filter(s=>appliesTo(s.when,cur.type));}
-function visibleFields(sec){return (sec.fields||[]).filter(f=>appliesTo(f.when,cur.type)&&(!f.showIf||f.showIf(cur.f)));}
-function answered(v){return v!=null&&v!==''&&!(Array.isArray(v)&&!v.length);}
+const addrOf=i=>(i.txt&&i.txt.address)||(i.f&&i.f.addr)||'';
+function isLand(){return SHEET.opts.some(o=>o.f==='prop_type'&&o.v==='VACANT'&&cur.sel[o.id]);}
 
 /* ---------- Home ---------- */
 async function showHome(){
   view='home';cur=null;
-  $('#title').textContent='Field Lite';$('#homeBtn').classList.add('hide');$('#repBtn').classList.add('hide');
-  $('#tabs').classList.add('hide');$('#bar').classList.add('hide');
+  $('#title').textContent='Field Lite';$('#homeBtn').classList.add('hide');
+  $('#tabs').classList.add('hide');$('#bar').classList.add('hide');$('#main').classList.remove('sheetmode');
   const all=(await dbAll('insp')).sort((a,b)=>b.updated-a.updated);
   $('#main').innerHTML=`
-   <div class="card"><h2>New inspection</h2><div class="types">
-     ${Object.entries(TYPES).map(([k,v])=>`<button data-new="${k}">${v}</button>`).join('')}
-   </div></div>
+   <div class="card"><button class="btn pri" id="newBtn" style="width:100%;padding:16px;font-size:17px">+ New inspection</button></div>
    <div class="card"><h2>Inspections (${all.length})</h2><div class="list">
-     ${all.length?all.map(i=>`<div class="it"><div class="t" data-open="${i.id}"><b>${esc(i.f.addr||'(no address)')}${i.f.unit?' #'+esc(i.f.unit):''}</b>
-       <span class="muted">${TYPES[i.type]} · ${new Date(i.updated).toLocaleString()}</span></div>
+     ${all.length?all.map(i=>`<div class="it"><div class="t" data-open="${i.id}"><b>${esc(addrOf(i)||'(no address)')}${i.txt&&i.txt.unit?' #'+esc(i.txt.unit):''}</b>
+       <span class="muted">${new Date(i.updated).toLocaleString()}</span></div>
        <button class="btn sm" data-open="${i.id}">Open</button><button class="btn sm warn" data-del="${i.id}">&#10005;</button></div>`).join('')
-     :'<p class="muted">Nothing yet. Tap a property type above to start.</p>'}
+     :'<p class="muted">Nothing yet. Tap New inspection to start.</p>'}
    </div></div>
    <div class="card"><h2>Office</h2>
-     <p class="muted">Bring a field package (.zip) onto this computer, then import it here to get one-tap copy for TOTAL. If your computer unzipped it, select inspection.json and the photos together.</p>
+     <p class="muted">Bring a field package (.zip) onto this computer and import it here. If your computer unzipped it, select inspection.json and the photos together.</p>
      <button class="btn" id="impBtn">Import package (.zip)</button></div>
    <p class="muted" style="text-align:center">Data stays on this device until you export it.</p>`;
+  $('#main').oninput=$('#main').onchange=null;
   $('#main').onclick=async e=>{
-    const n=e.target.closest('[data-new]'),o=e.target.closest('[data-open]'),d=e.target.closest('[data-del]');
-    if(n){cur=newInsp(n.dataset.new);await dbPut('insp',cur);secIdx=0;showEdit();}
-    else if(o){cur=await dbGet('insp',o.dataset.open);secIdx=0;showEdit();}
+    const o=e.target.closest('[data-open]'),d=e.target.closest('[data-del]');
+    if(e.target.id==='newBtn'){cur=newInsp();await dbPut('insp',cur);tab=0;showEdit();}
+    else if(o){cur=normalize(await dbGet('insp',o.dataset.open));tab=0;showEdit();}
     else if(d){if(confirm('Delete this inspection and its photos?')){const ph=await photosFor(d.dataset.del);for(const p of ph)await dbDel('photos',p.id);await dbDel('insp',d.dataset.del);showHome();}}
     else if(e.target.id==='impBtn')$('#imp').click();
   };
 }
 
-/* ---------- Editor ---------- */
+/* ---------- Editor shell ---------- */
 function showEdit(){
   view='edit';
-  $('#homeBtn').classList.remove('hide');$('#repBtn').classList.remove('hide');$('#repBtn').textContent='Report / Export';
-  $('#tabs').classList.remove('hide');$('#bar').classList.remove('hide');
+  $('#homeBtn').classList.remove('hide');$('#tabs').classList.remove('hide');$('#bar').classList.remove('hide');
   renderTabs();renderSection();
 }
-function secProgress(s){
-  if(s.custom==='rooms') return Object.values(cur.rooms.rows).some(r=>Object.values(r.c).some(n=>n>0))?'✓':'';
-  if(s.custom==='sketch') return cur.sketch.areas.length?'✓':'';
-  if(s.custom==='photos') return cur._pc?String(cur._pc):'';
-  const fs=visibleFields(s);const a=fs.filter(f=>answered(cur.f[f.id])).length;return a?`${a}/${fs.length}`:'';
+function tabProgress(t){
+  if(t.id==='p1'||t.id==='p2'){const p=t.id==='p1'?1:2;
+    const n=PAGE_OPTS[p].filter(o=>cur.sel[o.id]).length+SHEET.blanks.filter(b=>b.p===p&&cur.txt[b.id]).length;return n?String(n):'';}
+  if(t.id==='photo')return cur._pc?String(cur._pc):'';
+  if(t.id==='sketch')return cur.sketch.areas.length?'✓':'';
+  return '';
 }
 function renderTabs(){
-  $('#title').textContent=(cur.f.addr||TYPES[cur.type]);
-  const secs=visibleSections();
-  $('#tabs').innerHTML=secs.map((s,i)=>`<button data-i="${i}" class="${i===secIdx?'act':''}">${s.title}<small>${secProgress(s)}</small></button>`).join('');
-  $('#tabs').onclick=e=>{const b=e.target.closest('button');if(b){secIdx=+b.dataset.i;renderTabs();renderSection();}};
-  const a=$('#tabs .act');if(a)a.scrollIntoView({inline:'center',block:'nearest'});
-  $('#prevBtn').disabled=secIdx===0;
-  $('#nextBtn').innerHTML=secIdx===secs.length-1?'Report &#9654;':'Next &#9654;';
+  $('#title').textContent=addrOf(cur)||'New inspection';
+  $('#tabs').innerHTML=TABS.map((t,i)=>`<button data-i="${i}" class="${i===tab?'act':''}">${t.title}<small>${tabProgress(t)}</small></button>`).join('');
+  $('#tabs').onclick=e=>{const b=e.target.closest('button');if(b){tab=+b.dataset.i;renderTabs();renderSection();}};
+  $('#prevBtn').disabled=tab===0;
+  $('#nextBtn').disabled=tab===TABS.length-1;
 }
 function renderSection(){
-  const sec=visibleSections()[secIdx];
   window.scrollTo(0,0);
-  if(sec.custom==='rooms') return renderRooms();
-  if(sec.custom==='photos') return renderPhotos();
-  if(sec.custom==='sketch') return renderSketch();
-  let h=`<div class="card"><h2>${sec.title}</h2>`;
-  if(sec.id==='gen') h+=`<div class="f"><span class="lb">Property type</span><div class="chips">${Object.entries(TYPES).map(([k,v])=>`<button class="chip ${cur.type===k?'on':''}" data-type="${k}">${v}</button>`).join('')}</div></div>`;
-  for(const f of visibleFields(sec)) h+=fieldHtml(f);
-  h+='</div>';
-  $('#main').innerHTML=h;
-  $('#main').onclick=onFieldClick;
-  $('#main').oninput=onFieldInput;
-}
-function fieldHtml(f){
-  const v=cur.f[f.id];
-  const wrap=inner=>`<div class="f" data-f="${f.id}"><span class="lb">${esc(f.l)}</span>${inner}</div>`;
-  switch(f.t){
-    case 'text': return wrap(`<input type="text" data-in="${f.id}" value="${esc(v||'')}" ${f.id==='addr'?'autocomplete="street-address"':''}>`);
-    case 'date': return wrap(`<input type="date" data-in="${f.id}" value="${esc(v||'')}">`);
-    case 'num':  return wrap(`<input type="number" inputmode="numeric" data-in="${f.id}" value="${esc(v||'')}">`);
-    case 'note': return wrap(`<textarea data-in="${f.id}">${esc(v||'')}</textarea>`);
-    case 'count': return wrap(`<div class="step"><button data-cnt="${f.id}" data-d="-1">&minus;</button><span>${v||0}</span><button data-cnt="${f.id}" data-d="1">+</button></div>`);
-    case 'cond': case 'qual': {
-      const list=f.t==='cond'?COND:QUAL;
-      return wrap(`<div class="chips">${list.map(([c,d])=>`<button class="chip ${v===c?'on':''}" data-one="${f.id}" data-v="${c}"><b>${c}</b> ${d}</button>`).join('')}</div>`);
-    }
-    case 'upd': return wrap(`<div class="chips">${UPD.map(o=>`<button class="chip ${v===o?'on':''}" data-one="${f.id}" data-v="${esc(o)}">${esc(o)}</button>`).join('')}</div>`);
-    case 'one': case 'multi': {
-      const sel=f.t==='one'?(v?[v]:[]):(v||[]);
-      const opts=[...f.o, ...sel.filter(s=>!f.o.includes(s))];
-      const at=f.t==='one'?'data-one':'data-multi';
-      return wrap(`<div class="chips">${opts.map(o=>`<button class="chip ${sel.includes(o)?'on':''}" ${at}="${f.id}" data-v="${esc(o)}">${esc(o)}</button>`).join('')}<button class="chip add" data-other="${f.id}">+ Other</button></div>`);
-    }
-  }
-}
-function fieldDef(id){for(const s of SECTIONS)for(const f of (s.fields||[]))if(f.id===id)return f;return ROOM_FIELDS.find(f=>f.id===id);}
-function rerenderKeepScroll(){const y=window.scrollY;renderSection();renderTabs();window.scrollTo(0,y);}
-function onFieldClick(e){
-  const b=e.target.closest('button');if(!b)return;
-  const d=b.dataset;
-  if(d.type){if(d.type!==cur.type&&confirm('Change property type to '+TYPES[d.type]+'?')){cur.type=d.type;if(d.type==='multi'&&cur.rooms.rows.length<2)cur.rooms.rows=[{name:'Unit 1',c:{}},{name:'Unit 2',c:{}}];save();secIdx=0;rerenderKeepScroll();}return;}
-  if(d.one){cur.f[d.one]=cur.f[d.one]===d.v?'':d.v;}
-  else if(d.multi){
-    let a=cur.f[d.multi]||[];
-    const exclusive=/^(none|none observed|none apparent|nobody)$/i;
-    if(a.includes(d.v))a=a.filter(x=>x!==d.v);
-    else{ if(exclusive.test(d.v))a=[d.v]; else a=a.filter(x=>!exclusive.test(x)).concat(d.v); }
-    cur.f[d.multi]=a;
-  }
-  else if(d.cnt){cur.f[d.cnt]=Math.max(0,(cur.f[d.cnt]||0)+(+d.d));}
-  else if(d.other){
-    const v=prompt('Other - '+fieldDef(d.other).l);if(!v||!v.trim())return;
-    const f=fieldDef(d.other);
-    if(f.t==='one')cur.f[f.id]=v.trim();else cur.f[f.id]=(cur.f[f.id]||[]).filter(x=>!/^(none|none observed|none apparent)$/i.test(x)).concat(v.trim());
-  } else return;
-  save();rerenderKeepScroll();
-}
-function onFieldInput(e){
-  const id=e.target.dataset.in;if(!id)return;
-  cur.f[id]=e.target.type==='number'?(e.target.value===''?'':+e.target.value):e.target.value;
-  if(id==='addr')$('#title').textContent=e.target.value||TYPES[cur.type];
-  save();
+  const id=TABS[tab].id;
+  $('#main').classList.toggle('sheetmode',id==='p1'||id==='p2');
+  $('#main').onclick=$('#main').oninput=$('#main').onchange=null;
+  if(id==='p1')return renderSheet(1);
+  if(id==='p2')return renderSheet(2);
+  if(id==='photo')return renderPhotos();
+  if(id==='sketch')return renderSketch();
+  return renderExport();
 }
 
-/* ---------- Rooms grid ---------- */
-function roomTotals(){
-  let rooms=0,bed=0,full=0,half=0;
-  for(const r of cur.rooms.rows){
-    const c=r.c;const below=r.name==='Basement';
-    // UAD: total rooms exclude baths, foyer, laundry; basement rooms not counted above grade
-    if(!below)for(const k of ['Living','Dining','Kitchen','Den','Family','Rec','Bed','Other'])rooms+=c[k]||0;
-    if(!below){bed+=c.Bed||0;full+=c.Bath||0;half+=c.Half||0;}
-  }
-  return {rooms,bed,full,half,bathStr:`${full}.${half}`};
+/* ---------- Inspection sheet: circle / tap options, write in blanks ---------- */
+let tool='pen', hist=[], sheetPage=1, sheetScale=1;
+const bgImg={};
+function loadBg(p){
+  if(!bgImg[p]){bgImg[p]=new Promise((res,rej)=>{const i=new Image();i.onload=()=>res(i);i.onerror=rej;i.src=SHEET.pages[p-1].img;});}
+  return bgImg[p];
 }
-function renderRooms(){
-  const rows=cur.rooms.rows,t=roomTotals(),isMulti=cur.type==='multi';
-  let h=`<div class="card"><h2>Room count ${isMulti?'by unit':'by level'}</h2>
-  <p class="muted">Tap a cell to add one. Long-press a cell (or switch to REMOVE mode) to subtract.</p>
-  <div class="scrollx"><table class="rooms"><tr><th></th>${rows.map((r,i)=>`<th>${esc(r.name)} <button data-rm="${i}" title="Remove" style="border:0;background:none;color:var(--mute);padding:0 2px">&#10005;</button></th>`).join('')}</tr>`;
-  for(const c of ROOM_COLS){
-    h+=`<tr><th style="text-align:left;white-space:nowrap">${c==='Half'?'Half bath':c==='Bed'?'Bedroom':c}</th>${rows.map((r,i)=>{const n=r.c[c]||0;return `<td class="n"><button data-r="${i}" data-c="${c}" class="${n?'':'z'}">${n||'·'}</button></td>`;}).join('')}</tr>`;
-  }
-  h+=`</table></div>
-  <div class="row" style="margin-top:8px"><button class="btn sm" id="minusMode">${renderRooms.minus?'Mode: REMOVE (tap to switch)':'Mode: ADD (tap to switch)'}</button>
-  ${(isMulti?['Unit '+(rows.length+1)]:LEVELS.filter(l=>!rows.some(r=>r.name===l))).slice(0,isMulti&&rows.length>=4?0:4).map(l=>`<button class="btn sm" data-addrow="${l}">+ ${l}</button>`).join('')}</div>
-  ${isMulti?'':`<div class="tot"><span>Rooms: ${t.rooms}</span><span>Bedrooms: ${t.bed}</span><span>Baths: ${t.bathStr}</span></div><p class="muted">Above-grade totals (UAD style: full.half). Basement counted separately.</p>`}
-  ${isMulti?rows.map(r=>{const c=r.c;const rm=['Living','Dining','Kitchen','Den','Family','Rec','Bed','Other'].reduce((s,k)=>s+(c[k]||0),0);return `<div class="tot"><span>${esc(r.name)}: ${rm} rms / ${c.Bed||0} bd / ${c.Bath||0}.${c.Half||0} ba</span></div>`;}).join(''):''}
-  </div>
-  <div class="card"><h2>Layout</h2>${ROOM_FIELDS.map(fieldHtml).join('')}</div>`;
-  $('#main').innerHTML=h;
-  let pressT=null,longFired=false;
-  const cell=e=>e.target.closest('button[data-c]');
-  $('#main').onpointerdown=e=>{const b=cell(e);if(!b)return;longFired=false;pressT=setTimeout(()=>{longFired=true;bump(b,-1);},500);};
-  $('#main').onpointerup=$('#main').onpointerleave=()=>clearTimeout(pressT);
-  $('#main').oncontextmenu=e=>{if(cell(e))e.preventDefault();};
-  function bump(b,d){const r=cur.rooms.rows[+b.dataset.r];r.c[b.dataset.c]=Math.max(0,(r.c[b.dataset.c]||0)+d);save();rerenderKeepScroll();}
+function blankFont(b){return Math.min(11,(b.h/b.lines)*0.78);}
+function renderSheet(p){
+  sheetPage=p;hist=[];
+  const pg=SHEET.pages[p-1];
+  const W=Math.min(document.documentElement.clientWidth,1000),s=sheetScale=W/pg.w;
+  $('#main').innerHTML=`
+   <div class="tools">
+     <button class="btn sm ${tool==='pen'?'on':''}" data-tool="pen">&#9998; Pen</button>
+     <button class="btn sm ${tool==='erase'?'on':''}" data-tool="erase">&#9003; Eraser</button>
+     <button class="btn sm" id="undoBtn">&#8630; Undo</button>
+     <button class="btn sm ${SET.finger?'on':''}" id="fingerBtn">Finger writes: ${SET.finger?'ON':'OFF'}</button>
+     <span class="hint">${SET.finger?'Finger draws. Use two fingers to scroll.':'Circle or tap an option. Write in the shaded boxes.'}</span>
+   </div>
+   <div class="sheet ${SET.finger?'finger':''}" id="sheet" style="width:${W}px;height:${Math.round(pg.h*s)}px">
+     <img src="${pg.img}" alt="Inspection sheet page ${p}">
+     <canvas id="ink"></canvas>
+     ${SHEET.blanks.filter(b=>b.p===p).map(b=>{
+       const st=`left:${b.x*s}px;top:${b.y*s}px;width:${b.w*s}px;height:${b.h*s}px;font-size:${blankFont(b)*s}px`;
+       const im=NUMERIC.test(b.id)?' inputmode="decimal"':'';
+       const lab=esc((b.of?FIELD[b.of].label+' – other':FIELD[b.id].label));
+       return b.lines>1
+         ?`<textarea class="bl" data-b="${b.id}" style="${st}" aria-label="${lab}" spellcheck="false">${esc(cur.txt[b.id]||'')}</textarea>`
+         :`<input class="bl" data-b="${b.id}" style="${st}" aria-label="${lab}" value="${esc(cur.txt[b.id]||'')}" autocomplete="off" spellcheck="false"${im}>`;
+     }).join('')}
+   </div>`;
+  const cv=$('#ink'),dpr=window.devicePixelRatio||1;
+  cv.width=Math.round(W*dpr);cv.height=Math.round(pg.h*s*dpr);
+  const ctx=cv.getContext('2d');ctx.setTransform(dpr*s,0,0,dpr*s,0,0);
+  drawSheet(ctx,p);
+  attachInk(cv,ctx,p);
+  $('#main').oninput=e=>{const id=e.target.dataset.b;if(!id)return;cur.txt[id]=e.target.value;if(id==='address')$('#title').textContent=e.target.value||'New inspection';save();};
   $('#main').onclick=e=>{
-    const b=cell(e);
-    if(b){if(longFired){longFired=false;return;}bump(b,renderRooms.minus?-1:1);return;}
-    const t=e.target.closest('button');if(!t)return;
-    if(t.id==='minusMode'){renderRooms.minus=!renderRooms.minus;rerenderKeepScroll();return;}
-    if(t.dataset.rm!=null){const r=cur.rooms.rows[+t.dataset.rm];if(Object.values(r.c).some(n=>n)&&!confirm('Remove '+r.name+'?'))return;cur.rooms.rows.splice(+t.dataset.rm,1);save();rerenderKeepScroll();return;}
-    if(t.dataset.addrow){cur.rooms.rows.push({name:t.dataset.addrow,c:{}});cur.rooms.rows.sort((a,b)=>rowOrder(a.name)-rowOrder(b.name));save();rerenderKeepScroll();return;}
-    onFieldClick(e);
+    const b=e.target.closest('button');if(!b)return;
+    if(b.dataset.tool){tool=b.dataset.tool;renderSheet(p);}
+    else if(b.id==='undoBtn'){undo(ctx,p);}
+    else if(b.id==='fingerBtn'){SET.finger=!SET.finger;saveSettings();renderSheet(p);}
   };
-  $('#main').oninput=onFieldInput;
 }
-function rowOrder(n){const i=LEVELS.indexOf(n);return i>=0?i:10+parseInt(n.replace(/\D/g,'')||0,10);}
+function drawSelections(ctx,p){
+  for(const o of PAGE_OPTS[p]){
+    if(!cur.sel[o.id])continue;
+    ctx.fillStyle='rgba(31,111,235,.20)';ctx.fillRect(o.x,o.y,o.w,o.h);
+    ctx.strokeStyle='rgba(26,63,176,.9)';ctx.lineWidth=1.1;
+    ctx.beginPath();ctx.ellipse(o.x+o.w/2,o.y+o.h/2,o.w/2+2,o.h/2+1.5,0,0,Math.PI*2);ctx.stroke();
+  }
+}
+function drawStroke(ctx,st){
+  const pts=st.pts;if(!pts.length)return;
+  ctx.strokeStyle=st.c;ctx.lineWidth=st.w;ctx.lineCap='round';ctx.lineJoin='round';
+  ctx.beginPath();ctx.moveTo(pts[0][0],pts[0][1]);
+  if(pts.length===1)ctx.lineTo(pts[0][0]+0.01,pts[0][1]);
+  for(let i=1;i<pts.length;i++)ctx.lineTo(pts[i][0],pts[i][1]);
+  ctx.stroke();
+}
+function drawSheet(ctx,p){
+  ctx.clearRect(0,0,SHEET.pages[p-1].w,SHEET.pages[p-1].h);
+  drawSelections(ctx,p);
+  for(const st of cur.ink[p])drawStroke(ctx,st);
+}
+function optAt(p,x,y){
+  let best=null,bd=1e9;
+  for(const o of PAGE_OPTS[p]){
+    if(x>=o.x-2&&x<=o.x+o.w+2&&y>=o.y-2&&y<=o.y+o.h+2){const d=Math.hypot(x-(o.x+o.w/2),y-(o.y+o.h/2));if(d<bd){bd=d;best=o;}}
+  }
+  return best;
+}
+function snapshot(p){hist.push({sel:Object.assign({},cur.sel),ink:cur.ink[p].slice()});if(hist.length>60)hist.shift();}
+function undo(ctx,p){const h=hist.pop();if(!h){toast('Nothing to undo');return;}cur.sel=h.sel;cur.ink[p]=h.ink;save();drawSheet(ctx,p);renderTabs();}
+function setOpt(o,on){
+  if(on&&FIELD[o.f].kind!=='multi')for(const x of OPTS_OF[o.f])delete cur.sel[x.id];
+  if(on)cur.sel[o.id]=1;else delete cur.sel[o.id];
+}
+function inPoly(x,y,pts){let c=false;for(let i=0,j=pts.length-1;i<pts.length;j=i++){const [xi,yi]=pts[i],[xj,yj]=pts[j];if(((yi>y)!==(yj>y))&&(x<(xj-xi)*(y-yi)/(yj-yi)+xi))c=!c;}return c;}
+function recognise(p,st){
+  // A roughly closed loop selects every option whose centre it encloses.
+  const pts=st.pts;if(pts.length<6)return [];
+  let x0=1e9,y0=1e9,x1=-1e9,y1=-1e9;for(const [x,y] of pts){x0=Math.min(x0,x);y0=Math.min(y0,y);x1=Math.max(x1,x);y1=Math.max(y1,y);}
+  const diag=Math.hypot(x1-x0,y1-y0),gap=Math.hypot(pts[0][0]-pts[pts.length-1][0],pts[0][1]-pts[pts.length-1][1]);
+  if(x1-x0<6||y1-y0<5||gap>Math.max(10,diag*0.45))return [];
+  // Rows on the sheet are only ~14pt apart, so a hand-drawn loop often clips the rows above and
+  // below. Count an option only if it sits on the loop's own line and at least half of the word
+  // is inside the loop.
+  const cx=(x0+x1)/2,cy=(y0+y1)/2,byField={};
+  const cover=o=>{let n=0;for(let i=0;i<7;i++)for(let j=0;j<3;j++)if(inPoly(o.x+o.w*(i+0.5)/7,o.y+o.h*(j+0.5)/3,pts))n++;return n/21;};
+  let hits=PAGE_OPTS[p].filter(o=>Math.abs(o.y+o.h/2-cy)<7.5&&inPoly(o.x+o.w/2,o.y+o.h/2,pts)&&cover(o)>=0.5);
+  for(const o of hits){const k=FIELD[o.f].kind==='multi'?o.id:o.f;const d=Math.hypot(o.x+o.w/2-cx,o.y+o.h/2-cy);if(!byField[k]||d<byField[k].d)byField[k]={o,d};}
+  return Object.values(byField).map(v=>v.o);
+}
+function attachInk(cv,ctx,p){
+  let st=null,tapStart=null;
+  const pt=e=>{const r=cv.getBoundingClientRect();return [(e.clientX-r.left)/sheetScale,(e.clientY-r.top)/sheetScale];};
+  const stopStylusScroll=e=>{if([...e.touches].some(t=>t.touchType==='stylus'))e.preventDefault();};
+  cv.addEventListener('touchstart',stopStylusScroll,{passive:false});
+  cv.addEventListener('touchmove',stopStylusScroll,{passive:false});
+  const draws=e=>e.pointerType==='pen'||e.pointerType==='mouse'||(e.pointerType==='touch'&&SET.finger);
+  const eraseAt=([x,y])=>{
+    const before=cur.ink[p].length;
+    cur.ink[p]=cur.ink[p].filter(s=>{const hit=s.pts.some(q=>Math.hypot(q[0]-x,q[1]-y)<7);if(hit)(s.hits||[]).forEach(id=>delete cur.sel[id]);return !hit;});
+    if(cur.ink[p].length!==before){drawSheet(ctx,p);save();}
+  };
+  cv.onpointerdown=e=>{
+    if(!draws(e)){tapStart={x:e.clientX,y:e.clientY,t:Date.now()};return;}
+    e.preventDefault();cv.setPointerCapture(e.pointerId);snapshot(p);
+    if(tool==='erase'){st={erase:true};eraseAt(pt(e));return;}
+    st={pts:[pt(e)],c:SET.color,w:e.pointerType==='pen'?1.4:1.6};
+  };
+  cv.onpointermove=e=>{
+    if(!st)return;
+    const evs=e.getCoalescedEvents?e.getCoalescedEvents():[e];
+    if(st.erase){evs.forEach(ev=>eraseAt(pt(ev)));return;}
+    const from=st.pts.length-1;
+    for(const ev of evs){const q=pt(ev),l=st.pts[st.pts.length-1];if(Math.hypot(q[0]-l[0],q[1]-l[1])>0.6)st.pts.push(q.map(v=>Math.round(v*10)/10));}
+    if(st.pts.length-1>from)drawStroke(ctx,{pts:st.pts.slice(from),c:st.c,w:st.w}); // only the new piece
+  };
+  const end=e=>{
+    if(tapStart&&!st){
+      const moved=Math.hypot(e.clientX-tapStart.x,e.clientY-tapStart.y);
+      if(e.type==='pointerup'&&moved<10&&Date.now()-tapStart.t<450){const o=optAt(p,...pt(e));if(o){snapshot(p);setOpt(o,!cur.sel[o.id]);save();drawSheet(ctx,p);renderTabs();}}
+      tapStart=null;return;
+    }
+    if(!st)return;
+    const s=st;st=null;
+    if(s.erase){renderTabs();return;}
+    let len=0;for(let i=1;i<s.pts.length;i++)len+=Math.hypot(s.pts[i][0]-s.pts[i-1][0],s.pts[i][1]-s.pts[i-1][1]);
+    if(len<4){ // a tap with the pen toggles the option under it
+      const o=optAt(p,...s.pts[0]);
+      if(o){setOpt(o,!cur.sel[o.id]);save();drawSheet(ctx,p);renderTabs();}else hist.pop();
+      return;
+    }
+    const hits=recognise(p,s);
+    if(hits.length){hits.forEach(o=>setOpt(o,true));s.hits=hits.map(o=>o.id);toast('✓ '+hits.map(o=>o.v).join(', '));}
+    cur.ink[p].push(s);save();drawSheet(ctx,p);renderTabs();
+  };
+  cv.onpointerup=end;cv.onpointercancel=end;
+}
+let resizeT;
+window.addEventListener('resize',()=>{clearTimeout(resizeT);resizeT=setTimeout(()=>{if(view==='edit'&&/^p[12]$/.test(TABS[tab].id)&&!document.activeElement.classList.contains('bl'))renderSheet(sheetPage);},250);});
+
+/* The filled sheet as an image (background + circles + ink + typed text), for PDF and package. */
+async function sheetImage(p,k=2){
+  const pg=SHEET.pages[p-1],img=await loadBg(p);
+  const c=document.createElement('canvas');c.width=pg.w*k;c.height=pg.h*k;
+  const g=c.getContext('2d');g.fillStyle='#fff';g.fillRect(0,0,c.width,c.height);g.drawImage(img,0,0,c.width,c.height);
+  g.setTransform(k,0,0,k,0,0);drawSelections(g,p);for(const st of cur.ink[p])drawStroke(g,st);
+  g.fillStyle='#0b3d91';
+  for(const b of SHEET.blanks.filter(b=>b.p===p&&cur.txt[b.id])){
+    const fs=blankFont(b);g.font=`600 ${fs}px Helvetica, Arial, sans-serif`;
+    const lh=b.h/b.lines,words=String(cur.txt[b.id]).split(/\s+/);let line='',row=0;
+    const flush=()=>{g.fillText(line,b.x+2,b.y+lh*(row+1)-3,b.w-4);row++;line='';};
+    for(const w of words){const t=line?line+' '+w:w;if(g.measureText(t).width>b.w-4&&line&&row<b.lines-1){flush();line=w;}else line=t;}
+    if(line)flush();
+  }
+  return new Uint8Array(await (await new Promise(r=>c.toBlob(r,'image/jpeg',0.85))).arrayBuffer());
+}
+
+/* ---------- Report (sheet order, tap to copy) ---------- */
+function fieldValue(f){
+  const vals=[...new Set((OPTS_OF[f.id]||[]).filter(o=>cur.sel[o.id]).map(o=>o.v))];
+  for(const b of SHEET.blanks)if(b.of===f.id&&cur.txt[b.id])vals.push(cur.txt[b.id]);
+  if(f.kind==='text'&&cur.txt[f.id])vals.push(cur.txt[f.id]);
+  return vals.join(', ');
+}
+function reportData(){
+  const out=[],idx={};
+  const push=(sec,row)=>{if(!(sec in idx)){idx[sec]=out.length;out.push({title:sec,rows:[]});}out[idx[sec]].rows.push(row);};
+  push('Assignment',['Inspection date',cur.date]);
+  for(const f of SHEET.fields){const v=fieldValue(f);if(v)push(f.sec,[f.label,v]);}
+  const sk=sketchTotals();
+  for(const k in sk)push('Sketch',[k==='GLA'?'GLA (sf)':k+' (sf)',sk[k].toLocaleString()]);
+  return out;
+}
+function reportText(){return reportData().map(s=>`== ${s.title.toUpperCase()} ==\n`+s.rows.map(([k,v])=>`${k}: ${v}`).join('\n')).join('\n\n')+'\n';}
+async function copy(txt){try{await navigator.clipboard.writeText(txt);}catch(_){const t=document.createElement('textarea');t.value=txt;document.body.appendChild(t);t.select();document.execCommand('copy');t.remove();}}
+function titleOf(){return (addrOf(cur)||'(no address)')+(cur.txt.unit?' #'+cur.txt.unit:'');}
+
+/* ---------- Export / settings page ---------- */
+async function renderExport(){
+  const data=reportData(),ph=(await photosFor(cur.id)).sort((a,b)=>a.ts-b.ts);cur._pc=ph.length;
+  $('#main').innerHTML=`<div class="card"><h2>Send to office / TOTAL</h2>
+    <div class="row"><button class="btn pri" id="exZip">Export package (.zip)</button><button class="btn" id="exPdf">Save PDF</button><button class="btn" id="exCopy">Copy all text</button></div>
+    <p class="muted">The PDF has your filled-in sheet pages, a typed summary, the sketch and the photos - ready for TOTAL's PDF import. The package adds the photos as separate files named by label, Sketch.png, a spreadsheet and the data file. On the office PC, open this app, import the package, then tap any line below to copy it into TOTAL.</p></div>
+  <div class="card rep"><h2 style="font-size:17px">${esc(titleOf())}</h2>
+    <p class="muted">Tap a line to copy its value.</p>
+    ${data.map((s,si)=>`<div class="sec"><h3>${esc(s.title)} <button class="btn sm" data-cs="${si}">Copy section</button></h3>${s.rows.map(([k,v],ri)=>`<div class="kv" data-s="${si}" data-r="${ri}"><div class="k">${esc(k)}</div><div class="v">${esc(v)}</div></div>`).join('')}</div>`).join('')}
+    ${data.length<=1?'<p class="muted">Nothing recorded yet - circle or tap options on Page 1 and Page 2.</p>':''}
+  </div>
+  <div class="card"><h2>Settings</h2>
+    <div class="f"><span class="lb">Inspection date</span><input type="date" id="setDate" value="${esc(cur.date)}"></div>
+    <div class="f"><span class="lb">Writing with a finger</span><button class="btn sm ${SET.finger?'pri':''}" id="setFinger">${SET.finger?'ON - finger draws, two fingers scroll':'OFF - finger taps options and scrolls (pen still writes)'}</button></div>
+    <div class="f"><span class="lb">Ink colour</span><div class="row">${['#1a3fb0','#111111','#c62828','#2e7d32'].map(c=>`<button class="swatch ${SET.color===c?'on':''}" data-color="${c}" style="background:${c}" aria-label="ink ${c}"></button>`).join('')}</div></div>
+    <div class="f"><span class="lb">Clear</span><div class="row"><button class="btn sm" id="clrInk">Clear pen marks (both pages)</button><button class="btn sm warn" id="delInsp">Delete this inspection</button></div></div>
+  </div>`;
+  $('#main').onchange=e=>{if(e.target.id==='setDate'){cur.date=e.target.value;save();}};
+  $('#main').onclick=async e=>{
+    const kv=e.target.closest('.kv'),cs=e.target.closest('[data-cs]'),sw=e.target.closest('[data-color]');
+    if(kv){const [k,v]=data[+kv.dataset.s].rows[+kv.dataset.r];await copy(v);kv.classList.add('cp');setTimeout(()=>kv.classList.remove('cp'),500);toast('Copied: '+k);}
+    else if(cs){const s=data[+cs.dataset.cs];await copy(s.rows.map(([k,v])=>`${k}: ${v}`).join('\n'));toast('Section copied');}
+    else if(sw){SET.color=sw.dataset.color;saveSettings();renderExport();}
+    else if(e.target.id==='exCopy'){await copy(reportText());toast('All text copied');}
+    else if(e.target.id==='exPdf'){toast('Building PDF…');try{await deliver(new Blob([await buildPdf()],{type:'application/pdf'}),pkgName('pdf'));}catch(err){alert('PDF failed: '+err.message);}}
+    else if(e.target.id==='exZip'){exportZip();}
+    else if(e.target.id==='setFinger'){SET.finger=!SET.finger;saveSettings();renderExport();}
+    else if(e.target.id==='clrInk'){if(confirm('Remove all pen marks? Circled options stay recorded.')){cur.ink={1:[],2:[]};save();toast('Pen marks cleared');}}
+    else if(e.target.id==='delInsp'){if(confirm('Delete this inspection and its photos?')){for(const p of await photosFor(cur.id))await dbDel('photos',p.id);await dbDel('insp',cur.id);showHome();}}
+  };
+}
 
 /* ---------- Photos ---------- */
 let shotLabel=null;
 async function renderPhotos(){
   const ph=(await photosFor(cur.id)).sort((a,b)=>a.ts-b.ts);
   cur._pc=ph.length;
-  const shots=PHOTO_SHOTS[improved(cur.type)?'imp':'land'];
+  const shots=PHOTO_SHOTS[isLand()?'land':'imp'];
   const byLabel={};ph.forEach(p=>(byLabel[p.label]=byLabel[p.label]||[]).push(p));
   const extra=Object.keys(byLabel).filter(l=>!shots.includes(l));
   let h=`<div class="card"><h2>Shot list - tap to take photo</h2><div class="shots">`;
@@ -502,7 +507,7 @@ async function addFiles(files){
   }
   cur.updated=Date.now();await dbPut('insp',cur);
   toast('Saved: '+(shotLabel||'Other'));
-  if(view==='edit'&&visibleSections()[secIdx].custom==='photos')renderPhotos();
+  if(view==='edit'&&TABS[tab].id==='photo')renderPhotos();
 }
 $('#cam').onchange=e=>addFiles(e.target.files);
 $('#lib').onchange=e=>addFiles(e.target.files);
@@ -602,82 +607,6 @@ function renderSketch(){
   };
 }
 
-/* ---------- Report (TOTAL-ordered, tap to copy) ---------- */
-function fmtVal(f,v){
-  if(!answered(v))return '';
-  if(f.t==='cond'||f.t==='qual')return v;
-  if(Array.isArray(v))return v.join(', ');
-  return String(v);
-}
-function reportData(){
-  // Returns [{title, rows:[[label,value]]}] in the order TOTAL's 1004/1073/1025 forms ask for them.
-  const out=[],F=cur.f,t=improved(cur.type)?roomTotals():null,sk=sketchTotals();
-  const push=(title,rows)=>{rows=rows.filter(r=>r[1]!==''&&r[1]!=null);if(rows.length)out.push({title,rows});};
-    const rowsOf=secId=>{const s=SECTIONS.find(x=>x.id===secId);if(!appliesTo(s.when,cur.type))return [];return visibleFields(s).map(f=>[f.l.replace(/\s*\(.*\)$/,''),fmtVal(f,F[f.id])]);};
-  push('Subject',[['Property type',TYPES[cur.type]],...rowsOf('gen')]);
-  push('Site',rowsOf('site'));
-  if(cur.type==='condo'||cur.type==='th')push('Project / Unit',rowsOf('proj'));
-  if(cur.type==='multi')push('Units',rowsOf('units'));
-  if(improved(cur.type)){
-    push('Improvements',rowsOf('bldg'));
-    push('Interior',rowsOf('int'));
-    push('Amenities',rowsOf('amen'));
-    const rr=[];
-    for(const r of cur.rooms.rows){const parts=ROOM_COLS.filter(c=>r.c[c]).map(c=>`${c} ${r.c[c]}`);if(parts.length)rr.push([r.name,parts.join(', ')]);}
-    if(cur.type!=='multi')rr.push(['Total rooms (above grade)',String(t.rooms)],['Bedrooms',String(t.bed)],['Baths (full.half)',t.bathStr]);
-    else for(const r of cur.rooms.rows){const c=r.c;rr.push([r.name+' totals',`${['Living','Dining','Kitchen','Den','Family','Rec','Bed','Other'].reduce((s,k)=>s+(c[k]||0),0)} rooms / ${c.Bed||0} bed / ${c.Bath||0}.${c.Half||0} bath`]);}
-    rr.push(['Layout',fmtVal(ROOM_FIELDS[0],F.layout)]);
-    for(const k in sk)rr.push([k==='GLA'?'GLA (sketch, sf)':k+' (sf)',sk[k].toLocaleString()]);
-    if(F.gla_est)rr.push(['GLA (entered)',String(F.gla_est)]);
-    push('Rooms / Area',rr);
-    push('Condition & Quality',[...rowsOf('rate'),['Condition commentary (draft)',conditionDraft()]]);
-  }
-  push('Defects / Adverse',rowsOf('def'));
-  push('Notes',rowsOf('notes'));
-  return out;
-}
-function conditionDraft(){
-  // Builds a UAD-style improvements commentary sentence from what was tapped.
-  const F=cur.f,parts=[];
-  if(!improved(cur.type))return '';
-  if(F.cond)parts.push(`The subject is in ${F.cond} condition`+(F.qual?` and ${F.qual} quality`:'')+'.');
-  const k=F.kit_upd,b=F.bath_upd;
-  if(k)parts.push(`Kitchen: ${k.toLowerCase()}${F.kit_detail&&F.kit_detail.length?' ('+F.kit_detail.join(', ').toLowerCase()+')':''}.`);
-  if(b)parts.push(`Baths: ${b.toLowerCase()}${F.bath_detail&&F.bath_detail.length?' ('+F.bath_detail.join(', ').toLowerCase()+')':''}.`);
-  if(F.other_upd&&F.other_upd.length)parts.push(`Other updates: ${F.other_upd.join(', ').toLowerCase()}.`);
-  const def=(F.defects||[]).filter(x=>!/none/i.test(x));
-  if(def.length)parts.push(`Observed: ${def.join(', ').toLowerCase()}.`);
-  else if(F.defects&&F.defects.length)parts.push('No physical deficiencies or adverse conditions were observed that would affect livability, soundness or structural integrity.');
-  return parts.join(' ');
-}
-function reportText(){
-  return reportData().map(s=>`== ${s.title.toUpperCase()} ==\n`+s.rows.map(([k,v])=>`${k}: ${v}`).join('\n')).join('\n\n')+'\n';
-}
-async function copy(txt){
-  try{await navigator.clipboard.writeText(txt);}catch(_){const t=document.createElement('textarea');t.value=txt;document.body.appendChild(t);t.select();document.execCommand('copy');t.remove();}
-}
-async function showReport(){
-  view='report';
-  $('#tabs').classList.add('hide');$('#bar').classList.add('hide');$('#repBtn').textContent='Edit';
-  const data=reportData(),ph=(await photosFor(cur.id)).sort((a,b)=>a.ts-b.ts);
-  $('#main').innerHTML=`<div class="card noprint"><h2>Send to office / TOTAL</h2>
-    <div class="row"><button class="btn pri" id="exZip">Export package (.zip)</button><button class="btn" id="exCopy">Copy all text</button><button class="btn" id="exPdf">Save PDF</button></div>
-    <p class="muted">Package = Field Notes PDF (for TOTAL's PDF import), report text, spreadsheet (CSV), data file, sketch image and all photos named by label. On the office PC, open this app, Import the package, then tap any line below to copy it and paste into TOTAL. Drag the photos folder into TOTAL's photo pages and insert Sketch.png as the building sketch.</p></div>
-  <div class="card rep"><h2 style="font-size:17px">${esc(cur.f.addr||'(no address)')}${cur.f.unit?' #'+esc(cur.f.unit):''}</h2>
-    <p class="muted noprint">Tap a line to copy its value.</p>
-    ${data.map((s,si)=>`<div class="sec"><h3>${esc(s.title)} <button class="btn sm noprint" data-cs="${si}">Copy section</button></h3>${s.rows.map(([k,v],ri)=>`<div class="kv" data-s="${si}" data-r="${ri}"><div class="k">${esc(k)}</div><div class="v">${esc(v)}</div></div>`).join('')}</div>`).join('')}
-    ${cur.sketch.areas.length?`<div class="sec"><h3>Sketch</h3><div style="color:var(--ink)">${sketchSVG(true).replace(/width="\d+" height="\d+"/,'style="width:100%;height:auto;max-height:520px"')}</div></div>`:''}
-    ${ph.length?`<div class="sec"><h3>Photos (${ph.length})</h3><div class="thumbs pgrid">${ph.map(p=>`<figure><img src="${photoURL(p)}" alt=""><figcaption>${esc(p.label)}</figcaption></figure>`).join('')}</div></div>`:''}
-  </div>`;
-  $('#main').onclick=async e=>{
-    const kv=e.target.closest('.kv'),cs=e.target.closest('[data-cs]');
-    if(kv){const [k,v]=data[+kv.dataset.s].rows[+kv.dataset.r];await copy(v);kv.classList.add('cp');setTimeout(()=>kv.classList.remove('cp'),500);toast('Copied: '+k);}
-    else if(cs){const s=data[+cs.dataset.cs];await copy(s.rows.map(([k,v])=>`${k}: ${v}`).join('\n'));toast('Section copied');}
-    else if(e.target.id==='exCopy'){await copy(reportText());toast('All text copied');}
-    else if(e.target.id==='exPdf'){toast('Building PDF…');try{const pdf=await buildPdf();await deliver(new Blob([pdf],{type:'application/pdf'}),pkgName('pdf'));}catch(err){alert('PDF failed: '+err.message);}}
-    else if(e.target.id==='exZip'){exportZip();}
-  };
-}
 
 /* ---------- ZIP (store-only, no compression; photos are already JPEG) ---------- */
 const CRC=(()=>{const t=new Uint32Array(256);for(let n=0;n<256;n++){let c=n;for(let k=0;k<8;k++)c=c&1?0xEDB88320^(c>>>1):c>>>1;t[n]=c>>>0;}return t;})();
@@ -730,42 +659,48 @@ async function exportZip(){
   const enc=new TextEncoder(),data=reportData(),ph=(await photosFor(cur.id)).sort((a,b)=>a.ts-b.ts);
   const files=[],seen={},photoIndex=[];
   ph.forEach((p,i)=>{const base=safe(p.label)||'Photo';seen[base]=(seen[base]||0)+1;const nm=`photos/${String(i+1).padStart(2,'0')} ${base}${seen[base]>1?' '+seen[base]:''}.jpg`;photoIndex.push({name:nm,label:p.label,ts:p.ts,p});});
-  const json={app:'FieldLite',v:1,insp:Object.assign({},cur,{_pc:undefined}),photos:photoIndex.map(x=>({file:x.name,label:x.label,ts:x.ts}))};
+  const json={app:'FieldLite',v:2,insp:Object.assign({},cur,{_pc:undefined}),photos:photoIndex.map(x=>({file:x.name,label:x.label,ts:x.ts}))};
+  try{files.push({name:'Field Notes.pdf',data:await buildPdf()});}catch(err){console.warn('PDF skipped',err);}
+  for(const p of [1,2])files.push({name:`Sheet page ${p}.jpg`,data:await sheetImage(p)});
   files.push({name:'Report.txt',data:enc.encode(reportText().replace(/\n/g,'\r\n'))});
   files.push({name:'Data.csv',data:enc.encode('﻿'+csvOf(data))});
-  files.push({name:'inspection.json',data:enc.encode(JSON.stringify(json,null,1))});
+  files.push({name:'inspection.json',data:enc.encode(JSON.stringify(json))});
   if(cur.sketch.areas.length){const svg=sketchSVG(true);files.push({name:'Sketch.svg',data:enc.encode(svg)});try{files.push({name:'Sketch.png',data:await svgToPng(svg)});}catch(_){}}
   for(const x of photoIndex)files.push({name:x.name,data:new Uint8Array(await x.p.blob.arrayBuffer())});
-  try{files.unshift({name:'Field Notes.pdf',data:await buildPdf()});}catch(err){console.warn('PDF skipped',err);}
   await deliver(makeZip(files),pkgName('zip'));
 }
-function pkgName(ext){return `${safe(cur.f.addr||'Inspection')}${cur.f.unit?' '+safe(cur.f.unit):''} ${cur.f.insp_date||today()}.${ext}`;}
+function pkgName(ext){return `${safe(addrOf(cur)||'Inspection')}${cur.txt.unit?' '+safe(cur.txt.unit):''} ${cur.date||today()}.${ext}`;}
 async function deliver(blob,fname){
-  // Phones get the share sheet (AirDrop, Mail, Files); computers get a download.
+  // Phones/tablets get the share sheet (AirDrop, Mail, Files); computers get a download.
   const file=new File([blob],fname,{type:blob.type});
-  if(navigator.canShare&&navigator.canShare({files:[file]})&&/Mobi|Android|iPhone|iPad/i.test(navigator.userAgent)){
+  if(navigator.canShare&&navigator.canShare({files:[file]})&&/Mobi|Android|iPhone|iPad|Macintosh/i.test(navigator.userAgent)&&navigator.maxTouchPoints>0){
     try{await navigator.share({files:[file],title:fname});return;}catch(err){if(err.name==='AbortError')return;}
   }
   const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=fname;document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove();},2000);
   toast('Saved '+fname);
 }
 
-/* ---------- PDF (uses the html2pdf bundle already shipped in ../vendor for its jsPDF) ---------- */
+/* ---------- PDF (uses the jsPDF inside the html2pdf bundle already shipped in ../vendor) ---------- */
 async function newPdfDoc(){
   if(!window.html2pdf)await new Promise((res,rej)=>{const sc=document.createElement('script');sc.src='../vendor/html2pdf.bundle.min.js';sc.onload=res;sc.onerror=()=>rej(new Error('PDF library not available offline yet - open the app once with signal'));document.head.appendChild(sc);});
-  // html2pdf doesn't expose jsPDF globally; render an empty element to get a fresh blank letter-size document.
-  const el=document.createElement('div');
-  return await window.html2pdf().set({margin:0,jsPDF:{unit:'pt',format:'letter',orientation:'portrait'}}).from(el).toPdf().get('pdf');
+  // html2pdf doesn't expose jsPDF globally; render an empty element to get a fresh blank document
+  // the size of the inspection sheet (8.5 x 14).
+  return await window.html2pdf().set({margin:0,jsPDF:{unit:'pt',format:[612,1008],orientation:'portrait'}}).from(document.createElement('div')).toPdf().get('pdf');
 }
 async function imgSize(blob){try{const b=await createImageBitmap(blob);const r=[b.width,b.height];b.close&&b.close();return r;}catch(_){return [4,3];}}
 async function buildPdf(){
   const doc=await newPdfDoc();
+  // Pages 1-2: the filled-in inspection sheet exactly as marked.
+  for(const p of [1,2]){if(p>1)doc.addPage([612,1008],'p');doc.addImage(await sheetImage(p),'JPEG',0,0,612,1008);}
+  // Typed summary, sketch and photos on letter pages.
   const W=612,H=792,M=40,LW=170;let y=M;
-  const need=h=>{if(y+h>H-M){doc.addPage();y=M;}};
-  const title=(cur.f.addr||'(no address)')+(cur.f.unit?' #'+cur.f.unit:'');
+  const newPage=()=>{doc.addPage('letter','p');y=M;};
+  const need=h=>{if(y+h>H-M)newPage();};
+  const title=titleOf();
+  newPage();
   doc.setFont('helvetica','bold');doc.setFontSize(16);doc.text(title,M,y+12);y+=22;
   doc.setFont('helvetica','normal');doc.setFontSize(10);doc.setTextColor(90);
-  doc.text(`${TYPES[cur.type]}  |  Inspected ${cur.f.insp_date||''}  |  Field notes`,M,y+8);y+=22;doc.setTextColor(0);
+  doc.text(`Inspected ${cur.date||''}  |  Field notes summary`,M,y+8);y+=22;doc.setTextColor(0);
   for(const sec of reportData()){
     need(40);doc.setFillColor(31,78,121);doc.rect(M,y,W-2*M,18,'F');doc.setTextColor(255);doc.setFont('helvetica','bold');doc.setFontSize(11);
     doc.text(sec.title.toUpperCase(),M+6,y+13);doc.setTextColor(0);y+=24;
@@ -781,24 +716,25 @@ async function buildPdf(){
   }
   if(cur.sketch.areas.length){
     const jpg=await svgToPng(sketchSVG(true),'image/jpeg');const [iw,ih]=await imgSize(new Blob([jpg],{type:'image/jpeg'}));
-    doc.addPage();y=M;doc.setFont('helvetica','bold');doc.setFontSize(13);doc.text('Building Sketch',M,y+12);y+=22;
+    newPage();doc.setFont('helvetica','bold');doc.setFontSize(13);doc.text('Building Sketch',M,y+12);y+=22;
     const t=sketchTotals();doc.setFont('helvetica','normal');doc.setFontSize(10);doc.text(Object.entries(t).map(([k,v])=>`${k}: ${v.toLocaleString()} sf`).join('    '),M,y+8);y+=18;
     const k=Math.min((W-2*M)/iw,(H-M-y)/ih);doc.addImage(jpg,'JPEG',M,y,iw*k,ih*k);
   }
   const ph=(await photosFor(cur.id)).sort((a,b)=>a.ts-b.ts);
   const cw=(W-2*M-12)/2,ch=(H-2*M-30)/3-20;
   for(let i=0;i<ph.length;i++){
-    if(i%6===0){doc.addPage();doc.setFont('helvetica','bold');doc.setFontSize(13);doc.text(i?'Photographs (cont.)':'Photographs',M,M+12);}
+    if(i%6===0){newPage();doc.setFont('helvetica','bold');doc.setFontSize(13);doc.text(i?'Photographs (cont.)':'Photographs',M,M+12);}
     const col=i%2,row=Math.floor((i%6)/2),x=M+col*(cw+12),yy=M+30+row*(ch+20);
     const [iw,ih]=await imgSize(ph[i].blob);const k=Math.min(cw/iw,ch/ih);
-    const data=new Uint8Array(await ph[i].blob.arrayBuffer());
-    doc.addImage(data,'JPEG',x+(cw-iw*k)/2,yy+(ch-ih*k)/2,iw*k,ih*k);
+    doc.addImage(new Uint8Array(await ph[i].blob.arrayBuffer()),'JPEG',x+(cw-iw*k)/2,yy+(ch-ih*k)/2,iw*k,ih*k);
     doc.setFont('helvetica','normal');doc.setFontSize(10);doc.text(ph[i].label,x+cw/2,yy+ch+13,{align:'center'});
   }
   const n=doc.getNumberOfPages();
-  for(let i=1;i<=n;i++){doc.setPage(i);doc.setFontSize(8);doc.setTextColor(120);doc.text(`${title} - page ${i} of ${n}`,W/2,H-20,{align:'center'});doc.setTextColor(0);}
+  for(let i=1;i<=n;i++){doc.setPage(i);const ph2=i<=2?1008:H;doc.setFontSize(8);doc.setTextColor(120);doc.text(`${title} - page ${i} of ${n}`,W/2,ph2-12,{align:'center'});doc.setTextColor(0);}
   return new Uint8Array(doc.output('arraybuffer'));
 }
+
+/* ---------- Import (office PC) ---------- */
 async function importFiles(list){
   try{
     let z={};
@@ -808,24 +744,23 @@ async function importFiles(list){
       // Unzipped package (e.g. Mac auto-extracted it): pick inspection.json plus the photos.
       for(const f of list){const key=/\.json$/i.test(f.name)?'inspection.json':'photos/'+f.name;z[key]=new Uint8Array(await f.arrayBuffer());}
     }
-    if(!z['inspection.json'])throw new Error('No inspection.json in this zip');
+    if(!z['inspection.json'])throw new Error('No inspection.json in this package');
     const j=JSON.parse(new TextDecoder().decode(z['inspection.json']));
-    const insp=j.insp;delete insp._pc;
+    const insp=normalize(j.insp);delete insp._pc;
     const exists=await dbGet('insp',insp.id);
     if(exists&&!confirm('This inspection is already on this device. Replace it with the imported copy?'))return;
     for(const p of await photosFor(insp.id))await dbDel('photos',p.id);
     for(const p of j.photos){const d=z[p.file];if(d)await dbPut('photos',{id:uid(),insp:insp.id,label:p.label,ts:p.ts,blob:new Blob([d],{type:'image/jpeg'})});}
     await dbPut('insp',insp);
-    cur=insp;toast('Imported');showReport();
+    cur=insp;toast('Imported');tab=TABS.length-1;showEdit();
   }catch(err){alert('Import failed: '+err.message);}
 }
 $('#imp').onchange=e=>{const l=[...e.target.files];e.target.value='';if(l.length)importFiles(l);};
 
 /* ---------- Navigation ---------- */
-$('#homeBtn').onclick=()=>{if(view==='report')showEdit();else showHome();};
-$('#repBtn').onclick=()=>{if(view==='report')showEdit();else showReport();};
-$('#prevBtn').onclick=()=>{if(secIdx>0){secIdx--;renderTabs();renderSection();}};
-$('#nextBtn').onclick=()=>{const n=visibleSections().length;if(secIdx<n-1){secIdx++;renderTabs();renderSection();}else showReport();};
+$('#homeBtn').onclick=()=>showHome();
+$('#prevBtn').onclick=()=>{if(tab>0){tab--;renderTabs();renderSection();}};
+$('#nextBtn').onclick=()=>{if(tab<TABS.length-1){tab++;renderTabs();renderSection();}};
 
 /* ---------- Boot ---------- */
 (async()=>{

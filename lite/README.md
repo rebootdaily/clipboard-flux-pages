@@ -1,59 +1,61 @@
-# Field Lite: quick appraisal inspection collector
+# Field Lite: your inspection sheet, on a tablet
 
-A small, standalone field app that is separate from the main Clipboard-Flux
-app. It is one HTML page, works offline after the first visit, and keeps
-everything on the device.
+Field Lite puts your own paper inspection sheet on a phone or tablet. You
+circle and write on it the way you would on paper, and the app turns your
+marks into data, a PDF and a package for the office. It works offline after
+the first visit and keeps everything on the device.
 
-**Location:** `lite/` on the published Clipboard-Flux site, for example
-`https://<your-pages-site>/lite/`.
+**Location:** `lite/` on the published Clipboard-Flux site.
 
-## In the field (phone or tablet)
-1. Open the link in Safari or Chrome, then use **Share > Add to Home Screen**.
-   After that it runs like an app with no signal.
-2. Tap the property type: SFR, Townhouse, Condo, 2-4 Family or Vacant Land.
-   Sections that don't apply are hidden. For example, Vacant Land skips the
-   interior, rooms and sketch.
-3. Work left to right through the tabs. Nearly everything is a one-tap chip.
-   "+ Other" adds a custom value, and notes fields take dictation from the
-   keyboard microphone.
-4. **Rooms:** tap a cell to add one. Long-press a cell to subtract. Totals
-   (rooms, beds, baths shown as full.half) are calculated for you.
-5. **Photos:** tap a label in the shot list and the camera opens. The photo
-   is saved under that label.
-6. **Sketch:** type a length and tap an arrow to draw a wall. **Close shape**
-   finishes the area, and the square footage is calculated. **+ Area** adds a
-   garage, porch or similar. A new area starts in MOVE mode so you can slide
-   it into place before drawing.
-7. **Report / Export > Export package (.zip)**, then AirDrop, email or save it
-   to Drive or OneDrive.
-
-## In the office (PC running TOTAL)
-1. Open the same link and choose **Import package** with the .zip. If the
-   computer already unzipped it, select `inspection.json` and the photos
-   together.
-2. The report is laid out in TOTAL form order. Tap any line to copy it, then
-   paste it into the matching TOTAL field. **Copy section** copies a whole
-   block, for example for an addendum.
-3. Import `Field Notes.pdf` into TOTAL (its PDF import) to keep the field notes with the report.
-4. Drag the `photos` folder files into TOTAL's photo pages. The files are
-   already named by label, for example `01 Front.jpg`. Insert `Sketch.png` as
-   the building sketch.
-
-The **Save PDF** button on the Report screen makes just the PDF, without the rest of the package.
-
-## What's in the package
-| File | Contents |
+## The pages
+| Tab | What it is |
 | --- | --- |
-| `Field Notes.pdf` | Report, sketch and photos (6 per page) in one PDF, ready for TOTAL's PDF import or as a workfile exhibit |
-| `Report.txt` | Everything you collected, in form order |
-| `Data.csv` | Section / Field / Value, which opens in Excel |
-| `inspection.json` | The full record, used for re-importing |
-| `Sketch.png` and `Sketch.svg` | The footprint, with dimensions and square footage |
-| `photos/` | JPEG photos named by label |
+| **Page 1 / Page 2** | Your inspection sheet, exactly as printed. |
+| **Photos** | Shot list. Tap a label and the camera opens; the photo is saved under that label. |
+| **Sketch** | Footprint drawing with square-footage totals. |
+| **Export** | Tap-to-copy report, package and PDF export, and settings. |
+
+## Filling in the sheet
+- **Circle or tap an option** (OWNER, S-TILE, IMPACT…) to record it. It turns blue.
+  - Tap it again to un-select.
+  - YES/NO and similar pairs allow only one answer.
+  - A circle around two neighbouring options records both.
+- **Write in the shaded boxes** (address, fees, meter #, bed/bath counts, notes…).
+  - On an iPad with an Apple Pencil, Scribble turns your handwriting into typed text.
+  - On Android, pen handwriting input does the same.
+  - On a phone, the keyboard opens.
+- **Anything else you write** (margin notes, the grid on page 2) is kept as ink. It
+  appears in the PDF exactly as drawn.
+- **Tools:**
+  - **Eraser** removes pen marks. Erasing a circle also un-selects what it circled.
+  - **Undo** reverses the last mark.
+  - **Finger writes** lets a finger draw on devices without a pen; scroll with two fingers.
+
+## Export (in the field or at the office)
+- **Save PDF** gives you:
+  - the filled-in sheet pages (8.5 x 14), exactly as marked
+  - a typed summary of every recorded value
+  - the sketch
+  - photos, 6 per page
+
+  The PDF is ready for TOTAL's PDF import.
+- **Export package (.zip)** contains the PDF plus:
+  - `Sheet page 1.jpg` and `Sheet page 2.jpg`
+  - `Report.txt` and `Data.csv`
+  - `inspection.json`, for re-importing
+  - `Sketch.png` and `Sketch.svg`
+  - `photos/`, named by label
+- **At the office:** open the app on the PC and choose **Import package**. Then tap any line
+  of the report to copy it and paste it into TOTAL.
+
+## Changing the sheet
+The page images and the map of every option and write-in box are generated from
+`Generator/lite_sheet/InspectionSheet.pdf`. To change the sheet:
+1. Replace that PDF with the new version.
+2. Run `python3 Generator/lite_sheet/build_lite_sheet.py`. It needs poppler-utils and
+   ImageMagick.
+3. Update the row list in that script if any rows moved or were renamed.
 
 ## About sending data straight into TOTAL
-a la mode does not offer a public way for outside apps to write into a TOTAL
-report. Their own TOTAL Mobile app is the only direct sync. Field Lite
-therefore cuts re-typing down to tap-to-copy and paste, plus drag-in photos
-and sketch. If a la mode later provides an import format, it can be added to
-the export.
+Field Lite does not write TOTAL's XML yet. To build that, it needs one XML file that
+TOTAL itself has exported, so the layout matches exactly.
