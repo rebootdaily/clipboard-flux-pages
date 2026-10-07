@@ -333,7 +333,7 @@ function blankFont(b){return Math.min(15,(b.h/b.lines)*0.74);}
 const ZMIN=1,ZMAX=4;
 let Z=1,pinchUntil=0,inkView=null;
 const clampZ=z=>Math.max(ZMIN,Math.min(ZMAX,z));
-function baseScale(pg){return Math.min(document.documentElement.clientWidth,1000)/pg.w;}
+function baseScale(pg){fitW=availW();return Math.min(fitW,1000)/pg.w;}
 function sizeViewport(){
   const sv=$('#sv');if(!sv)return;
   const bar=$('#bar'),bh=bar&&!bar.classList.contains('hide')?bar.offsetHeight:0;
@@ -460,6 +460,7 @@ async function renderSheet(p,keep){
   placeInk(true);
   attachInk(cv,ctx,p);
   attachZoom(sv,sh);
+  setTimeout(onViewportChange,400);
   if(tool==='img')attachImages(p,s);
   $('#main').oninput=e=>{const id=e.target.dataset.b;if(!id)return;cur.txt[id]=e.target.value;if(id==='address')$('#title').textContent=e.target.value||'New inspection';save();};
   $('#main').onclick=e=>{
@@ -628,10 +629,20 @@ function attachInk(cv,ctx,p){
   };
   cv.onpointerup=end;cv.onpointercancel=end;
 }
-let resizeT;
-window.addEventListener('resize',()=>{clearTimeout(resizeT);resizeT=setTimeout(()=>{if(view!=='edit'||!TABS[tab].page)return;
-  if(document.activeElement.classList.contains('bl')){sizeViewport();placeInk(false);}   // keyboard: keep what's being typed
-  else renderSheet(sheetPage);},250);});
+/* Keep the sheet fitted to the window. Width changes (rotation, split view, a window that is still
+   opening) lay the sheet out again; height-only changes (keyboard, toolbars) just resize the viewport. */
+let resizeT,fitW=0;
+const availW=()=>document.documentElement.clientWidth;
+function onViewportChange(){clearTimeout(resizeT);resizeT=setTimeout(()=>{
+  if(view!=='edit'||!TABS[tab].page||!$('#sv'))return;
+  const typing=document.activeElement&&document.activeElement.classList.contains('bl');
+  if(Math.abs(availW()-fitW)>1&&!typing)renderSheet(sheetPage);
+  else{sizeViewport();placeInk(false);}
+},120);}
+window.addEventListener('resize',onViewportChange);
+window.addEventListener('orientationchange',onViewportChange);
+if(window.visualViewport)visualViewport.addEventListener('resize',onViewportChange);
+if(window.ResizeObserver)new ResizeObserver(onViewportChange).observe(document.documentElement);
 
 /* The filled sheet as an image (background + circles + ink + typed text), for PDF and package. */
 const jpeg=async c=>new Uint8Array(await (await new Promise(r=>c.toBlob(r,'image/jpeg',0.85))).arrayBuffer());
