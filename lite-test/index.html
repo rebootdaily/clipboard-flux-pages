@@ -561,7 +561,9 @@ function attachInk(cv,ctx,p){
   cv.addEventListener('touchstart',stopStylusScroll,{passive:false});
   cv.addEventListener('touchmove',stopStylusScroll,{passive:false});
   // Palm rejection: while the Pencil is down (and just after), touches and big contact areas are ignored.
-  const palm=e=>e.pointerType==='touch'&&(penDown||Date.now()-lastPen<900||e.width>32||e.height>32);
+  // iPad Safari reports a fingertip as a ~40px-wide contact, so only a much bigger one counts as a palm, and
+  // with Finger on (no Pencil in use) contact size is ignored altogether so finger strokes always draw.
+  const palm=e=>e.pointerType==='touch'&&(penDown||Date.now()-lastPen<900||(!SET.finger&&(e.width>80||e.height>80)));
   const r1=v=>Math.round(v*10)/10;
   const mk=(ev,pen)=>{const q=pt(ev).map(r1);return pen?[q[0],q[1],Math.round((ev.pressure||0.5)*100)/100]:q;};
   const draws=e=>e.pointerType==='pen'||e.pointerType==='mouse'||(e.pointerType==='touch'&&SET.finger);
