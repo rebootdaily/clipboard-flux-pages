@@ -1,23 +1,33 @@
-// Field Lite offline cache. Serves the saved copy instantly (works with no
-// signal), and refreshes it in the background whenever the network is up.
-const CACHE = 'fieldlite-test-v10';
+// Field Lite offline cache.
+//  - Online: every file is fetched fresh (revalidated with the server, bypassing the browser's own 10-minute
+//    HTTP cache that GitHub Pages sets), so a new version shows on the first open after it is published.
+//  - Slow (> 2.5 s) or offline: the saved copy is used, so the app still works with no signal.
+const CACHE = 'fieldlite-test-v11';
 const FILES = ['./', 'index.html', 'sheet.js', 'sheet-1.png', 'manifest.json', 'icon.svg', 'icon-192.png', 'icon-512.png'];
 
 self.addEventListener('install', e => {
   e.waitUntil(caches.open(CACHE).then(async c => {
-    await c.addAll(FILES);
+    // cache:'reload' skips the HTTP cache, so a new install never stores an old copy of a file
+    await c.addAll(FILES.map(u => new Request(u, {cache: 'reload'})));
     // PDF library lives in the main app's vendor folder; cache it too, but don't fail install without it.
-    try { await c.add('../vendor/html2pdf.bundle.min.js'); } catch (_) {}
+    try { await c.add(new Request('../vendor/html2pdf.bundle.min.js', {cache: 'reload'})); } catch (_) {}
   }).then(() => self.skipWaiting()));
 });
+
 self.addEventListener('activate', e => {
   e.waitUntil(caches.keys().then(keys => Promise.all(keys.filter(k => k.startsWith('fieldlite-test') && k !== CACHE).map(k => caches.delete(k)))).then(() => self.clients.claim()));
 });
+
 self.addEventListener('fetch', e => {
   if (e.request.method !== 'GET' || new URL(e.request.url).origin !== location.origin) return;
-  e.respondWith(caches.open(CACHE).then(async c => {
-    const hit = await c.match(e.request, {ignoreSearch: true});
-    const net = fetch(e.request).then(r => { if (r.ok) c.put(e.request, r.clone()); return r; }).catch(() => hit);
-    return hit || net;
-  }));
+  e.respondWith((async () => {
+    const c = await caches.open(CACHE);
+    const net = fetch(e.request, {cache: 'no-cache'}).then(r => { if (r.ok) c.put(e.request, r.clone()); return r; });
+    net.catch(() => {});
+    try {
+      return await Promise.race([net, new Promise((_, rej) => setTimeout(rej, 2500))]);
+    } catch (_) {
+      return (await c.match(e.request, {ignoreSearch: true})) || net;
+    }
+  })());
 });
