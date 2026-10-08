@@ -78,6 +78,7 @@ table.rooms td button.z{color:var(--mute);font-weight:400}
 .pick .x{position:absolute;top:5px;right:5px;border:0;background:rgba(0,0,0,.6);color:#fff;border-radius:50%;width:28px;height:28px;line-height:28px;padding:0}
 .pick select{width:100%;border:0;border-radius:0;padding:6px;font-size:13px;display:none}
 .pick figure.on select{display:block}
+#sk .lab{cursor:move}
 #sk{width:100%;height:46vh;min-height:260px;background:var(--bg);border:1px solid var(--line);border-radius:10px;touch-action:none;display:block}
 .skctl{display:grid;grid-template-columns:1fr 1fr;gap:10px;max-width:520px}
 .pad{display:grid;grid-template-columns:repeat(3,1fr);gap:5px}
@@ -172,7 +173,7 @@ header{background:#b45309!important}
    ===================================================================== */
 
 const CACHE_PREFIX = 'fieldlite-test';   // this app's saved copies; the practice copy uses its own prefix so the two never touch each other
-const APP_VERSION = '11 TEST';   // shown on the home screen so a screenshot says which version is running
+const APP_VERSION = '12 TEST';   // shown on the home screen so a screenshot says which version is running
 const TABS = [
   ...SHEET.pages.map((_,i)=>({id:'p'+(i+1), page:i+1, title:SHEET.pages.length>1?'Page '+(i+1):'Field Sheet'})),
   {id:'photo', title:'Photos'}, {id:'sketch', title:'Sketch'}, {id:'export', title:'Export'}
@@ -246,7 +247,7 @@ function newInsp(){return normalize({id:uid(),created:Date.now(),updated:Date.no
 function normalize(i){
   i.v=2; i.sel=i.sel||{}; i.txt=i.txt||{}; i.ink=i.ink||{}; SHEET.pages.forEach((_,n)=>{i.ink[n+1]=i.ink[n+1]||[];});
   if(!i.tallyAdj){i.tallyAdj={};for(const t of TALLY){const n=parseInt(i.txt[t.box],10);if(n>0)i.tallyAdj[t.box]=n;}}   // counts from before tally boxes
-  i.imgs=i.imgs||[]; i.sketch=i.sketch||{areas:[]}; i.date=i.date||(i.f&&i.f.insp_date)||today();
+  i.imgs=i.imgs||[]; i.sketch=i.sketch||{areas:[]}; i.sketch.labels=i.sketch.labels||[]; i.date=i.date||(i.f&&i.f.insp_date)||today();
   if(i.f&&!i.txt.address&&i.f.addr)i.txt.address=i.f.addr;   // carry address over from the old chip form
   migrateLayout(i);
   return i;
@@ -983,6 +984,8 @@ function sketchSVG(forExport){
   const areas=cur.sketch.areas;let minx=0,miny=0,maxx=10,maxy=10;
   const geo=areas.map(a=>areaPoints(a));
   geo.forEach(g=>{g.pts.concat([g.end]).forEach(([x,y])=>{minx=Math.min(minx,x);miny=Math.min(miny,y);maxx=Math.max(maxx,x);maxy=Math.max(maxy,y);});});
+  const labels=cur.sketch.labels||[];
+  labels.forEach(l=>{minx=Math.min(minx,l.x-3);miny=Math.min(miny,l.y-2);maxx=Math.max(maxx,l.x+3);maxy=Math.max(maxy,l.y+2);});
   const pad=8;minx-=pad;miny-=pad;maxx+=pad;maxy+=pad;
   const W=maxx-minx,H=maxy-miny;const fs=Math.max(1.6,Math.max(W,H)/40);
   const col={GLA:'#1f4e79',Garage:'#7a5c00',Porch:'#2e7d32',Patio:'#2e7d32',Deck:'#6d4c41',Basement:'#6a1b9a',Carport:'#7a5c00',Other:'#555'};
@@ -1003,10 +1006,45 @@ function sketchSVG(forExport){
       s+=`<text x="${cx}" y="${cy}" font-size="${fs*1.1}" text-anchor="middle" font-weight="bold" fill="${c}">${esc(a.name)}</text><text x="${cx}" y="${cy+fs*1.3}" font-size="${fs}" text-anchor="middle" fill="${c}">${Math.round(areaSF(a))} sf</text>`;}
     if(act){s+=`<circle cx="${g.end[0]}" cy="${g.end[1]}" r="${fs*0.45}" fill="#e53935"/>`;}
   });
+  // room labels (Bed 1, Kitchen...): a halo keeps them readable over walls and dimensions
+  labels.forEach(l=>{s+=`<text ${forExport?'':`data-lab="${l.id}" class="lab"`} x="${l.x}" y="${l.y}" font-size="${fs*0.95}" text-anchor="middle" dominant-baseline="middle" font-weight="600" `+
+    (forExport?`fill="#222" stroke="#fff"`:`style="fill:var(--ink);stroke:var(--bg)"`)+` stroke-width="${fs*0.35}" stroke-linejoin="round" paint-order="stroke">${esc(l.t)}</text>`;});
   return s+'</svg>';
+}
+const ROOM_LABELS=['Bed','Bath','½ Bath','Kitchen','Living','Dining','Family','Laundry','Garage','Porch','Patio','Pool'];
+let skLabelPick=false,skPending=null;
+// Bed, Bath and ½ Bath are numbered as they are placed: Bed 1, Bed 2...
+function nextLabel(base){if(!['Bed','Bath','½ Bath'].includes(base))return base;
+  const re=new RegExp('^'+base.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')+' (\\d+)$');
+  const used=cur.sketch.labels.map(l=>(l.t.match(re)||[])[1]).filter(Boolean).map(Number);
+  return base+' '+(used.length?Math.max(...used)+1:1);}
+// Labels vs the room tally - a heads-up only; the tally stays the count of record.
+function labelMismatch(){
+  const L=cur.sketch.labels,n=re=>L.filter(l=>re.test(l.t)).length,out=[];
+  for(const [re,box,name] of [[/^Bed\b/i,'t_bed','bedroom'],[/^Bath\b/i,'t_bath','full bath'],[/^½ ?Bath\b/i,'t_half','half bath']]){
+    const k=n(re);if(k&&k!==tallyOf(box))out.push(`${k} ${name} label${k===1?'':'s'}, tally says ${tallyOf(box)}`);}
+  return out;
 }
 function tallyOf(box){const n=parseInt(cur.txt[box],10);return n>0?n:0;}
 function fmtFt(n){const ft=Math.floor(n),inch=Math.round((n-ft)*12);return inch?`${ft}'${inch}"`:`${ft}'`;}
+/* Room labels on the sketch: place (after picking one), drag to move, tap to rename or delete. */
+function attachLabels(svg){
+  if(!svg)return;
+  const toSvg=e=>{const p=svg.createSVGPoint();p.x=e.clientX;p.y=e.clientY;const q=p.matrixTransform(svg.getScreenCTM().inverse());return [Math.round(q.x*10)/10,Math.round(q.y*10)/10];};
+  svg.onpointerdown=e=>{
+    if(skPending){e.preventDefault();const [x,y]=toSvg(e);cur.sketch.labels.push({id:uid(),t:nextLabel(skPending),x,y});skPending=null;save();renderSketch();return;}
+    const el=e.target.closest&&e.target.closest('[data-lab]');if(!el)return;
+    e.preventDefault();try{svg.setPointerCapture(e.pointerId);}catch(_){}
+    const L=cur.sketch.labels.find(l=>l.id===el.dataset.lab),s0=toSvg(e),x0=L.x,y0=L.y,c0=[e.clientX,e.clientY];let moved=false;
+    svg.onpointermove=ev=>{if(!moved&&Math.hypot(ev.clientX-c0[0],ev.clientY-c0[1])<6)return;moved=true;
+      const q=toSvg(ev);L.x=Math.round((x0+q[0]-s0[0])*10)/10;L.y=Math.round((y0+q[1]-s0[1])*10)/10;el.setAttribute('x',L.x);el.setAttribute('y',L.y);};
+    svg.onpointerup=svg.onpointercancel=ev=>{svg.onpointermove=svg.onpointerup=svg.onpointercancel=null;
+      if(moved){save();renderSketch();return;}
+      if(ev.type!=='pointerup')return;
+      const n=prompt('Rename this label - clear it to delete it',L.t);if(n===null)return;
+      if(n.trim())L.t=n.trim();else cur.sketch.labels=cur.sketch.labels.filter(l=>l!==L);save();renderSketch();};
+  };
+}
 function renderSketch(){
   const A=cur.sketch.areas;if(skArea>=A.length)skArea=Math.max(0,A.length-1);
   const a=A[skArea],t=sketchTotals();
@@ -1015,6 +1053,10 @@ function renderSketch(){
    <button class="btn sm pri" id="skNew">+ Area</button></div>
    <div id="skWrap">${sketchSVG(false)}</div>
    <div class="tot">${Object.entries(t).map(([k,v])=>`<span>${k}: ${v.toLocaleString()} sf</span>`).join('')||'<span class="muted">Add an area, type a length, tap a direction.</span>'}</div>
+   <div class="row" style="margin-top:8px"><button class="btn sm ${skLabelPick||skPending?'pri':''}" id="lbAdd">+ Label</button>
+     <span class="muted grow">${skPending?`Tap the sketch where <b>${esc(nextLabel(skPending))}</b> goes.`:cur.sketch.labels.length?'Drag a label to move it; tap it to rename or delete.':'Label rooms: Bed, Bath, Kitchen...'}</span></div>
+   ${skLabelPick?`<div class="chips" style="margin-top:6px">${ROOM_LABELS.map(l=>`<button class="chip" data-lbl="${esc(l)}">${esc(l)}</button>`).join('')}<button class="chip add" data-lbl="__custom">Custom…</button></div>`:''}
+   ${labelMismatch().map(m=>`<p class="muted" style="margin:6px 0 0;color:var(--warn)">&#9888; ${esc(m)}</p>`).join('')}
   </div>
   ${a?`<div class="card"><div class="skctl">
     <div><div class="lenbox" id="skLen">${skLen||'0'}<span class="muted"> ft</span></div>
@@ -1030,11 +1072,15 @@ function renderSketch(){
      <div class="tb2"><button data-tally="${x.box}" data-n="-1" aria-label="${esc(x.sub)} minus one">&minus;</button><button class="plus" data-tally="${x.box}" data-n="1" aria-label="${esc(x.sub)} plus one">+</button></div></div>`).join('')}</div>
    <p class="muted" style="margin:8px 0 0">These fill the ${TALLY.map(x=>esc(x.label)).join(', ')} boxes on the field sheet. Tally marks you write in those boxes count too.</p></div>`:''}`;
   $('#skWrap').firstChild.setAttribute('id','sk');
+  attachLabels($('#sk'));
   renderTabs();
   $('#main').oninput=null;
   $('#main').onchange=e=>{if(e.target.id==='skSel'){skArea=+e.target.value;renderSketch();}};
   $('#main').onclick=e=>{
     const b=e.target.closest('button');if(!b)return;const d=b.dataset;
+    if(b.id==='lbAdd'){skLabelPick=!(skLabelPick||skPending);skPending=null;renderSketch();return;}
+    if(d.lbl){let l=d.lbl;if(l==='__custom'){l=(prompt('Label (e.g. Office, Bonus room)')||'').trim();if(!l)return;}
+      skPending=l;skLabelPick=false;renderSketch();return;}
     if(d.tally){cur.tallyAdj=cur.tallyAdj||{};if(tallyOf(d.tally)+(+d.n)<0)return;
       cur.tallyAdj[d.tally]=(cur.tallyAdj[d.tally]||0)+(+d.n);syncTally();$('#tn_'+d.tally).textContent=tallyOf(d.tally);save();return;}
     if(b.id==='skNew'){
