@@ -159,6 +159,7 @@ header{background:#b45309!important}
 <input type="file" id="insImg" accept="image/*" class="hide">
 <input type="file" id="imp" accept=".zip,application/zip,.json,application/json,image/jpeg" multiple class="hide">
 <script src="sheet.js"></script>
+<script src="uad26.js"></script>
 <script>
 'use strict';
 /* =====================================================================
@@ -170,7 +171,7 @@ header{background:#b45309!important}
    ===================================================================== */
 
 const CACHE_PREFIX = 'fieldlite-test';   // this app's saved copies; the practice copy uses its own prefix so the two never touch each other
-const APP_VERSION = '9 TEST';   // shown on the home screen so a screenshot says which version is running
+const APP_VERSION = '10 TEST';   // shown on the home screen so a screenshot says which version is running
 const TABS = [
   ...SHEET.pages.map((_,i)=>({id:'p'+(i+1), page:i+1, title:SHEET.pages.length>1?'Page '+(i+1):'Field Sheet'})),
   {id:'photo', title:'Photos'}, {id:'sketch', title:'Sketch'}, {id:'export', title:'Export'}
@@ -809,6 +810,11 @@ function reportData(){
   for(const k in sk)push('Sketch',[k==='GLA'?'GLA (sf)':k+' (sf)',sk[k].toLocaleString()]);
   return out;
 }
+/* TOTAL import file: legacy URAR (Form 1004) as UAD 2.6 XML - see uad26.js */
+function uad26(){
+  const t=sketchTotals();
+  return UAD26.build({sel:id=>[...new Set((OPTS_OF[id]||[]).filter(o=>cur.sel[o.id]).map(o=>o.v))],txt:id=>cur.txt[id],date:cur.date,gla:t.GLA||0});
+}
 function reportText(){return reportData().map(s=>`== ${s.title.toUpperCase()} ==\n`+s.rows.map(([k,v])=>`${k}: ${v}`).join('\n')).join('\n\n')+'\n';}
 async function copy(txt){try{await navigator.clipboard.writeText(txt);}catch(_){const t=document.createElement('textarea');t.value=txt;document.body.appendChild(t);t.select();document.execCommand('copy');t.remove();}}
 function titleOf(){return (addrOf(cur)||'(no address)')+(cur.txt.unit?' #'+cur.txt.unit:'');}
@@ -817,8 +823,8 @@ function titleOf(){return (addrOf(cur)||'(no address)')+(cur.txt.unit?' #'+cur.t
 async function renderExport(){
   const data=reportData(),ph=await sentPhotos(cur.id);cur._pc=ph.length;
   $('#main').innerHTML=`<div class="card"><h2>Send to office / TOTAL</h2>
-    <div class="row"><button class="btn pri" id="exZip">Export package (.zip)</button><button class="btn" id="exPdf">Save PDF</button><button class="btn" id="exCopy">Copy all text</button></div>
-    <p class="muted">The PDF has your filled-in field sheet, a typed summary, the sketch and the ${ph.length} photo${ph.length===1?'':'s'} ticked to send on the Photos tab - ready for TOTAL's PDF import. The package adds those photos as separate files named by label, Sketch.png, a spreadsheet and the data file. On the office PC, open this app, import the package, then tap any line below to copy it into TOTAL.</p></div>
+    <div class="row"><button class="btn pri" id="exZip">Export package (.zip)</button><button class="btn" id="exPdf">Save PDF</button><button class="btn" id="exCopy">Copy all text</button><button class="btn" id="exXml">TOTAL file (UAD 2.6)</button></div>
+    <p class="muted">The PDF has your filled-in field sheet, a typed summary, the sketch and the ${ph.length} photo${ph.length===1?'':'s'} ticked to send on the Photos tab - ready for TOTAL's PDF import. The package adds those photos as separate files named by label, Sketch.png, a spreadsheet, the data file and the TOTAL file. <b>TOTAL file (UAD 2.6)</b> fills a legacy URAR (Form 1004) in TOTAL: File &gt; Open UAD XML. On the office PC, open this app, import the package, then tap any line below to copy it into TOTAL.</p></div>
   <div class="card rep"><h2 style="font-size:17px">${esc(titleOf())}</h2>
     <p class="muted">Tap a line to copy its value.</p>
     ${data.map((s,si)=>`<div class="sec"><h3>${esc(s.title)} <button class="btn sm" data-cs="${si}">Copy section</button></h3>${s.rows.map(([k,v],ri)=>`<div class="kv" data-s="${si}" data-r="${ri}"><div class="k">${esc(k)}</div><div class="v">${esc(v)}</div></div>`).join('')}</div>`).join('')}
@@ -839,6 +845,8 @@ async function renderExport(){
     else if(e.target.id==='exCopy'){await copy(reportText());toast('All text copied');}
     else if(e.target.id==='exPdf'){toast('Building PDF…');try{await deliver(new Blob([await buildPdf()],{type:'application/pdf'}),pkgName('pdf'));}catch(err){alert('PDF failed: '+err.message);}}
     else if(e.target.id==='exZip'){exportZip();}
+    else if(e.target.id==='exXml'){const r=uad26();await deliver(new Blob([r.xml],{type:'application/xml'}),pkgName('xml').replace(/\.xml$/,' UAD26.xml'));
+      alert('TOTAL file (UAD 2.6, Form 1004) - in TOTAL use File > Open UAD XML.\n\nFilled in: '+(r.filled.join(', ')||'nothing yet')+(r.skipped.length?'\n\nStill to do in TOTAL:\n- '+r.skipped.join('\n- '):''));}
     else if(e.target.id==='setFinger'){SET.finger=!SET.finger;saveSettings();renderExport();}
     else if(e.target.id==='clrInk'){if(confirm('Remove all pen marks? Circled options stay recorded.')){cur.ink={};normalize(cur);save();toast('Pen marks cleared');}}
     else if(e.target.id==='delInsp'){if(confirm('Delete this inspection and its photos?')){for(const p of await allFor(cur.id))await dbDel('photos',p.id);await dbDel('insp',cur.id);showHome();}}
@@ -1092,6 +1100,7 @@ async function exportZip(){
   files.push({name:'Report.txt',data:enc.encode(reportText().replace(/\n/g,'\r\n'))});
   files.push({name:'Data.csv',data:enc.encode('﻿'+csvOf(data))});
   files.push({name:'inspection.json',data:enc.encode(JSON.stringify(json))});
+  try{files.push({name:'TOTAL UAD 2.6.xml',data:enc.encode(uad26().xml)});}catch(err){console.warn('UAD 2.6 XML skipped',err);}
   if(cur.sketch.areas.length){const svg=sketchSVG(true);files.push({name:'Sketch.svg',data:enc.encode(svg)});try{files.push({name:'Sketch.png',data:await svgToPng(svg)});}catch(_){}}
   for(const x of photoIndex)files.push({name:x.name,data:new Uint8Array(await x.p.blob.arrayBuffer())});
   for(const r of refs)files.push({name:`refs/${r.id}.jpg`,data:new Uint8Array(await r.blob.arrayBuffer())});

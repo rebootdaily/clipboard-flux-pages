@@ -2,8 +2,8 @@
 //  - Online: every file is fetched fresh (revalidated with the server, bypassing the browser's own 10-minute
 //    HTTP cache that GitHub Pages sets), so a new version shows on the first open after it is published.
 //  - Slow (> 2.5 s) or offline: the saved copy is used, so the app still works with no signal.
-const CACHE = 'fieldlite-test-v11';
-const FILES = ['./', 'index.html', 'sheet.js', 'sheet-1.png', 'manifest.json', 'icon.svg', 'icon-192.png', 'icon-512.png'];
+const CACHE = 'fieldlite-test-v12';
+const FILES = ['./', 'index.html', 'sheet.js', 'uad26.js', 'sheet-1.png', 'manifest.json', 'icon.svg', 'icon-192.png', 'icon-512.png'];
 
 self.addEventListener('install', e => {
   e.waitUntil(caches.open(CACHE).then(async c => {
