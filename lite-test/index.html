@@ -129,6 +129,7 @@ main.sheetmode{max-width:none;padding:0}
 .sheet>img:first-child{display:block;width:100%;height:100%;user-select:none;-webkit-user-select:none;-webkit-user-drag:none;pointer-events:none}
 .sheet canvas{position:absolute;left:0;top:0;touch-action:pan-x pan-y}
 .sheet .bl{position:absolute;margin:0;min-height:0;border:0;border-radius:2px;background:rgba(31,111,235,.06);color:#0b3d91;padding:0 2px;font-family:"Bradley Hand","Segoe Print","Comic Sans MS",cursive,sans-serif;font-weight:600;outline:none;resize:none;line-height:1.1;overflow:hidden;-webkit-appearance:none;appearance:none;box-shadow:none}
+.sheet .tz{position:absolute;pointer-events:none;background:rgba(31,111,235,.06);border-radius:2px;display:flex;align-items:center;justify-content:flex-end;padding-right:3px;color:#0b3d91;font-weight:800;font-family:-apple-system,BlinkMacSystemFont,sans-serif}
 .sheet .bl:focus{background:rgba(255,214,0,.28)}
 .sheet .ins{position:absolute;display:block;pointer-events:none;user-select:none;-webkit-user-select:none;-webkit-user-drag:none;box-shadow:0 0 0 1px rgba(0,0,0,.25)}
 .sheet.imgmode .ins{pointer-events:auto;z-index:6;touch-action:none;cursor:move}
@@ -171,7 +172,7 @@ header{background:#b45309!important}
    ===================================================================== */
 
 const CACHE_PREFIX = 'fieldlite-test';   // this app's saved copies; the practice copy uses its own prefix so the two never touch each other
-const APP_VERSION = '10 TEST';   // shown on the home screen so a screenshot says which version is running
+const APP_VERSION = '11 TEST';   // shown on the home screen so a screenshot says which version is running
 const TABS = [
   ...SHEET.pages.map((_,i)=>({id:'p'+(i+1), page:i+1, title:SHEET.pages.length>1?'Page '+(i+1):'Field Sheet'})),
   {id:'photo', title:'Photos'}, {id:'sketch', title:'Sketch'}, {id:'export', title:'Export'}
@@ -189,6 +190,21 @@ const TALLY = [
   {box:'t_bath', label:'BATH#',    sub:'Full baths'},
   {box:'t_half', label:'1/2 BTH#', sub:'Half baths'}
 ].filter(t => SHEET.blanks.some(b => b.id === t.box));
+/* Tally marks: on the field sheet the BED#, BATH# and 1/2 BTH# boxes are tally boxes - the Pencil draws in them
+   (no Scribble) and every mark counts as one, the diagonal fifth stroke included. The box's value is the marks in
+   it plus the +/- taps on the Sketch tab (tallyAdj), so both ways of counting add up. Dots/taps don't count. */
+const TALLY_BOX = Object.fromEntries(TALLY.map(t => [t.box, SHEET.blanks.find(b => b.id === t.box)]));
+function strokeInBox(s, b){
+  let x0=1e9,y0=1e9,x1=-1e9,y1=-1e9;for(const q of s.pts){x0=Math.min(x0,q[0]);y0=Math.min(y0,q[1]);x1=Math.max(x1,q[0]);y1=Math.max(y1,q[1]);}
+  const cx=(x0+x1)/2,cy=(y0+y1)/2,m=2;
+  return cx>=b.x-m&&cx<=b.x+b.w+m&&cy>=b.y-m&&cy<=b.y+b.h+m;
+}
+function tallyMarks(box){const b=TALLY_BOX[box];return b?(cur.ink[b.p]||[]).filter(s=>s.k!=='hl'&&strokeInBox(s,b)).length:0;}
+function syncTally(){
+  cur.tallyAdj=cur.tallyAdj||{};
+  for(const t of TALLY){const n=Math.max(0,tallyMarks(t.box)+(cur.tallyAdj[t.box]||0));if(n)cur.txt[t.box]=String(n);else delete cur.txt[t.box];
+    const el=document.querySelector(`[data-tz="${t.box}"]`);if(el)el.textContent=n||'';}
+}
 const FIELD = Object.fromEntries(SHEET.fields.map(f => [f.id, f]));
 const OPT = Object.fromEntries(SHEET.opts.map(o => [o.id, o]));
 const OPTS_OF = {};
@@ -229,6 +245,7 @@ function save(){clearTimeout(saveTimer);saveTimer=setTimeout(()=>{cur.updated=Da
 function newInsp(){return normalize({id:uid(),created:Date.now(),updated:Date.now()});}
 function normalize(i){
   i.v=2; i.sel=i.sel||{}; i.txt=i.txt||{}; i.ink=i.ink||{}; SHEET.pages.forEach((_,n)=>{i.ink[n+1]=i.ink[n+1]||[];});
+  if(!i.tallyAdj){i.tallyAdj={};for(const t of TALLY){const n=parseInt(i.txt[t.box],10);if(n>0)i.tallyAdj[t.box]=n;}}   // counts from before tally boxes
   i.imgs=i.imgs||[]; i.sketch=i.sketch||{areas:[]}; i.date=i.date||(i.f&&i.f.insp_date)||today();
   if(i.f&&!i.txt.address&&i.f.addr)i.txt.address=i.f.addr;   // carry address over from the old chip form
   migrateLayout(i);
@@ -461,6 +478,7 @@ async function renderSheet(p,keep){
        const st=`left:${b.x*s}px;top:${b.y*s}px;width:${b.w*s}px;height:${b.h*s}px;font-size:${blankFont(b)*s}px;line-height:${b.h/b.lines*s}px`;
        const im=b.num?' inputmode="decimal"':'';
        const lab=esc((b.of?FIELD[b.of].label+' – other':FIELD[b.id].label));
+       if(TALLY_BOX[b.id])return `<div class="tz" data-tz="${b.id}" style="${st}" aria-label="${lab} (tally)">${esc(cur.txt[b.id]||'')}</div>`;
        return b.lines>1
          ?`<textarea class="bl" data-b="${b.id}" style="${st}" aria-label="${lab}" spellcheck="false">${esc(cur.txt[b.id]||'')}</textarea>`
          :`<input class="bl" data-b="${b.id}" style="${st}" aria-label="${lab}" value="${esc(cur.txt[b.id]||'')}" autocomplete="off" spellcheck="false"${im}>`;
@@ -550,8 +568,8 @@ function optAt(p,x,y){
 }
 const state=p=>({sel:Object.assign({},cur.sel),ink:cur.ink[p].slice()});
 function snapshot(p){hist.push(state(p));redoStack=[];if(hist.length>60)hist.shift();}
-function undo(ctx,p){const h=hist.pop();if(!h){toast('Nothing to undo');return;}redoStack.push(state(p));cur.sel=h.sel;cur.ink[p]=h.ink;save();drawSheet(ctx,p);renderTabs();}
-function redo(ctx,p){const h=redoStack.pop();if(!h){toast('Nothing to redo');return;}hist.push(state(p));cur.sel=h.sel;cur.ink[p]=h.ink;save();drawSheet(ctx,p);renderTabs();}
+function undo(ctx,p){const h=hist.pop();if(!h){toast('Nothing to undo');return;}redoStack.push(state(p));cur.sel=h.sel;cur.ink[p]=h.ink;syncTally();save();drawSheet(ctx,p);renderTabs();}
+function redo(ctx,p){const h=redoStack.pop();if(!h){toast('Nothing to redo');return;}hist.push(state(p));cur.sel=h.sel;cur.ink[p]=h.ink;syncTally();save();drawSheet(ctx,p);renderTabs();}
 function setOpt(o,on){
   if(on&&FIELD[o.f].kind!=='multi')for(const x of OPTS_OF[o.f])delete cur.sel[x.id];
   if(on)cur.sel[o.id]=1;else delete cur.sel[o.id];
@@ -606,7 +624,8 @@ function attachInk(cv,ctx,p){
      screen at any zoom. Erasing a circle un-selects what it circled; with nothing to erase under it, it
      un-selects a tapped option. Strokes are never edited in place, so Undo can always bring them back. */
   const eraseAt=([x,y],px)=>{
-    const r=Math.max(3,px/sheetScale),part=SET.erase==='part';
+    const inTally=Object.values(TALLY_BOX).some(b=>b&&x>=b.x&&x<=b.x+b.w&&y>=b.y&&y<=b.y+b.h);
+    const r=inTally?2.2:Math.max(3,px/sheetScale),part=SET.erase==='part';   // tally marks sit close together: erase one at a time
     const segDist=(a,b)=>{const dx=b[0]-a[0],dy=b[1]-a[1],l2=dx*dx+dy*dy;let t=l2?((x-a[0])*dx+(y-a[1])*dy)/l2:0;t=Math.max(0,Math.min(1,t));return Math.hypot(a[0]+t*dx-x,a[1]+t*dy-y);};
     const touches=s=>{const P=s.pts;if(P.length===1)return Math.hypot(P[0][0]-x,P[0][1]-y)<r;for(let i=1;i<P.length;i++)if(segDist(P[i-1],P[i])<r)return true;return false;};
     const kept=[],dropped=[];
@@ -680,7 +699,7 @@ function attachInk(cv,ctx,p){
     if(!st||e.pointerId!==st.pid)return;     // a palm lifting must not end the Pencil's stroke
     const s=st;st=null;delete s.pid;
     const box=s.box;delete s.box;
-    if(s.erase){renderTabs();return;}
+    if(s.erase){syncTally();save();renderTabs();return;}
     if(s.k==='hl'){ // highlighter: ink only, never circles an option
       if(s.pts.length<2){hist.pop();drawSheet(ctx,p);if(box)box.focus();return;}
       cur.ink[p].push(s);save();drawSheet(ctx,p);renderTabs();return;
@@ -694,7 +713,7 @@ function attachInk(cv,ctx,p){
     }
     const hits=recognise(p,s);
     if(hits.length){hits.forEach(o=>setOpt(o,true));s.hits=hits.map(o=>o.id);toast('✓ '+hits.map(o=>o.v).join(', '));}
-    cur.ink[p].push(s);save();drawSheet(ctx,p);renderTabs();
+    cur.ink[p].push(s);syncTally();save();drawSheet(ctx,p);renderTabs();
   };
   cv.onpointerup=end;cv.onpointercancel=end;
   /* With Finger on, a finger is the pen: a stroke that starts on a shaded writing box must draw, not focus the
@@ -740,6 +759,7 @@ async function sheetCanvas(p,k=2){
   g.fillStyle='#0b3d91';
   for(const b of SHEET.blanks.filter(b=>b.p===p&&cur.txt[b.id])){
     const fs=blankFont(b);g.font=`600 ${fs}px Helvetica, Arial, sans-serif`;
+    if(TALLY_BOX[b.id]){g.textAlign='right';g.font=`800 ${fs}px Helvetica, Arial, sans-serif`;g.fillText(String(cur.txt[b.id]),b.x+b.w-2,b.y+b.h/2+fs*0.35);g.textAlign='left';continue;}
     const lh=b.h/b.lines,words=String(cur.txt[b.id]).split(/\s+/);let line='',row=0;
     const flush=()=>{g.fillText(line,b.x+2,b.y+lh*(row+0.5)+fs*0.35,b.w-4);row++;line='';}; // vertically centred, as on screen
     for(const w of words){const t=line?line+' '+w:w;if(g.measureText(t).width>b.w-4&&line&&row<b.lines-1){flush();line=w;}else line=t;}
@@ -848,7 +868,7 @@ async function renderExport(){
     else if(e.target.id==='exXml'){const r=uad26();await deliver(new Blob([r.xml],{type:'application/xml'}),pkgName('xml').replace(/\.xml$/,' UAD26.xml'));
       alert('TOTAL file (UAD 2.6, Form 1004) - in TOTAL use File > Open UAD XML.\n\nFilled in: '+(r.filled.join(', ')||'nothing yet')+(r.skipped.length?'\n\nStill to do in TOTAL:\n- '+r.skipped.join('\n- '):''));}
     else if(e.target.id==='setFinger'){SET.finger=!SET.finger;saveSettings();renderExport();}
-    else if(e.target.id==='clrInk'){if(confirm('Remove all pen marks? Circled options stay recorded.')){cur.ink={};normalize(cur);save();toast('Pen marks cleared');}}
+    else if(e.target.id==='clrInk'){if(confirm('Remove all pen marks? Circled options stay recorded.')){cur.ink={};normalize(cur);syncTally();save();toast('Pen marks cleared');}}
     else if(e.target.id==='delInsp'){if(confirm('Delete this inspection and its photos?')){for(const p of await allFor(cur.id))await dbDel('photos',p.id);await dbDel('insp',cur.id);showHome();}}
   };
 }
@@ -996,10 +1016,6 @@ function renderSketch(){
    <div id="skWrap">${sketchSVG(false)}</div>
    <div class="tot">${Object.entries(t).map(([k,v])=>`<span>${k}: ${v.toLocaleString()} sf</span>`).join('')||'<span class="muted">Add an area, type a length, tap a direction.</span>'}</div>
   </div>
-  ${TALLY.length?`<div class="card"><h2>Room tally - tap as you walk through</h2><div class="tally">${TALLY.map(x=>`<div class="tc">
-     <div class="tl">${esc(x.label)}</div><div class="ts">${esc(x.sub)}</div><div class="tn" id="tn_${x.box}">${tallyOf(x.box)}</div>
-     <div class="tb2"><button data-tally="${x.box}" data-n="-1" aria-label="${esc(x.sub)} minus one">&minus;</button><button class="plus" data-tally="${x.box}" data-n="1" aria-label="${esc(x.sub)} plus one">+</button></div></div>`).join('')}</div>
-   <p class="muted" style="margin:8px 0 0">These fill the ${TALLY.map(x=>esc(x.label)).join(', ')} boxes on the field sheet.</p></div>`:''}
   ${a?`<div class="card"><div class="skctl">
     <div><div class="lenbox" id="skLen">${skLen||'0'}<span class="muted"> ft</span></div>
       <div class="keys">${['7','8','9','4','5','6','1','2','3','.','0','⌫'].map(k=>`<button data-k="${k}">${k}</button>`).join('')}</div></div>
@@ -1008,15 +1024,19 @@ function renderSketch(){
    </div>
    <div class="row" style="margin-top:8px"><button class="btn sm" id="skUndo">Undo</button><button class="btn sm" id="skClose">Close shape</button><button class="btn sm" id="skRen">Rename</button><button class="btn sm warn" id="skDel">Delete area</button></div>
    <p class="muted">Walk the exterior clockwise from a corner: type length, tap direction. "Close shape" draws the last wall back to the start. Inches: use decimals (e.g. 12.5 = 12'6").</p>
-  </div>`:''}`;
+  </div>`:''}
+  ${TALLY.length?`<div class="card"><h2>Room tally - tap as you walk through</h2><div class="tally">${TALLY.map(x=>`<div class="tc">
+     <div class="tl">${esc(x.label)}</div><div class="ts">${esc(x.sub)}</div><div class="tn" id="tn_${x.box}">${tallyOf(x.box)}</div>
+     <div class="tb2"><button data-tally="${x.box}" data-n="-1" aria-label="${esc(x.sub)} minus one">&minus;</button><button class="plus" data-tally="${x.box}" data-n="1" aria-label="${esc(x.sub)} plus one">+</button></div></div>`).join('')}</div>
+   <p class="muted" style="margin:8px 0 0">These fill the ${TALLY.map(x=>esc(x.label)).join(', ')} boxes on the field sheet. Tally marks you write in those boxes count too.</p></div>`:''}`;
   $('#skWrap').firstChild.setAttribute('id','sk');
   renderTabs();
   $('#main').oninput=null;
   $('#main').onchange=e=>{if(e.target.id==='skSel'){skArea=+e.target.value;renderSketch();}};
   $('#main').onclick=e=>{
     const b=e.target.closest('button');if(!b)return;const d=b.dataset;
-    if(d.tally){const n=Math.max(0,tallyOf(d.tally)+(+d.n));if(n)cur.txt[d.tally]=String(n);else delete cur.txt[d.tally];
-      $('#tn_'+d.tally).textContent=n;save();return;}
+    if(d.tally){cur.tallyAdj=cur.tallyAdj||{};if(tallyOf(d.tally)+(+d.n)<0)return;
+      cur.tallyAdj[d.tally]=(cur.tallyAdj[d.tally]||0)+(+d.n);syncTally();$('#tn_'+d.tally).textContent=tallyOf(d.tally);save();return;}
     if(b.id==='skNew'){
       const kind=prompt('Area type: '+AREA_KINDS.join(', '),A.length?'Garage':'GLA');if(!kind)return;
       const k=AREA_KINDS.find(x=>x.toLowerCase()===kind.trim().toLowerCase())||'Other';
