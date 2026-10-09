@@ -10,9 +10,9 @@ the first visit and keeps everything on the device.
 ## The pages
 | Tab | What it is |
 | --- | --- |
-| **Field Sheet** | Your 3_6 field sheet, redrawn from the workbook as one continuous page. Rows have extra room for tapping, circling and handwriting. |
-| **Photos** | Shot list. Tap a label and the camera opens; the photo is saved under that label. |
-| **Sketch** | Footprint drawing with square-footage totals. |
+| **Field Sheet** | Your printed 3_6 field sheet, exactly as on paper, as one continuous page. Pinch to zoom. |
+| **Photos** | Import photos from the photo library and tick the ones to send. |
+| **Sketch** | Footprint drawing with square-footage totals, and the bed/bath room tally. |
 | **Export** | Tap-to-copy report, package and PDF export, and settings. |
 
 ## Filling in the sheet
@@ -28,9 +28,9 @@ the first visit and keeps everything on the device.
   - On an iPad with an Apple Pencil, Scribble turns your handwriting into typed text.
   - On Android, pen handwriting input does the same.
   - On a phone, the keyboard opens.
-- **Notes:** the four rows under NOTES: DEFECTS/EXTRA are a writing box, so handwriting there becomes text.
-- **Building sketch:** the blank grid is at the end of the form under BUILDING SKETCH. Draw on it freely;
-  your strokes are kept as ink and appear in the PDF exactly as drawn.
+- **Building sketch:** the blank grid under NOTES: DEFECTS/EXTRA, as on paper. Draw on it freely;
+  your strokes are kept as ink and appear in the PDF exactly as drawn. Its top four rows are the notes box,
+  where handwriting becomes text.
 - **Anything else you write** (margin notes) is kept as ink too.
 - **Insert image:** tap **Insert image** to place a photo or picture (for example a county sketch you check
   measurements against) anywhere on the form.
@@ -44,21 +44,39 @@ the first visit and keeps everything on the device.
   - **Highlight** draws a wide translucent band, for example over a line on an inserted county sketch.
     It only marks the page and never selects options.
   - **Eraser** has two modes, shown in the toolbar while it is selected: **Whole stroke** removes any
-    mark it touches, and **Part of stroke** rubs out just the bit under it. Erasing a circle also un-selects
-    what it circled, and touching a tapped option with the eraser un-selects it. Undo brings anything back.
+    mark it touches, and **Part of stroke** rubs out just the bit under it. It stays the same size on screen
+    at any zoom. Erasing a circle also un-selects what it circled, and touching a tapped option with the
+    eraser un-selects it. Undo brings anything back.
   - **Colour dots and the line-thickness dot** change the pen or highlighter. The highlighter has its own colours.
   - **Undo / Redo** step back and forward through marks and option selections.
   - **Palm rejection:** while the Pencil is on the screen, and for a moment after, touches are ignored, so a
     resting hand can't toggle options or end your stroke.
   - **Finger** lets a finger draw on devices without a pen. Use two fingers to scroll while it is on.
+- **Zoom:** pinch with two fingers to zoom in and out on the sheet (up to 400%). Only the sheet zooms; the
+  toolbar stays put, ink redraws sharp, and taps and circles still land on the right option.
+  - The **− / % / +** buttons at the end of the toolbar zoom too; tap the **%** to go back to fit.
+  - On a PC, hold Ctrl and use the mouse wheel.
+
+## Room tally (Sketch tab)
+Below the sketch are three big counters: **BED#**, **BATH#** and **1/2 BTH#**. Tap **+** as you walk into each
+room. The counts fill the BED#, BATH# and 1/2 BTH# boxes on the field sheet, so there's nothing to recount.
+
+## Photos
+- **In the field:** use the iPad's own Camera app as usual. Take as many shots as you like; Field Lite
+  doesn't get in the way.
+- **In the vehicle or at the office:** on the Photos tab tap **Import from photo library** and select the
+  photos (as many at once as you like).
+- **Tap a photo to tick it** for sending and pick a label (Front, Street…) for its caption.
+  Only ticked photos go into the PDF and the package. Your full set stays in your photo library.
+- **Remove N not sent** clears the unticked photos from the app to save space (not from your library).
 
 ## Export (in the field or at the office)
 - **Save PDF** gives you:
-  - the filled-in field sheet, exactly as marked, on three 8.5 x 14 pages: the top through the notes, TOTAL
-    through Manufactured, then the building sketch (with any inserted images)
+  - the filled-in field sheet, exactly as marked, on two 8.5 x 14 pages laid out like the printed sheet
+    (with any inserted images)
   - a typed summary of every recorded value
   - the sketch
-  - photos, 6 per page
+  - the photos you ticked to send, 6 per page
 
   The PDF is ready for TOTAL's PDF import.
 - **Export package (.zip)** contains the PDF plus:
@@ -67,17 +85,19 @@ the first visit and keeps everything on the device.
   - `Report.txt` and `Data.csv`
   - `inspection.json`, for re-importing
   - `Sketch.png` and `Sketch.svg`
-  - `photos/`, named by label
+  - `photos/`, the ticked photos, named by label
 - **At the office:** open the app on the PC and choose **Import package**. Then tap any line
   of the report to copy it and paste it into TOTAL.
 
 ## Changing the sheet
-The sheet image and the map of every option and write-in box are generated from the
-"3_6 FIELD SHEET" tab of `Generator/lite_sheet/InspectionSheet.xlsx`. The script redraws the tab from
-the workbook's own column widths, row heights, fonts, shading, borders and merged cells. To change the sheet:
-1. Replace the workbook.
-2. Run `python3 Generator/lite_sheet/build_lite_sheet.py`. It needs Node with Playwright, and ImageMagick.
-3. Update `FIELDS` and `BLANKS` in that script if cells moved. Both lists refer to cells such as `D14` or `B3`.
+The sheet is your printed field sheet: `Generator/lite_sheet/InspectionSheet.pdf`, printed (Microsoft Print to PDF,
+8.5 x 14) from the "3_6 FIELD SHEET" tab of `InspectionSheet.xlsx`. The app shows it exactly as printed, as one
+continuous page, and finds every option and write-in box on it automatically. To change the sheet:
+1. Edit the tab in the workbook, then print it to PDF again and replace `InspectionSheet.pdf`.
+2. If you added, moved or renamed options or write-in boxes, update `FIELDS` and `BLANKS` in
+   `Generator/lite_sheet/build_lite_sheet.py`. Both lists refer to cells such as `D14` or `B3`.
+3. Run `python3 Generator/lite_sheet/build_lite_sheet_pdf.py`. It needs Node with Playwright, poppler,
+   ImageMagick and pdfplumber, and it stops with a message if an option can't be found on the PDF.
 
 ## About sending data straight into TOTAL
 Field Lite does not write TOTAL's XML yet. To build that, it needs one XML file that

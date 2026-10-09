@@ -69,6 +69,16 @@ table.rooms td button.z{color:var(--mute);font-weight:400}
 .thumbs img{width:100%;height:80px;object-fit:cover;border-radius:6px;display:block}
 .thumbs figcaption{font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .thumbs .x{position:absolute;top:2px;right:2px;border:0;background:rgba(0,0,0,.6);color:#fff;border-radius:50%;width:24px;height:24px;line-height:24px;padding:0}
+.pick{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:8px}
+.pick figure{margin:0;position:relative;border:3px solid transparent;border-radius:10px;overflow:hidden;background:var(--chip);cursor:pointer}
+.pick figure.on{border-color:var(--pri)}
+.pick img{width:100%;height:110px;object-fit:cover;display:block}
+.pick .ck{position:absolute;top:5px;left:5px;width:28px;height:28px;border-radius:50%;border:2px solid #fff;background:rgba(0,0,0,.35);color:transparent;font-weight:800;line-height:24px;text-align:center}
+.pick figure.on .ck{background:var(--pri);color:#fff}
+.pick .x{position:absolute;top:5px;right:5px;border:0;background:rgba(0,0,0,.6);color:#fff;border-radius:50%;width:28px;height:28px;line-height:28px;padding:0}
+.pick select{width:100%;border:0;border-radius:0;padding:6px;font-size:13px;display:none}
+.pick figure.on select{display:block}
+#sk .lab{cursor:move}
 #sk{width:100%;height:46vh;min-height:260px;background:var(--bg);border:1px solid var(--line);border-radius:10px;touch-action:none;display:block}
 .skctl{display:grid;grid-template-columns:1fr 1fr;gap:10px;max-width:520px}
 .pad{display:grid;grid-template-columns:repeat(3,1fr);gap:5px}
@@ -78,6 +88,14 @@ table.rooms td button.z{color:var(--mute);font-weight:400}
 .keys{display:grid;grid-template-columns:repeat(3,1fr);gap:5px}
 .keys button{height:36px;font-size:18px;border:1px solid var(--line);border-radius:10px;background:var(--card)}
 .lenbox{font-size:22px;font-weight:700;border:2px solid var(--pri);border-radius:10px;padding:4px 10px;text-align:right;margin-bottom:5px}
+.tally{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.tally .tc{border:1px solid var(--line);border-radius:12px;padding:8px;text-align:center;background:var(--bg)}
+.tally .tl{font-weight:800;font-size:15px}
+.tally .ts{font-size:12px;color:var(--mute)}
+.tally .tn{font-size:40px;font-weight:800;line-height:1.1;margin:2px 0 6px;font-variant-numeric:tabular-nums}
+.tally .tb2{display:grid;grid-template-columns:1fr 1.6fr;gap:6px}
+.tally button{height:64px;border-radius:12px;border:1px solid var(--line);background:var(--chip);font-size:30px;font-weight:800;touch-action:manipulation}
+.tally button.plus{background:var(--pri);border-color:var(--pri);color:#fff}
 .rep .sec{margin-bottom:14px}
 .rep .sec h3{font-size:14px;margin:0 0 4px;color:var(--pri);display:flex;justify-content:space-between;align-items:center}
 .rep .kv{display:flex;gap:10px;padding:8px 6px;border-top:1px solid var(--line);cursor:pointer}
@@ -92,7 +110,11 @@ footer#bar .btn{flex:1;max-width:200px}
 .types button{padding:16px 8px;border:1px solid var(--line);border-radius:12px;background:var(--card);font-weight:700;font-size:15px}
 .hide{display:none!important}
 @media print{header,nav,footer,#toast,.noprint{display:none!important}body,main{background:#fff;color:#000;padding:0}.card{border:0;padding:0}.rep .kv{padding:2px 0;break-inside:avoid}.pgrid{display:grid;grid-template-columns:1fr 1fr;gap:8px}.pgrid figure{margin:0;break-inside:avoid}.pgrid img{width:100%;max-height:300px;object-fit:contain}}
-main.sheetmode{max-width:none;padding:0 0 110px}
+main.sheetmode{max-width:none;padding:0}
+/* The sheet scrolls and zooms inside its own viewport (.sv), so the header, tabs and tools never zoom. */
+.sv{position:relative;overflow:auto;touch-action:pan-x pan-y;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;background:var(--bg)}
+.sv.finger,.sv.finger canvas{touch-action:none}
+.tools .zm{min-width:58px;font-variant-numeric:tabular-nums}
 .tools{position:sticky;top:calc(env(safe-area-inset-top) + 92px);z-index:15;display:flex;gap:5px;align-items:center;flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;padding:6px 10px;background:var(--card);border-bottom:1px solid var(--line)}
 .tools::-webkit-scrollbar{display:none}
 .tools>*{flex:0 0 auto}
@@ -104,11 +126,11 @@ main.sheetmode{max-width:none;padding:0 0 110px}
 .tools .dotsz{display:inline-block;border-radius:50%;background:currentColor}
 .tools .btn.on{background:var(--pri);border-color:var(--pri);color:#fff}
 .tools .hint{font-size:12px;color:var(--mute);flex:1;min-width:140px}
-.sheet{position:relative;margin:8px auto;background:#fff;box-shadow:0 1px 6px rgba(0,0,0,.25)}
-.sheet img{display:block;width:100%;height:100%;user-select:none;-webkit-user-select:none;-webkit-user-drag:none;pointer-events:none}
-.sheet canvas{position:absolute;left:0;top:0;width:100%;height:100%;touch-action:pan-x pan-y pinch-zoom}
-.sheet.finger canvas{touch-action:none}
+.sheet{position:relative;margin:8px auto;background:#fff;box-shadow:0 1px 6px rgba(0,0,0,.25);transform-origin:0 0}
+.sheet>img:first-child{display:block;width:100%;height:100%;user-select:none;-webkit-user-select:none;-webkit-user-drag:none;pointer-events:none}
+.sheet canvas{position:absolute;left:0;top:0;touch-action:pan-x pan-y}
 .sheet .bl{position:absolute;margin:0;min-height:0;border:0;border-radius:2px;background:rgba(31,111,235,.06);color:#0b3d91;padding:0 2px;font-family:"Bradley Hand","Segoe Print","Comic Sans MS",cursive,sans-serif;font-weight:600;outline:none;resize:none;line-height:1.1;overflow:hidden;-webkit-appearance:none;appearance:none;box-shadow:none}
+.sheet .tz{position:absolute;pointer-events:none;background:rgba(31,111,235,.06);border-radius:2px;display:flex;align-items:center;justify-content:flex-end;padding-right:3px;color:#0b3d91;font-weight:800;font-family:-apple-system,BlinkMacSystemFont,sans-serif}
 .sheet .bl:focus{background:rgba(255,214,0,.28)}
 .sheet .ins{position:absolute;display:block;pointer-events:none;user-select:none;-webkit-user-select:none;-webkit-user-drag:none;box-shadow:0 0 0 1px rgba(0,0,0,.25)}
 .sheet.imgmode .ins{pointer-events:auto;z-index:6;touch-action:none;cursor:move}
@@ -134,11 +156,11 @@ main.sheetmode{max-width:none;padding:0 0 110px}
   <button class="btn pri" id="nextBtn">Next &#9654;</button>
 </footer>
 <div id="toast"></div>
-<input type="file" id="cam" accept="image/*" capture="environment" class="hide">
 <input type="file" id="lib" accept="image/*" multiple class="hide">
 <input type="file" id="insImg" accept="image/*" class="hide">
 <input type="file" id="imp" accept=".zip,application/zip,.json,application/json,image/jpeg" multiple class="hide">
 <script src="sheet.js"></script>
+<script src="uad26.js"></script>
 <script>
 'use strict';
 /* =====================================================================
@@ -149,7 +171,8 @@ main.sheetmode{max-width:none;padding:0 0 110px}
    Everything is stored on the device (IndexedDB); works offline.
    ===================================================================== */
 
-const APP_VERSION = '9';   // shown on the home screen so a screenshot says which version is running
+const CACHE_PREFIX = 'fieldlite-v';   // this app's saved copies; the practice copy uses its own prefix so the two never touch each other
+const APP_VERSION = '12';   // shown on the home screen so a screenshot says which version is running
 const TABS = [
   ...SHEET.pages.map((_,i)=>({id:'p'+(i+1), page:i+1, title:SHEET.pages.length>1?'Page '+(i+1):'Field Sheet'})),
   {id:'photo', title:'Photos'}, {id:'sketch', title:'Sketch'}, {id:'export', title:'Export'}
@@ -159,6 +182,29 @@ const PHOTO_SHOTS = {
   land:['Front','Street','Street (opposite)','Rear','Side','Address / sign','Access','Adverse','Defect']
 };
 const AREA_KINDS = ['GLA','Garage','Porch','Patio','Deck','Basement','Carport','Other'];
+/* Walk-through room tally on the Sketch tab. Each counter IS the matching write-in box on the field
+   sheet (same stored value), so a count tapped here shows on the sheet and in the report - no recount.
+   When the sheet is re-mapped, point `box` at the new write-in box ids. */
+const TALLY = [
+  {box:'t_bed',  label:'BED#',     sub:'Bedrooms'},
+  {box:'t_bath', label:'BATH#',    sub:'Full baths'},
+  {box:'t_half', label:'1/2 BTH#', sub:'Half baths'}
+].filter(t => SHEET.blanks.some(b => b.id === t.box));
+/* Tally marks: on the field sheet the BED#, BATH# and 1/2 BTH# boxes are tally boxes - the Pencil draws in them
+   (no Scribble) and every mark counts as one, the diagonal fifth stroke included. The box's value is the marks in
+   it plus the +/- taps on the Sketch tab (tallyAdj), so both ways of counting add up. Dots/taps don't count. */
+const TALLY_BOX = Object.fromEntries(TALLY.map(t => [t.box, SHEET.blanks.find(b => b.id === t.box)]));
+function strokeInBox(s, b){
+  let x0=1e9,y0=1e9,x1=-1e9,y1=-1e9;for(const q of s.pts){x0=Math.min(x0,q[0]);y0=Math.min(y0,q[1]);x1=Math.max(x1,q[0]);y1=Math.max(y1,q[1]);}
+  const cx=(x0+x1)/2,cy=(y0+y1)/2,m=2;
+  return cx>=b.x-m&&cx<=b.x+b.w+m&&cy>=b.y-m&&cy<=b.y+b.h+m;
+}
+function tallyMarks(box){const b=TALLY_BOX[box];return b?(cur.ink[b.p]||[]).filter(s=>s.k!=='hl'&&strokeInBox(s,b)).length:0;}
+function syncTally(){
+  cur.tallyAdj=cur.tallyAdj||{};
+  for(const t of TALLY){const n=Math.max(0,tallyMarks(t.box)+(cur.tallyAdj[t.box]||0));if(n)cur.txt[t.box]=String(n);else delete cur.txt[t.box];
+    const el=document.querySelector(`[data-tz="${t.box}"]`);if(el)el.textContent=n||'';}
+}
 const FIELD = Object.fromEntries(SHEET.fields.map(f => [f.id, f]));
 const OPT = Object.fromEntries(SHEET.opts.map(o => [o.id, o]));
 const OPTS_OF = {};
@@ -199,9 +245,30 @@ function save(){clearTimeout(saveTimer);saveTimer=setTimeout(()=>{cur.updated=Da
 function newInsp(){return normalize({id:uid(),created:Date.now(),updated:Date.now()});}
 function normalize(i){
   i.v=2; i.sel=i.sel||{}; i.txt=i.txt||{}; i.ink=i.ink||{}; SHEET.pages.forEach((_,n)=>{i.ink[n+1]=i.ink[n+1]||[];});
-  i.imgs=i.imgs||[]; i.sketch=i.sketch||{areas:[]}; i.date=i.date||(i.f&&i.f.insp_date)||today();
+  if(!i.tallyAdj){i.tallyAdj={};for(const t of TALLY){const n=parseInt(i.txt[t.box],10);if(n>0)i.tallyAdj[t.box]=n;}}   // counts from before tally boxes
+  i.imgs=i.imgs||[]; i.sketch=i.sketch||{areas:[]}; i.sketch.labels=i.sketch.labels||[]; i.date=i.date||(i.f&&i.f.insp_date)||today();
   if(i.f&&!i.txt.address&&i.f.addr)i.txt.address=i.f.addr;   // carry address over from the old chip form
+  migrateLayout(i);
   return i;
+}
+/* The sheet's layout changed (v1: re-spaced rows with the sketch grid at the end; v2: the printed PDF).
+   Options and write-ins keep their ids, so selections and text carry over as they are; pen marks and
+   inserted images are moved row by row so they land on the same part of the form. */
+function migrateLayout(i){
+  const v=SHEET.v||1,iv=i.sheetV||1;
+  if(iv===v)return;
+  const M=SHEET.migrate;
+  if(M&&iv===1&&v===2){
+    const band=y=>{let best=M[0];for(const m of M){if(y>=m[0]&&y<m[1])return m;if(y>=m[0])best=m;}return best;};
+    const map=(x,y)=>{const [o0,o1,n0,n1,a,b]=band(y);return [Math.round((a*x+b)*10)/10,Math.round((n0+(o1>o0?(y-o0)/(o1-o0):0)*(n1-n0))*10)/10];};
+    for(const p in i.ink)for(const st of i.ink[p]){
+      const a=band(st.pts[0][1])[4];
+      st.pts=st.pts.map(q=>{const r=map(q[0],q[1]);return q.length>2?[r[0],r[1],q[2]]:r;});
+      st.w=Math.round(st.w*a*100)/100;
+    }
+    for(const m of i.imgs){const [x0,y0]=map(m.x,m.y),[x1]=map(m.x+m.w,m.y),k=(x1-x0)/m.w;m.x=x0;m.y=y0;m.w=Math.round(m.w*k);m.h=Math.round(m.h*k);}
+  }
+  i.sheetV=v;
 }
 const addrOf=i=>(i.txt&&i.txt.address)||(i.f&&i.f.addr)||'';
 function isLand(){return SHEET.opts.some(o=>o.f==='prop_type'&&o.v==='VACANT'&&cur.sel[o.id]);}
@@ -238,8 +305,8 @@ async function showHome(){
 /* Forget the saved copy of the app (never the inspections) and load the newest version from the server. */
 async function getLatest(){
   toast('Getting the latest version…');
-  try{for(const k of await caches.keys())await caches.delete(k);}catch(_){}
-  try{for(const r of await navigator.serviceWorker.getRegistrations())await r.unregister();}catch(_){}
+  try{for(const k of await caches.keys())if(k.startsWith(CACHE_PREFIX))await caches.delete(k);}catch(_){}
+  try{const r=await navigator.serviceWorker.getRegistration();if(r)await r.unregister();}catch(_){}   // this app's worker only
   location.reload();
 }
 
@@ -284,11 +351,101 @@ function loadBg(p){
   return bgImg[p];
 }
 function blankFont(b){return Math.min(15,(b.h/b.lines)*0.74);}
-async function renderSheet(p){
-  sheetPage=p;hist=[];
+
+/* ---------- Zoom (Goodnotes-style) ----------
+   Z is the zoom factor on top of "fit to width". Pinch (two fingers), the toolbar - / + buttons, or
+   Ctrl + mouse wheel zoom only the sheet. While fingers are down the sheet is scaled with a CSS
+   transform (smooth); when they lift it is laid out again at the new size, so text boxes, tap targets
+   and ink are exact and sharp. The ink canvas only covers the visible part of the sheet (plus a margin)
+   and is redrawn as you scroll, because a canvas the size of a zoomed-in sheet would exceed the
+   iPad's canvas memory limit. */
+const ZMIN=1,ZMAX=4;
+let Z=1,pinchUntil=0,inkView=null;
+const clampZ=z=>Math.max(ZMIN,Math.min(ZMAX,z));
+function baseScale(pg){fitW=availW();return Math.min(fitW,1000)/pg.w;}
+function sizeViewport(){
+  const sv=$('#sv');if(!sv)return;
+  const bar=$('#bar'),bh=bar&&!bar.classList.contains('hide')?bar.offsetHeight:0;
+  sv.style.height=Math.max(200,window.innerHeight-sv.getBoundingClientRect().top-bh)+'px';
+}
+// Where the viewport is looking, as a sheet point (page units) pinned to a screen point.
+function captureView(){
+  const sv=$('#sv'),sh=$('#sheet');if(!sv||!sh)return null;
+  const r=sv.getBoundingClientRect();
+  return {u:(sv.scrollLeft-sh.offsetLeft)/sheetScale,v:(sv.scrollTop-sh.offsetTop)/sheetScale,cx:r.left+sv.clientLeft,cy:r.top+sv.clientTop};
+}
+function applyView(k){
+  const sv=$('#sv'),sh=$('#sheet');if(!sv||!sh||!k)return;
+  const r=sv.getBoundingClientRect();
+  sv.scrollLeft=r.left+sv.clientLeft+sh.offsetLeft+k.u*sheetScale-k.cx;
+  sv.scrollTop=r.top+sv.clientTop+sh.offsetTop+k.v*sheetScale-k.cy;
+}
+// Zoom to z keeping the sheet point under screen point (cx, cy) where it is.
+function zoomAt(z,cx,cy){
+  const sh=$('#sheet');if(!sh)return;z=clampZ(z);
+  const r=sh.getBoundingClientRect(),k={u:(cx-r.left)/sheetScale,v:(cy-r.top)/sheetScale,cx,cy};
+  if(Math.abs(z-Z)<0.005){applyView(k);return;}
+  Z=z;renderSheet(sheetPage,k);
+}
+/* The ink canvas: positioned over the visible area of the sheet and redrawn when the view moves. */
+function placeInk(force){
+  const v=inkView,sv=$('#sv'),sh=$('#sheet');if(!v||!sv||!sh)return;
+  const SW=sh.offsetWidth,SH=sh.offsetHeight;
+  const vx=sv.scrollLeft-sh.offsetLeft,vy=sv.scrollTop-sh.offsetTop,vw=sv.clientWidth,vh=sv.clientHeight;
+  if(!force&&vx>=v.ox&&vy>=v.oy&&vx+vw<=v.ox+v.w&&vy+vh<=v.oy+v.h)return;   // still covered
+  const mx=vw*0.3,my=vh*0.45;
+  const ox=Math.max(0,Math.floor(vx-mx)),oy=Math.max(0,Math.floor(vy-my));
+  const w=Math.min(SW,Math.ceil(vx+vw+mx))-ox,h=Math.min(SH,Math.ceil(vy+vh+my))-oy;
+  if(w<=0||h<=0)return;
+  const d=Math.min(window.devicePixelRatio||1,Math.sqrt(12e6/(w*h)));   // stay under the iPad's canvas size limit
+  Object.assign(v,{ox,oy,w,h,d});
+  const cv=v.cv;cv.style.left=ox+'px';cv.style.top=oy+'px';cv.style.width=w+'px';cv.style.height=h+'px';
+  cv.width=Math.round(w*d);cv.height=Math.round(h*d);
+  v.ctx.setTransform(d*sheetScale,0,0,d*sheetScale,-d*ox,-d*oy);
+  drawSheet(v.ctx,sheetPage);
+}
+function attachZoom(sv,sh){
+  let G=null;
+  const pts=e=>[...e.touches].filter(t=>t.touchType!=='stylus');
+  const mid=t=>({x:(t[0].clientX+t[1].clientX)/2,y:(t[0].clientY+t[1].clientY)/2});
+  const dist=t=>Math.hypot(t[0].clientX-t[1].clientX,t[0].clientY-t[1].clientY)||1;
+  const show=()=>{const r0=G.r0,q={x:G.c0.x-r0.left,y:G.c0.y-r0.top};
+    sh.style.transform=`translate(${G.c.x-G.c0.x+q.x*(1-G.k)}px,${G.c.y-G.c0.y+q.y*(1-G.k)}px) scale(${G.k})`;};
+  const begin=c=>{G={r0:sh.getBoundingClientRect(),c0:c,c,k:1,z0:Z};pinchUntil=Infinity;};
+  const commit=()=>{
+    if(!G)return;const g=G;G=null;pinchUntil=Date.now()+350;
+    const k={u:(g.c0.x-g.r0.left)/sheetScale,v:(g.c0.y-g.r0.top)/sheetScale,cx:g.c.x,cy:g.c.y};
+    sh.style.transform='';
+    const z=clampZ(g.z0*g.k);
+    if(Math.abs(z-Z)<0.005){applyView(k);placeInk(true);}else{Z=z;renderSheet(sheetPage,k);}
+  };
+  sv.addEventListener('touchstart',e=>{const t=pts(e);if(t.length===2){e.preventDefault();begin(mid(t));G.d0=dist(t);}},{passive:false});
+  sv.addEventListener('touchmove',e=>{if(!G||G.d0==null)return;const t=pts(e);if(t.length<2)return;e.preventDefault();
+    G.c=mid(t);G.k=clampZ(G.z0*dist(t)/G.d0)/G.z0;show();},{passive:false});
+  const up=e=>{if(G&&G.d0!=null&&pts(e).length<2)commit();};
+  sv.addEventListener('touchend',up);sv.addEventListener('touchcancel',up);
+  // Office PC: Ctrl + wheel (and trackpad pinch, which browsers report the same way) zooms around the cursor.
+  sv.addEventListener('wheel',e=>{
+    if(!e.ctrlKey)return;e.preventDefault();
+    if(!G)begin({x:e.clientX,y:e.clientY});
+    G.k=clampZ(G.z0*G.k*Math.exp(-e.deltaY*0.01))/G.z0;show();
+    clearTimeout(G.t);G.t=setTimeout(commit,160);
+  },{passive:false});
+  let raf=0;
+  sv.addEventListener('scroll',()=>{if(!raf)raf=requestAnimationFrame(()=>{raf=0;placeInk(false);});},{passive:true});
+}
+// Safari's own page zoom would zoom the toolbar too; on the sheet our zoom replaces it.
+document.addEventListener('gesturestart',e=>{if(view==='edit'&&TABS[tab].page)e.preventDefault();});
+
+async function renderSheet(p,keep){
+  const same=p===sheetPage&&$('#sheet');
+  if(keep===undefined)keep=same?captureView():null;
+  if(!same)hist=[];
+  sheetPage=p;
   const refs=await refsFor(cur.id);refs.forEach(r=>refBlobs.set(r.id,r.blob));
   const pg=SHEET.pages[p-1];
-  const W=Math.min(document.documentElement.clientWidth,1000),s=sheetScale=W/pg.w;
+  const s=sheetScale=baseScale(pg)*Z,W=Math.round(pg.w*s);
+  const toolsX=same&&$('.tools')?$('.tools').scrollLeft:0;   // keep the toolbar where it was scrolled to
   $('#main').innerHTML=`
    <div class="tools">
      <button class="tb ${tool==='pen'?'on':''}" data-tool="pen" aria-label="Pen">&#9998; Pen</button>
@@ -307,8 +464,13 @@ async function renderSheet(p){
      <button class="tb" id="addImgBtn" aria-label="Insert image">&#128247; Image</button>
      <button class="tb ${tool==='img'?'on':''}" data-tool="img" aria-label="Move or resize images">&#10021; Move</button>
      <button class="tb ${SET.finger?'on':''}" id="fingerBtn" aria-label="Finger writes">&#9757; Finger ${SET.finger?'ON':'OFF'}</button>
+     <span class="sep"></span>
+     <button class="tb" id="zOut" aria-label="Zoom out" ${Z<=ZMIN?'disabled':''}>&minus;</button>
+     <button class="tb zm" id="zFit" aria-label="Fit to width">${Math.round(Z*100)}%</button>
+     <button class="tb" id="zIn" aria-label="Zoom in" ${Z>=ZMAX?'disabled':''}>+</button>
    </div>
-   <div class="sheet ${SET.finger?'finger':''} ${tool==='img'?'imgmode':''}" id="sheet" style="width:${W}px;height:${Math.round(pg.h*s)}px">
+   <div class="sv ${SET.finger?'finger':''}" id="sv">
+   <div class="sheet ${tool==='img'?'imgmode':''}" id="sheet" style="width:${W}px;height:${Math.round(pg.h*s)}px">
      <img src="${pg.img}" alt="Inspection sheet page ${p}">
      ${cur.imgs.filter(m=>m.p===p&&refBlobs.has(m.id)).map(m=>`<img class="ins ${m.id===selImg?'sel':''}" data-ins="${m.id}" src="${refUrl(m.id)}" alt="Inserted reference image" style="left:${m.x*s}px;top:${m.y*s}px;width:${m.w*s}px;height:${m.h*s}px">`).join('')}
      <canvas id="ink"></canvas>
@@ -316,16 +478,22 @@ async function renderSheet(p){
        const st=`left:${b.x*s}px;top:${b.y*s}px;width:${b.w*s}px;height:${b.h*s}px;font-size:${blankFont(b)*s}px;line-height:${b.h/b.lines*s}px`;
        const im=b.num?' inputmode="decimal"':'';
        const lab=esc((b.of?FIELD[b.of].label+' – other':FIELD[b.id].label));
+       if(TALLY_BOX[b.id])return `<div class="tz" data-tz="${b.id}" style="${st}" aria-label="${lab} (tally)">${esc(cur.txt[b.id]||'')}</div>`;
        return b.lines>1
          ?`<textarea class="bl" data-b="${b.id}" style="${st}" aria-label="${lab}" spellcheck="false">${esc(cur.txt[b.id]||'')}</textarea>`
          :`<input class="bl" data-b="${b.id}" style="${st}" aria-label="${lab}" value="${esc(cur.txt[b.id]||'')}" autocomplete="off" spellcheck="false"${im}>`;
      }).join('')}
-   </div>`;
-  const cv=$('#ink'),dpr=window.devicePixelRatio||1;
-  cv.width=Math.round(W*dpr);cv.height=Math.round(pg.h*s*dpr);
-  const ctx=cv.getContext('2d',{desynchronized:true});ctx.setTransform(dpr*s,0,0,dpr*s,0,0);   // desynchronized = lower pen latency where supported
-  drawSheet(ctx,p);
+   </div></div>`;
+  const sv=$('#sv'),sh=$('#sheet'),cv=$('#ink');
+  $('.tools').scrollLeft=toolsX;
+  sizeViewport();
+  if(keep)applyView(keep);
+  const ctx=cv.getContext('2d',{desynchronized:true});   // desynchronized = lower pen latency where supported
+  inkView={cv,ctx,ox:0,oy:0,w:0,h:0,d:1};
+  placeInk(true);
   attachInk(cv,ctx,p);
+  attachZoom(sv,sh);
+  setTimeout(onViewportChange,400);
   if(tool==='img')attachImages(p,s);
   $('#main').oninput=e=>{const id=e.target.dataset.b;if(!id)return;cur.txt[id]=e.target.value;if(id==='address')$('#title').textContent=e.target.value||'New inspection';save();};
   $('#main').onclick=e=>{
@@ -338,6 +506,10 @@ async function renderSheet(p){
     else if(b.id==='sizeBtn'){SET.size=(SET.size+1)%3;saveSettings();renderSheet(p);}
     else if(b.dataset.color){if(tool==='hl')SET.hl=b.dataset.color;else SET.color=b.dataset.color;saveSettings();renderSheet(p);}
     else if(b.id==='fingerBtn'){SET.finger=!SET.finger;saveSettings();renderSheet(p);}
+    else if(b.id==='zIn'||b.id==='zOut'||b.id==='zFit'){
+      const r=sv.getBoundingClientRect(),cx=r.left+sv.clientWidth/2,cy=r.top+sv.clientHeight/2;
+      zoomAt(b.id==='zFit'?1:Z*(b.id==='zIn'?1.25:0.8),cx,cy);
+    }
   };
 }
 /* A recorded option gets a pale blue fill. One you tapped also gets a neat ring; one you circled by hand
@@ -396,8 +568,8 @@ function optAt(p,x,y){
 }
 const state=p=>({sel:Object.assign({},cur.sel),ink:cur.ink[p].slice()});
 function snapshot(p){hist.push(state(p));redoStack=[];if(hist.length>60)hist.shift();}
-function undo(ctx,p){const h=hist.pop();if(!h){toast('Nothing to undo');return;}redoStack.push(state(p));cur.sel=h.sel;cur.ink[p]=h.ink;save();drawSheet(ctx,p);renderTabs();}
-function redo(ctx,p){const h=redoStack.pop();if(!h){toast('Nothing to redo');return;}hist.push(state(p));cur.sel=h.sel;cur.ink[p]=h.ink;save();drawSheet(ctx,p);renderTabs();}
+function undo(ctx,p){const h=hist.pop();if(!h){toast('Nothing to undo');return;}redoStack.push(state(p));cur.sel=h.sel;cur.ink[p]=h.ink;syncTally();save();drawSheet(ctx,p);renderTabs();}
+function redo(ctx,p){const h=redoStack.pop();if(!h){toast('Nothing to redo');return;}hist.push(state(p));cur.sel=h.sel;cur.ink[p]=h.ink;syncTally();save();drawSheet(ctx,p);renderTabs();}
 function setOpt(o,on){
   if(on&&FIELD[o.f].kind!=='multi')for(const x of OPTS_OF[o.f])delete cur.sel[x.id];
   if(on)cur.sel[o.id]=1;else delete cur.sel[o.id];
@@ -433,15 +605,18 @@ function recognise(p,st){
   return Object.values(byField).map(v=>v.o);
 }
 function attachInk(cv,ctx,p){
-  let st=null,tapStart=null,scrolling=false,lastC=null,raf=0,penDown=false,lastPen=0;
+  let st=null,tapStart=null,scrolling=false,raf=0,penDown=false,lastPen=0,fromBox=null;
   const fingers=new Map();   // touches currently down (finger-writing mode only)
-  const centre=()=>{let x=0,y=0;fingers.forEach(f=>{x+=f.x;y+=f.y;});return {x:x/fingers.size,y:y/fingers.size};};
-  const pt=e=>{const r=cv.getBoundingClientRect();return [(e.clientX-r.left)/sheetScale,(e.clientY-r.top)/sheetScale];};
+  const sheetEl=$('#sheet');
+  const pt=e=>{const r=sheetEl.getBoundingClientRect();return [(e.clientX-r.left)/sheetScale,(e.clientY-r.top)/sheetScale];};
+  const pinching=()=>Date.now()<pinchUntil;
   const stopStylusScroll=e=>{if([...e.touches].some(t=>t.touchType==='stylus'))e.preventDefault();};
   cv.addEventListener('touchstart',stopStylusScroll,{passive:false});
   cv.addEventListener('touchmove',stopStylusScroll,{passive:false});
   // Palm rejection: while the Pencil is down (and just after), touches and big contact areas are ignored.
-  const palm=e=>e.pointerType==='touch'&&(penDown||Date.now()-lastPen<900||e.width>32||e.height>32);
+  // iPad Safari reports a fingertip as a ~40px-wide contact, so only a much bigger one counts as a palm, and
+  // with Finger on (no Pencil in use) contact size is ignored altogether so finger strokes always draw.
+  const palm=e=>e.pointerType==='touch'&&(penDown||Date.now()-lastPen<900||(!SET.finger&&(e.width>80||e.height>80)));
   const r1=v=>Math.round(v*10)/10;
   const mk=(ev,pen)=>{const q=pt(ev).map(r1);return pen?[q[0],q[1],Math.round((ev.pressure||0.5)*100)/100]:q;};
   const draws=e=>e.pointerType==='pen'||e.pointerType==='mouse'||(e.pointerType==='touch'&&SET.finger);
@@ -449,7 +624,8 @@ function attachInk(cv,ctx,p){
      screen at any zoom. Erasing a circle un-selects what it circled; with nothing to erase under it, it
      un-selects a tapped option. Strokes are never edited in place, so Undo can always bring them back. */
   const eraseAt=([x,y],px)=>{
-    const r=Math.max(3,px/sheetScale),part=SET.erase==='part';
+    const inTally=Object.values(TALLY_BOX).some(b=>b&&x>=b.x&&x<=b.x+b.w&&y>=b.y&&y<=b.y+b.h);
+    const r=inTally?2.2:Math.max(3,px/sheetScale),part=SET.erase==='part';   // tally marks sit close together: erase one at a time
     const segDist=(a,b)=>{const dx=b[0]-a[0],dy=b[1]-a[1],l2=dx*dx+dy*dy;let t=l2?((x-a[0])*dx+(y-a[1])*dy)/l2:0;t=Math.max(0,Math.min(1,t));return Math.hypot(a[0]+t*dx-x,a[1]+t*dy-y);};
     const touches=s=>{const P=s.pts;if(P.length===1)return Math.hypot(P[0][0]-x,P[0][1]-y)<r;for(let i=1;i<P.length;i++)if(segDist(P[i-1],P[i])<r)return true;return false;};
     const kept=[],dropped=[];
@@ -479,14 +655,15 @@ function attachInk(cv,ctx,p){
   };
   const erasePx=e=>e.pointerType==='touch'?22:14;
   cv.onpointerdown=e=>{
+    const startedOn=fromBox;fromBox=null;   // set only when a finger touched a writing box (see below)
     if(e.pointerType==='pen'){penDown=true;lastPen=Date.now();}
     if(palm(e)){e.preventDefault();return;}
-    if(e.pointerType==='touch'&&SET.finger){
-      // With finger-writing on the page can't scroll natively, so two fingers scroll it by hand.
-      fingers.set(e.pointerId,{x:e.clientX,y:e.clientY});
-      if(fingers.size>=2){
-        if(st){st=null;hist.pop();drawSheet(ctx,p);}          // the first finger was a scroll, not a stroke
-        scrolling=true;lastC=centre();e.preventDefault();return;
+    if(e.pointerType==='touch'){
+      // Two fingers pan and zoom the sheet (attachZoom); here they only cancel what the first finger started.
+      fingers.set(e.pointerId,1);
+      if(fingers.size>=2||pinching()){
+        if(st&&!st.pen){if(!st.erase)hist.pop();st=null;drawSheet(ctx,p);}   // the first finger was a pinch, not a stroke
+        tapStart=null;scrolling=true;return;
       }
     }
     if(!draws(e)){tapStart={x:e.clientX,y:e.clientY,t:Date.now()};return;}
@@ -495,13 +672,11 @@ function attachInk(cv,ctx,p){
     const pen=e.pointerType==='pen';
     st=tool==='hl'?{pts:[mk(e,false)],c:SET.hl,w:HL_W[SET.size],k:'hl',pid:e.pointerId}
                   :{pts:[mk(e,pen)],c:SET.color,w:PEN_W[SET.size],pen,pid:e.pointerId};
+    if(startedOn)st.box=startedOn;
     if(st.k!=='hl')drawStroke(ctx,st);   // the dot shows immediately
   };
   cv.onpointermove=e=>{
-    if(fingers.has(e.pointerId)){
-      fingers.set(e.pointerId,{x:e.clientX,y:e.clientY});
-      if(scrolling){const c=centre();window.scrollBy(lastC.x-c.x,lastC.y-c.y);lastC=c;return;}
-    }
+    if(scrolling&&fingers.has(e.pointerId))return;
     if(!st||e.pointerId!==st.pid)return;     // only the pointer that started the stroke can extend it
     const evs=e.getCoalescedEvents?e.getCoalescedEvents():[e];
     if(st.erase){evs.forEach(ev=>eraseAt(pt(ev),erasePx(ev)));return;}
@@ -514,33 +689,59 @@ function attachInk(cv,ctx,p){
   };
   const end=e=>{
     if(e.pointerType==='pen'){penDown=false;lastPen=Date.now();}
-    if(fingers.delete(e.pointerId)&&scrolling){if(fingers.size<2)scrolling=st=null;return;}
+    if(fingers.delete(e.pointerId)&&scrolling){if(!fingers.size)scrolling=false;tapStart=null;return;}
     if(tapStart&&!st){
+      if(pinching()){tapStart=null;return;}   // fingers lifting after a pinch are not a tap
       const moved=Math.hypot(e.clientX-tapStart.x,e.clientY-tapStart.y);
       if(e.type==='pointerup'&&moved<10&&Date.now()-tapStart.t<450){const o=optAt(p,...pt(e));if(o){snapshot(p);setOpt(o,!cur.sel[o.id]);save();drawSheet(ctx,p);renderTabs();}}
       tapStart=null;return;
     }
     if(!st||e.pointerId!==st.pid)return;     // a palm lifting must not end the Pencil's stroke
     const s=st;st=null;delete s.pid;
-    if(s.erase){renderTabs();return;}
+    const box=s.box;delete s.box;
+    if(s.erase){syncTally();save();renderTabs();return;}
     if(s.k==='hl'){ // highlighter: ink only, never circles an option
-      if(s.pts.length<2){hist.pop();drawSheet(ctx,p);return;}
+      if(s.pts.length<2){hist.pop();drawSheet(ctx,p);if(box)box.focus();return;}
       cur.ink[p].push(s);save();drawSheet(ctx,p);renderTabs();return;
     }
     let len=0;for(let i=1;i<s.pts.length;i++)len+=Math.hypot(s.pts[i][0]-s.pts[i-1][0],s.pts[i][1]-s.pts[i-1][1]);
-    if(len<4){ // a tap with the pen toggles the option under it
+    if(len<4){ // a tap with the pen toggles the option under it; a tap on a writing box opens that box
       const o=optAt(p,...s.pts[0]);
+      if(box){hist.pop();drawSheet(ctx,p);box.focus();return;}
       if(o){setOpt(o,!cur.sel[o.id]);save();drawSheet(ctx,p);renderTabs();}else hist.pop();
       return;
     }
     const hits=recognise(p,s);
     if(hits.length){hits.forEach(o=>setOpt(o,true));s.hits=hits.map(o=>o.id);toast('✓ '+hits.map(o=>o.v).join(', '));}
-    cur.ink[p].push(s);save();drawSheet(ctx,p);renderTabs();
+    cur.ink[p].push(s);syncTally();save();drawSheet(ctx,p);renderTabs();
   };
   cv.onpointerup=end;cv.onpointercancel=end;
+  /* With Finger on, a finger is the pen: a stroke that starts on a shaded writing box must draw, not focus the
+     box (a plain tap still opens it). Handing the touch to the drawing layer captures the pointer, so the rest
+     of the stroke follows it. The Pencil is untouched, so Scribble still writes into the boxes. */
+  const isBox=t=>t&&t.classList&&t.classList.contains('bl');
+  sheetEl.addEventListener('pointerdown',e=>{
+    if(e.pointerType!=='touch'||!SET.finger||!isBox(e.target)||e.target===cv)return;
+    e.preventDefault();e.stopPropagation();fromBox=e.target;cv.onpointerdown(e);
+  },true);
+  sheetEl.addEventListener('touchstart',e=>{
+    if(SET.finger&&isBox(e.target)&&![...e.touches].some(t=>t.touchType==='stylus'))e.preventDefault();
+  },{capture:true,passive:false});
 }
-let resizeT;
-window.addEventListener('resize',()=>{clearTimeout(resizeT);resizeT=setTimeout(()=>{if(view==='edit'&&TABS[tab].page&&!document.activeElement.classList.contains('bl'))renderSheet(sheetPage);},250);});
+/* Keep the sheet fitted to the window. Width changes (rotation, split view, a window that is still
+   opening) lay the sheet out again; height-only changes (keyboard, toolbars) just resize the viewport. */
+let resizeT,fitW=0;
+const availW=()=>document.documentElement.clientWidth;
+function onViewportChange(){clearTimeout(resizeT);resizeT=setTimeout(()=>{
+  if(view!=='edit'||!TABS[tab].page||!$('#sv'))return;
+  const typing=document.activeElement&&document.activeElement.classList.contains('bl');
+  if(Math.abs(availW()-fitW)>1&&!typing)renderSheet(sheetPage);
+  else{sizeViewport();placeInk(false);}
+},120);}
+window.addEventListener('resize',onViewportChange);
+window.addEventListener('orientationchange',onViewportChange);
+if(window.visualViewport)visualViewport.addEventListener('resize',onViewportChange);
+if(window.ResizeObserver)new ResizeObserver(onViewportChange).observe(document.documentElement);
 
 /* The filled sheet as an image (background + circles + ink + typed text), for PDF and package. */
 const jpeg=async c=>new Uint8Array(await (await new Promise(r=>c.toBlob(r,'image/jpeg',0.85))).arrayBuffer());
@@ -558,6 +759,7 @@ async function sheetCanvas(p,k=2){
   g.fillStyle='#0b3d91';
   for(const b of SHEET.blanks.filter(b=>b.p===p&&cur.txt[b.id])){
     const fs=blankFont(b);g.font=`600 ${fs}px Helvetica, Arial, sans-serif`;
+    if(TALLY_BOX[b.id]){g.textAlign='right';g.font=`800 ${fs}px Helvetica, Arial, sans-serif`;g.fillText(String(cur.txt[b.id]),b.x+b.w-2,b.y+b.h/2+fs*0.35);g.textAlign='left';continue;}
     const lh=b.h/b.lines,words=String(cur.txt[b.id]).split(/\s+/);let line='',row=0;
     const flush=()=>{g.fillText(line,b.x+2,b.y+lh*(row+0.5)+fs*0.35,b.w-4);row++;line='';}; // vertically centred, as on screen
     for(const w of words){const t=line?line+' '+w:w;if(g.measureText(t).width>b.w-4&&line&&row<b.lines-1){flush();line=w;}else line=t;}
@@ -576,7 +778,7 @@ $('#insImg').onchange=async e=>{
     toast('Adding image…');
     const blob=await shrink(f,2400),bm=await createImageBitmap(blob),pg=SHEET.pages[sheetPage-1];
     let w=pg.w*0.7,h=w*bm.height/bm.width;if(h>pg.h*0.6){h=pg.h*0.6;w=h*bm.width/bm.height;}bm.close&&bm.close();
-    const sh=$('#sheet'),topNow=sh?Math.max(0,(-sh.getBoundingClientRect().top)/sheetScale)+80:0;
+    const sv=$('#sv'),sh=$('#sheet'),topNow=sv&&sh?Math.max(0,(sv.scrollTop-sh.offsetTop)/sheetScale)+40:0;   // in view
     const id=uid(),m={id,p:sheetPage,x:Math.round((pg.w-w)/2),y:Math.round(Math.min(topNow,pg.h-h)),w:Math.round(w),h:Math.round(h)};
     await dbPut('photos',{id,insp:cur.id,kind:'ref',label:f.name||'Reference image',ts:Date.now(),blob});
     refBlobs.set(id,blob);cur.imgs.push(m);save();selImg=id;tool='img';
@@ -628,16 +830,21 @@ function reportData(){
   for(const k in sk)push('Sketch',[k==='GLA'?'GLA (sf)':k+' (sf)',sk[k].toLocaleString()]);
   return out;
 }
+/* TOTAL import file: legacy URAR (Form 1004) as UAD 2.6 XML - see uad26.js */
+function uad26(){
+  const t=sketchTotals();
+  return UAD26.build({sel:id=>[...new Set((OPTS_OF[id]||[]).filter(o=>cur.sel[o.id]).map(o=>o.v))],txt:id=>cur.txt[id],date:cur.date,gla:t.GLA||0});
+}
 function reportText(){return reportData().map(s=>`== ${s.title.toUpperCase()} ==\n`+s.rows.map(([k,v])=>`${k}: ${v}`).join('\n')).join('\n\n')+'\n';}
 async function copy(txt){try{await navigator.clipboard.writeText(txt);}catch(_){const t=document.createElement('textarea');t.value=txt;document.body.appendChild(t);t.select();document.execCommand('copy');t.remove();}}
 function titleOf(){return (addrOf(cur)||'(no address)')+(cur.txt.unit?' #'+cur.txt.unit:'');}
 
 /* ---------- Export / settings page ---------- */
 async function renderExport(){
-  const data=reportData(),ph=(await photosFor(cur.id)).sort((a,b)=>a.ts-b.ts);cur._pc=ph.length;
+  const data=reportData(),ph=await sentPhotos(cur.id);cur._pc=ph.length;
   $('#main').innerHTML=`<div class="card"><h2>Send to office / TOTAL</h2>
-    <div class="row"><button class="btn pri" id="exZip">Export package (.zip)</button><button class="btn" id="exPdf">Save PDF</button><button class="btn" id="exCopy">Copy all text</button></div>
-    <p class="muted">The PDF has your filled-in field sheet, a typed summary, the sketch and the photos - ready for TOTAL's PDF import. The package adds the photos as separate files named by label, Sketch.png, a spreadsheet and the data file. On the office PC, open this app, import the package, then tap any line below to copy it into TOTAL.</p></div>
+    <div class="row"><button class="btn pri" id="exZip">Export package (.zip)</button><button class="btn" id="exPdf">Save PDF</button><button class="btn" id="exCopy">Copy all text</button><button class="btn" id="exXml">TOTAL file (UAD 2.6)</button></div>
+    <p class="muted">The PDF has your filled-in field sheet, a typed summary, the sketch and the ${ph.length} photo${ph.length===1?'':'s'} ticked to send on the Photos tab - ready for TOTAL's PDF import. The package adds those photos as separate files named by label, Sketch.png, a spreadsheet, the data file and the TOTAL file. <b>TOTAL file (UAD 2.6)</b> fills a legacy URAR (Form 1004) in TOTAL: File &gt; Open UAD XML. On the office PC, open this app, import the package, then tap any line below to copy it into TOTAL.</p></div>
   <div class="card rep"><h2 style="font-size:17px">${esc(titleOf())}</h2>
     <p class="muted">Tap a line to copy its value.</p>
     ${data.map((s,si)=>`<div class="sec"><h3>${esc(s.title)} <button class="btn sm" data-cs="${si}">Copy section</button></h3>${s.rows.map(([k,v],ri)=>`<div class="kv" data-s="${si}" data-r="${ri}"><div class="k">${esc(k)}</div><div class="v">${esc(v)}</div></div>`).join('')}</div>`).join('')}
@@ -658,40 +865,70 @@ async function renderExport(){
     else if(e.target.id==='exCopy'){await copy(reportText());toast('All text copied');}
     else if(e.target.id==='exPdf'){toast('Building PDF…');try{await deliver(new Blob([await buildPdf()],{type:'application/pdf'}),pkgName('pdf'));}catch(err){alert('PDF failed: '+err.message);}}
     else if(e.target.id==='exZip'){exportZip();}
+    else if(e.target.id==='exXml'){const r=uad26();await deliver(new Blob([r.xml],{type:'application/xml'}),pkgName('xml').replace(/\.xml$/,' UAD26.xml'));
+      alert('TOTAL file (UAD 2.6, Form 1004) - in TOTAL use File > Open UAD XML.\n\nFilled in: '+(r.filled.join(', ')||'nothing yet')+(r.skipped.length?'\n\nStill to do in TOTAL:\n- '+r.skipped.join('\n- '):''));}
     else if(e.target.id==='setFinger'){SET.finger=!SET.finger;saveSettings();renderExport();}
-    else if(e.target.id==='clrInk'){if(confirm('Remove all pen marks? Circled options stay recorded.')){cur.ink={};normalize(cur);save();toast('Pen marks cleared');}}
+    else if(e.target.id==='clrInk'){if(confirm('Remove all pen marks? Circled options stay recorded.')){cur.ink={};normalize(cur);syncTally();save();toast('Pen marks cleared');}}
     else if(e.target.id==='delInsp'){if(confirm('Delete this inspection and its photos?')){for(const p of await allFor(cur.id))await dbDel('photos',p.id);await dbDel('insp',cur.id);showHome();}}
   };
 }
 
-/* ---------- Photos ---------- */
-let shotLabel=null;
+/* ---------- Photos ----------
+   In the field photos are taken with the device's own Camera app (fast, no prompts, straight to the
+   library) - Field Lite has no camera of its own. Back in the vehicle or at the office the photos are
+   imported from the library in one go, and only the ones ticked "send" (front, side, street scene...)
+   go into the PDF and the package. The full set stays in the photo library / work file.
+   Photo records: {id, insp, ts, blob, thumb, sel, label, src}. Records from before this change have
+   no `sel` and count as selected, so older inspections export exactly as they did. */
+const isSel=p=>p.sel!==false;
+const sentPhotos=async id=>(await photosFor(id)).filter(isSel).sort((a,b)=>a.ts-b.ts);
+const photoCaption=(p,i)=>p.label||('Photo '+(i+1));
+let photoFilter='all';
 async function renderPhotos(){
   const ph=(await photosFor(cur.id)).sort((a,b)=>a.ts-b.ts);
-  cur._pc=ph.length;
-  const shots=PHOTO_SHOTS[isLand()?'land':'imp'];
-  const byLabel={};ph.forEach(p=>(byLabel[p.label]=byLabel[p.label]||[]).push(p));
-  const extra=Object.keys(byLabel).filter(l=>!shots.includes(l));
-  let h=`<div class="card"><h2>Shot list - tap to take photo</h2><div class="shots">`;
-  for(const l of [...shots,...extra]){
-    const list=byLabel[l]||[];
-    h+=`<button class="shot ${list.length?'has':''}" data-shot="${esc(l)}">${list.length?`<img src="${photoURL(list[list.length-1])}" alt=""><span class="cnt">${list.length}</span>`:'<span style="font-size:24px">&#128247;</span>'}<span>${esc(l)}</span></button>`;
-  }
-  h+=`<button class="shot" data-shot="__other"><span style="font-size:24px">+</span><span>Custom label</span></button></div>
-  <div class="row" style="margin-top:10px"><button class="btn sm" id="fromLib">Add from library</button><span class="muted">Photos are shrunk to ~1600px to stay light.</span></div></div>
-  <div class="card"><h2>All photos (${ph.length})</h2><div class="thumbs">${ph.map(p=>`<figure><img src="${photoURL(p)}" alt=""><figcaption>${esc(p.label)}</figcaption><button class="x" data-delp="${p.id}">&#10005;</button></figure>`).join('')||'<span class="muted">None yet.</span>'}</div></div>`;
-  $('#main').innerHTML=h;
+  const nSel=ph.filter(isSel).length;cur._pc=nSel;
+  const labels=PHOTO_SHOTS[isLand()?'land':'imp'];
+  const list=photoFilter==='sel'?ph.filter(isSel):ph;
+  const opts=p=>`<option value="">No label</option>${[...new Set([...labels,...(p.label&&!labels.includes(p.label)?[p.label]:[])])].map(l=>`<option ${p.label===l?'selected':''}>${esc(l)}</option>`).join('')}<option value="__custom">Custom…</option>`;
+  $('#main').innerHTML=`<div class="card"><h2>Photos</h2>
+    <p class="muted" style="margin-top:0">In the field, shoot with the Camera app as usual. Here, import them from the photo library (select as many as you like), then tick the ones to send - only ticked photos go into the PDF and the package.</p>
+    <div class="row"><button class="btn pri" id="fromLib">Import from photo library</button><span class="muted" id="impMsg"></span></div></div>
+  <div class="card"><div class="row" style="margin-bottom:8px">
+     <div class="chips grow"><button class="chip ${photoFilter==='all'?'on':''}" data-filter="all">All (${ph.length})</button><button class="chip ${photoFilter==='sel'?'on':''}" data-filter="sel" id="nSel">To send (${nSel})</button></div>
+     ${ph.length>nSel?`<button class="btn sm warn" id="dropUnsel">Remove ${ph.length-nSel} not sent</button>`:''}</div>
+    <p class="muted" style="margin:0 0 6px">Tap a photo to tick or untick it for sending. Give ticked photos a label for the PDF caption.</p>
+    <div class="pick">${list.map(p=>`<figure class="${isSel(p)?'on':''}" data-pid="${p.id}"><img src="${thumbURL(p)}" alt="" loading="lazy" decoding="async"><span class="ck">&#10003;</span>
+      <button class="x" data-delp="${p.id}" aria-label="Delete photo">&#10005;</button>
+      <select data-lab="${p.id}" aria-label="Photo label">${opts(p)}</select></figure>`).join('')||`<span class="muted">${ph.length?'No photos ticked yet.':'No photos yet.'}</span>`}</div></div>`;
   renderTabs();
+  const counts=async()=>{const all=await photosFor(cur.id),n=all.filter(isSel).length;cur._pc=n;$('#nSel').textContent=`To send (${n})`;renderTabs();};
   $('#main').oninput=null;
+  $('#main').onchange=async e=>{
+    const id=e.target.dataset.lab;if(!id)return;const p=await dbGet('photos',id);let l=e.target.value;
+    if(l==='__custom'){l=(prompt('Photo label (e.g. Front, Street scene, Roof damage)',p.label||'')||'').trim();if(!l){e.target.value=p.label||'';return;}}
+    p.label=l;p.sel=true;await dbPut('photos',p);
+    if(e.target.value==='__custom')renderPhotos();else{e.target.closest('figure').classList.add('on');counts();}
+  };
   $('#main').onclick=async e=>{
-    const s=e.target.closest('[data-shot]'),dp=e.target.closest('[data-delp]');
-    if(s){let l=s.dataset.shot;if(l==='__other'){l=prompt('Photo label (e.g. Bedroom 2, Roof damage)');if(!l)return;}shotLabel=l.trim();$('#cam').value='';$('#cam').click();}
-    else if(dp){if(confirm('Delete photo?')){await dbDel('photos',dp.dataset.delp);revoke(dp.dataset.delp);renderPhotos();}}
-    else if(e.target.id==='fromLib'){shotLabel=prompt('Label for these photos','Other')||'Other';$('#lib').value='';$('#lib').click();}
+    const dp=e.target.closest('[data-delp]'),fl=e.target.closest('[data-filter]'),fig=e.target.closest('figure[data-pid]');
+    if(dp){if(confirm('Delete this photo from the inspection? (It stays in your photo library.)')){await dbDel('photos',dp.dataset.delp);revoke(dp.dataset.delp);renderPhotos();}}
+    else if(fl){photoFilter=fl.dataset.filter;renderPhotos();}
+    else if(e.target.id==='fromLib'){$('#lib').value='';$('#lib').click();}
+    else if(e.target.id==='dropUnsel'){
+      const drop=(await photosFor(cur.id)).filter(p=>!isSel(p));
+      if(!confirm(`Remove the ${drop.length} photos not being sent from this inspection? They stay in your photo library.`))return;
+      for(const p of drop){await dbDel('photos',p.id);revoke(p.id);}renderPhotos();
+    }
+    else if(fig&&e.target.tagName!=='SELECT'){
+      const p=await dbGet('photos',fig.dataset.pid);p.sel=!isSel(p);await dbPut('photos',p);fig.classList.toggle('on',p.sel);
+      if(photoFilter==='sel'&&!p.sel)fig.remove();counts();
+    }
   };
 }
 function photoURL(p){if(!urls.has(p.id))urls.set(p.id,URL.createObjectURL(p.blob));return urls.get(p.id);}
-function revoke(id){if(urls.has(id)){URL.revokeObjectURL(urls.get(id));urls.delete(id);}}
+// Small thumbnails keep 80-90 photos on screen without running the iPad out of memory.
+function thumbURL(p){if(!p.thumb)return photoURL(p);const k='t:'+p.id;if(!urls.has(k))urls.set(k,URL.createObjectURL(p.thumb));return urls.get(k);}
+function revoke(id){for(const k of [id,'t:'+id])if(urls.has(k)){URL.revokeObjectURL(urls.get(k));urls.delete(k);}}
 async function shrink(file,MAX=1600){
   let bmp;
   try{bmp=await createImageBitmap(file,{imageOrientation:'from-image'});}catch(_){bmp=await new Promise((res,rej)=>{const i=new Image();i.onload=()=>res(i);i.onerror=rej;i.src=URL.createObjectURL(file);});}
@@ -702,17 +939,23 @@ async function shrink(file,MAX=1600){
   return await new Promise(r=>c.toBlob(r,'image/jpeg',0.82));
 }
 async function addFiles(files){
-  if(!files||!files.length||!cur)return;
-  toast('Saving photo…');
-  for(const f of files){
-    let blob;try{blob=await shrink(f);}catch(_){blob=f;}
-    await dbPut('photos',{id:uid(),insp:cur.id,label:shotLabel||'Other',ts:Date.now(),blob});
+  files=[...(files||[])];if(!files.length||!cur)return;
+  const have=new Set((await photosFor(cur.id)).map(p=>p.src).filter(Boolean));
+  const msg=t=>{const m=$('#impMsg');if(m)m.textContent=t;else toast(t);};
+  let added=0,skipped=0;
+  for(let i=0;i<files.length;i++){
+    const f=files[i],src=`${f.name}|${f.size}|${f.lastModified}`;
+    if(have.has(src)){skipped++;continue;}   // already imported (e.g. picked again)
+    msg(`Importing ${i+1} of ${files.length}…`);
+    let blob,thumb;try{blob=await shrink(f);}catch(_){blob=f;}
+    try{thumb=await shrink(blob,320);}catch(_){}
+    await dbPut('photos',{id:uid(),insp:cur.id,label:'',sel:false,ts:f.lastModified||Date.now(),src,blob,thumb});
+    have.add(src);added++;
   }
   cur.updated=Date.now();await dbPut('insp',cur);
-  toast('Saved: '+(shotLabel||'Other'));
-  if(view==='edit'&&TABS[tab].id==='photo')renderPhotos();
+  if(view==='edit'&&TABS[tab].id==='photo')await renderPhotos();
+  msg(`Imported ${added} photo${added===1?'':'s'}${skipped?` (${skipped} already here)`:''}.`);
 }
-$('#cam').onchange=e=>addFiles(e.target.files);
 $('#lib').onchange=e=>addFiles(e.target.files);
 
 /* ---------- Sketch (footprint) ---------- */
@@ -740,6 +983,8 @@ function sketchSVG(forExport){
   const areas=cur.sketch.areas;let minx=0,miny=0,maxx=10,maxy=10;
   const geo=areas.map(a=>areaPoints(a));
   geo.forEach(g=>{g.pts.concat([g.end]).forEach(([x,y])=>{minx=Math.min(minx,x);miny=Math.min(miny,y);maxx=Math.max(maxx,x);maxy=Math.max(maxy,y);});});
+  const labels=cur.sketch.labels||[];
+  labels.forEach(l=>{minx=Math.min(minx,l.x-3);miny=Math.min(miny,l.y-2);maxx=Math.max(maxx,l.x+3);maxy=Math.max(maxy,l.y+2);});
   const pad=8;minx-=pad;miny-=pad;maxx+=pad;maxy+=pad;
   const W=maxx-minx,H=maxy-miny;const fs=Math.max(1.6,Math.max(W,H)/40);
   const col={GLA:'#1f4e79',Garage:'#7a5c00',Porch:'#2e7d32',Patio:'#2e7d32',Deck:'#6d4c41',Basement:'#6a1b9a',Carport:'#7a5c00',Other:'#555'};
@@ -760,9 +1005,45 @@ function sketchSVG(forExport){
       s+=`<text x="${cx}" y="${cy}" font-size="${fs*1.1}" text-anchor="middle" font-weight="bold" fill="${c}">${esc(a.name)}</text><text x="${cx}" y="${cy+fs*1.3}" font-size="${fs}" text-anchor="middle" fill="${c}">${Math.round(areaSF(a))} sf</text>`;}
     if(act){s+=`<circle cx="${g.end[0]}" cy="${g.end[1]}" r="${fs*0.45}" fill="#e53935"/>`;}
   });
+  // room labels (Bed 1, Kitchen...): a halo keeps them readable over walls and dimensions
+  labels.forEach(l=>{s+=`<text ${forExport?'':`data-lab="${l.id}" class="lab"`} x="${l.x}" y="${l.y}" font-size="${fs*0.95}" text-anchor="middle" dominant-baseline="middle" font-weight="600" `+
+    (forExport?`fill="#222" stroke="#fff"`:`style="fill:var(--ink);stroke:var(--bg)"`)+` stroke-width="${fs*0.35}" stroke-linejoin="round" paint-order="stroke">${esc(l.t)}</text>`;});
   return s+'</svg>';
 }
+const ROOM_LABELS=['Bed','Bath','½ Bath','Kitchen','Living','Dining','Family','Laundry','Garage','Porch','Patio','Pool'];
+let skLabelPick=false,skPending=null;
+// Bed, Bath and ½ Bath are numbered as they are placed: Bed 1, Bed 2...
+function nextLabel(base){if(!['Bed','Bath','½ Bath'].includes(base))return base;
+  const re=new RegExp('^'+base.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')+' (\\d+)$');
+  const used=cur.sketch.labels.map(l=>(l.t.match(re)||[])[1]).filter(Boolean).map(Number);
+  return base+' '+(used.length?Math.max(...used)+1:1);}
+// Labels vs the room tally - a heads-up only; the tally stays the count of record.
+function labelMismatch(){
+  const L=cur.sketch.labels,n=re=>L.filter(l=>re.test(l.t)).length,out=[];
+  for(const [re,box,name] of [[/^Bed\b/i,'t_bed','bedroom'],[/^Bath\b/i,'t_bath','full bath'],[/^½ ?Bath\b/i,'t_half','half bath']]){
+    const k=n(re);if(k&&k!==tallyOf(box))out.push(`${k} ${name} label${k===1?'':'s'}, tally says ${tallyOf(box)}`);}
+  return out;
+}
+function tallyOf(box){const n=parseInt(cur.txt[box],10);return n>0?n:0;}
 function fmtFt(n){const ft=Math.floor(n),inch=Math.round((n-ft)*12);return inch?`${ft}'${inch}"`:`${ft}'`;}
+/* Room labels on the sketch: place (after picking one), drag to move, tap to rename or delete. */
+function attachLabels(svg){
+  if(!svg)return;
+  const toSvg=e=>{const p=svg.createSVGPoint();p.x=e.clientX;p.y=e.clientY;const q=p.matrixTransform(svg.getScreenCTM().inverse());return [Math.round(q.x*10)/10,Math.round(q.y*10)/10];};
+  svg.onpointerdown=e=>{
+    if(skPending){e.preventDefault();const [x,y]=toSvg(e);cur.sketch.labels.push({id:uid(),t:nextLabel(skPending),x,y});skPending=null;save();renderSketch();return;}
+    const el=e.target.closest&&e.target.closest('[data-lab]');if(!el)return;
+    e.preventDefault();try{svg.setPointerCapture(e.pointerId);}catch(_){}
+    const L=cur.sketch.labels.find(l=>l.id===el.dataset.lab),s0=toSvg(e),x0=L.x,y0=L.y,c0=[e.clientX,e.clientY];let moved=false;
+    svg.onpointermove=ev=>{if(!moved&&Math.hypot(ev.clientX-c0[0],ev.clientY-c0[1])<6)return;moved=true;
+      const q=toSvg(ev);L.x=Math.round((x0+q[0]-s0[0])*10)/10;L.y=Math.round((y0+q[1]-s0[1])*10)/10;el.setAttribute('x',L.x);el.setAttribute('y',L.y);};
+    svg.onpointerup=svg.onpointercancel=ev=>{svg.onpointermove=svg.onpointerup=svg.onpointercancel=null;
+      if(moved){save();renderSketch();return;}
+      if(ev.type!=='pointerup')return;
+      const n=prompt('Rename this label - clear it to delete it',L.t);if(n===null)return;
+      if(n.trim())L.t=n.trim();else cur.sketch.labels=cur.sketch.labels.filter(l=>l!==L);save();renderSketch();};
+  };
+}
 function renderSketch(){
   const A=cur.sketch.areas;if(skArea>=A.length)skArea=Math.max(0,A.length-1);
   const a=A[skArea],t=sketchTotals();
@@ -771,6 +1052,10 @@ function renderSketch(){
    <button class="btn sm pri" id="skNew">+ Area</button></div>
    <div id="skWrap">${sketchSVG(false)}</div>
    <div class="tot">${Object.entries(t).map(([k,v])=>`<span>${k}: ${v.toLocaleString()} sf</span>`).join('')||'<span class="muted">Add an area, type a length, tap a direction.</span>'}</div>
+   <div class="row" style="margin-top:8px"><button class="btn sm ${skLabelPick||skPending?'pri':''}" id="lbAdd">+ Label</button>
+     <span class="muted grow">${skPending?`Tap the sketch where <b>${esc(nextLabel(skPending))}</b> goes.`:cur.sketch.labels.length?'Drag a label to move it; tap it to rename or delete.':'Label rooms: Bed, Bath, Kitchen...'}</span></div>
+   ${skLabelPick?`<div class="chips" style="margin-top:6px">${ROOM_LABELS.map(l=>`<button class="chip" data-lbl="${esc(l)}">${esc(l)}</button>`).join('')}<button class="chip add" data-lbl="__custom">Custom…</button></div>`:''}
+   ${labelMismatch().map(m=>`<p class="muted" style="margin:6px 0 0;color:var(--warn)">&#9888; ${esc(m)}</p>`).join('')}
   </div>
   ${a?`<div class="card"><div class="skctl">
     <div><div class="lenbox" id="skLen">${skLen||'0'}<span class="muted"> ft</span></div>
@@ -780,13 +1065,23 @@ function renderSketch(){
    </div>
    <div class="row" style="margin-top:8px"><button class="btn sm" id="skUndo">Undo</button><button class="btn sm" id="skClose">Close shape</button><button class="btn sm" id="skRen">Rename</button><button class="btn sm warn" id="skDel">Delete area</button></div>
    <p class="muted">Walk the exterior clockwise from a corner: type length, tap direction. "Close shape" draws the last wall back to the start. Inches: use decimals (e.g. 12.5 = 12'6").</p>
-  </div>`:''}`;
+  </div>`:''}
+  ${TALLY.length?`<div class="card"><h2>Room tally - tap as you walk through</h2><div class="tally">${TALLY.map(x=>`<div class="tc">
+     <div class="tl">${esc(x.label)}</div><div class="ts">${esc(x.sub)}</div><div class="tn" id="tn_${x.box}">${tallyOf(x.box)}</div>
+     <div class="tb2"><button data-tally="${x.box}" data-n="-1" aria-label="${esc(x.sub)} minus one">&minus;</button><button class="plus" data-tally="${x.box}" data-n="1" aria-label="${esc(x.sub)} plus one">+</button></div></div>`).join('')}</div>
+   <p class="muted" style="margin:8px 0 0">These fill the ${TALLY.map(x=>esc(x.label)).join(', ')} boxes on the field sheet. Tally marks you write in those boxes count too.</p></div>`:''}`;
   $('#skWrap').firstChild.setAttribute('id','sk');
+  attachLabels($('#sk'));
   renderTabs();
   $('#main').oninput=null;
   $('#main').onchange=e=>{if(e.target.id==='skSel'){skArea=+e.target.value;renderSketch();}};
   $('#main').onclick=e=>{
     const b=e.target.closest('button');if(!b)return;const d=b.dataset;
+    if(b.id==='lbAdd'){skLabelPick=!(skLabelPick||skPending);skPending=null;renderSketch();return;}
+    if(d.lbl){let l=d.lbl;if(l==='__custom'){l=(prompt('Label (e.g. Office, Bonus room)')||'').trim();if(!l)return;}
+      skPending=l;skLabelPick=false;renderSketch();return;}
+    if(d.tally){cur.tallyAdj=cur.tallyAdj||{};if(tallyOf(d.tally)+(+d.n)<0)return;
+      cur.tallyAdj[d.tally]=(cur.tallyAdj[d.tally]||0)+(+d.n);syncTally();$('#tn_'+d.tally).textContent=tallyOf(d.tally);save();return;}
     if(b.id==='skNew'){
       const kind=prompt('Area type: '+AREA_KINDS.join(', '),A.length?'Garage':'GLA');if(!kind)return;
       const k=AREA_KINDS.find(x=>x.toLowerCase()===kind.trim().toLowerCase())||'Other';
@@ -859,9 +1154,9 @@ async function svgToPng(svg,type='image/png'){
 }
 async function exportZip(){
   toast('Building package…');
-  const enc=new TextEncoder(),data=reportData(),ph=(await photosFor(cur.id)).sort((a,b)=>a.ts-b.ts);
+  const enc=new TextEncoder(),data=reportData(),ph=await sentPhotos(cur.id);   // only photos ticked to send
   const files=[],seen={},photoIndex=[];
-  ph.forEach((p,i)=>{const base=safe(p.label)||'Photo';seen[base]=(seen[base]||0)+1;const nm=`photos/${String(i+1).padStart(2,'0')} ${base}${seen[base]>1?' '+seen[base]:''}.jpg`;photoIndex.push({name:nm,label:p.label,ts:p.ts,p});});
+  ph.forEach((p,i)=>{const base=safe(p.label)||'Photo';seen[base]=(seen[base]||0)+1;const nm=`photos/${String(i+1).padStart(2,'0')} ${base}${seen[base]>1?' '+seen[base]:''}.jpg`;photoIndex.push({name:nm,label:photoCaption(p,i),ts:p.ts,p});});
   const refs=await refsFor(cur.id);
   const json={app:'FieldLite',v:2,insp:Object.assign({},cur,{_pc:undefined}),photos:photoIndex.map(x=>({file:x.name,label:x.label,ts:x.ts})),
     refs:refs.map(r=>({id:r.id,file:`refs/${r.id}.jpg`,label:r.label}))};
@@ -870,6 +1165,7 @@ async function exportZip(){
   files.push({name:'Report.txt',data:enc.encode(reportText().replace(/\n/g,'\r\n'))});
   files.push({name:'Data.csv',data:enc.encode('﻿'+csvOf(data))});
   files.push({name:'inspection.json',data:enc.encode(JSON.stringify(json))});
+  try{files.push({name:'TOTAL UAD 2.6.xml',data:enc.encode(uad26().xml)});}catch(err){console.warn('UAD 2.6 XML skipped',err);}
   if(cur.sketch.areas.length){const svg=sketchSVG(true);files.push({name:'Sketch.svg',data:enc.encode(svg)});try{files.push({name:'Sketch.png',data:await svgToPng(svg)});}catch(_){}}
   for(const x of photoIndex)files.push({name:x.name,data:new Uint8Array(await x.p.blob.arrayBuffer())});
   for(const r of refs)files.push({name:`refs/${r.id}.jpg`,data:new Uint8Array(await r.blob.arrayBuffer())});
@@ -937,14 +1233,14 @@ async function buildPdf(){
     const t=sketchTotals();doc.setFont('helvetica','normal');doc.setFontSize(10);doc.text(Object.entries(t).map(([k,v])=>`${k}: ${v.toLocaleString()} sf`).join('    '),M,y+8);y+=18;
     const k=Math.min((W-2*M)/iw,(H-M-y)/ih);doc.addImage(jpg,'JPEG',M,y,iw*k,ih*k);
   }
-  const ph=(await photosFor(cur.id)).sort((a,b)=>a.ts-b.ts);
+  const ph=await sentPhotos(cur.id);   // only photos ticked to send
   const cw=(W-2*M-12)/2,ch=(H-2*M-30)/3-20;
   for(let i=0;i<ph.length;i++){
     if(i%6===0){newPage();doc.setFont('helvetica','bold');doc.setFontSize(13);doc.text(i?'Photographs (cont.)':'Photographs',M,M+12);}
     const col=i%2,row=Math.floor((i%6)/2),x=M+col*(cw+12),yy=M+30+row*(ch+20);
     const [iw,ih]=await imgSize(ph[i].blob);const k=Math.min(cw/iw,ch/ih);
     doc.addImage(new Uint8Array(await ph[i].blob.arrayBuffer()),'JPEG',x+(cw-iw*k)/2,yy+(ch-ih*k)/2,iw*k,ih*k);
-    doc.setFont('helvetica','normal');doc.setFontSize(10);doc.text(ph[i].label,x+cw/2,yy+ch+13,{align:'center'});
+    doc.setFont('helvetica','normal');doc.setFontSize(10);doc.text(photoCaption(ph[i],i),x+cw/2,yy+ch+13,{align:'center'});
   }
   const n=doc.getNumberOfPages();
   for(let i=1;i<=n;i++){doc.setPage(i);const ph2=i<=sheetPages?1008:H;doc.setFontSize(8);doc.setTextColor(120);doc.text(`${title} - page ${i} of ${n}`,W/2,ph2-12,{align:'center'});doc.setTextColor(0);}
@@ -967,7 +1263,7 @@ async function importFiles(list){
     const exists=await dbGet('insp',insp.id);
     if(exists&&!confirm('This inspection is already on this device. Replace it with the imported copy?'))return;
     for(const p of await allFor(insp.id))await dbDel('photos',p.id);
-    for(const p of j.photos){const d=z[p.file];if(d)await dbPut('photos',{id:uid(),insp:insp.id,label:p.label,ts:p.ts,blob:new Blob([d],{type:'image/jpeg'})});}
+    for(const p of j.photos){const d=z[p.file];if(d){const blob=new Blob([d],{type:'image/jpeg'});let thumb;try{thumb=await shrink(blob,320);}catch(_){}await dbPut('photos',{id:uid(),insp:insp.id,label:p.label,sel:true,ts:p.ts,blob,thumb});}}
     for(const r of j.refs||[]){const d=z[r.file]||z['photos/'+r.file.split('/').pop()];if(d)await dbPut('photos',{id:r.id,insp:insp.id,kind:'ref',label:r.label,ts:Date.now(),blob:new Blob([d],{type:'image/jpeg'})});}
     await dbPut('insp',insp);
     cur=insp;toast('Imported');tab=TABS.length-1;showEdit();
