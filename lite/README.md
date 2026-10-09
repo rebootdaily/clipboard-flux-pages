@@ -20,6 +20,10 @@ the first visit and keeps everything on the device.
   - Tap it again to un-select.
   - YES/NO and similar pairs allow only one answer.
   - A circle around two neighbouring options records both.
+  - The loop does not have to be perfect: it can be open at one end, cross over itself, or cover most of the
+    word rather than all of it. A circle around a label with no options in it records nothing.
+  - A circled option shows your own circle plus a pale blue fill, which is how you know it was recorded. One
+    you tapped shows the fill plus a neat ring.
 - **Write in the shaded boxes** (address, HOA$, #STORY, Elev, BED#/BATH#, update years, condo and manufactured info…).
   - On an iPad with an Apple Pencil, Scribble turns your handwriting into typed text.
   - On Android, pen handwriting input does the same.
@@ -39,7 +43,9 @@ the first visit and keeps everything on the device.
   - **Pen** draws smooth ink. With an Apple Pencil the line gets thicker as you press harder.
   - **Highlight** draws a wide translucent band, for example over a line on an inserted county sketch.
     It only marks the page and never selects options.
-  - **Eraser** removes whole strokes. Erasing a circle also un-selects what it circled.
+  - **Eraser** has two modes, shown in the toolbar while it is selected: **Whole stroke** removes any
+    mark it touches, and **Part of stroke** rubs out just the bit under it. Erasing a circle also un-selects
+    what it circled, and touching a tapped option with the eraser un-selects it. Undo brings anything back.
   - **Colour dots and the line-thickness dot** change the pen or highlighter. The highlighter has its own colours.
   - **Undo / Redo** step back and forward through marks and option selections.
   - **Palm rejection:** while the Pencil is on the screen, and for a moment after, touches are ignored, so a

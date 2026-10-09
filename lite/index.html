@@ -149,6 +149,7 @@ main.sheetmode{max-width:none;padding:0 0 110px}
    Everything is stored on the device (IndexedDB); works offline.
    ===================================================================== */
 
+const APP_VERSION = '9';   // shown on the home screen so a screenshot says which version is running
 const TABS = [
   ...SHEET.pages.map((_,i)=>({id:'p'+(i+1), page:i+1, title:SHEET.pages.length>1?'Page '+(i+1):'Field Sheet'})),
   {id:'photo', title:'Photos'}, {id:'sketch', title:'Sketch'}, {id:'export', title:'Export'}
@@ -173,7 +174,7 @@ const today = () => new Date().toISOString().slice(0,10);
 function toast(m){const t=$('#toast');t.textContent=m;t.classList.add('show');clearTimeout(toast.h);toast.h=setTimeout(()=>t.classList.remove('show'),1600);}
 
 /* ---------- Settings (per device) ---------- */
-const SET = {finger:false, color:'#1a3fb0', hl:'#ffd600', size:1};
+const SET = {finger:false, color:'#1a3fb0', hl:'#ffd600', size:1, erase:'stroke'};
 try{Object.assign(SET, JSON.parse(localStorage.getItem('fieldlite.settings')||'{}'));}catch(_){}
 function saveSettings(){try{localStorage.setItem('fieldlite.settings', JSON.stringify(SET));}catch(_){}}
 
@@ -222,7 +223,7 @@ async function showHome(){
    <div class="card"><h2>Office</h2>
      <p class="muted">Bring a field package (.zip) onto this computer and import it here. If your computer unzipped it, select inspection.json and the photos together.</p>
      <button class="btn" id="impBtn">Import package (.zip)</button></div>
-   <p class="muted" style="text-align:center">Data stays on this device until you export it.</p>`;
+   <p class="muted" style="text-align:center">Data stays on this device until you export it.<br>Field Lite version ${APP_VERSION} &middot; <a href="#" id="updBtn">Get latest version</a></p>`;
   $('#main').oninput=$('#main').onchange=null;
   $('#main').onclick=async e=>{
     const o=e.target.closest('[data-open]'),d=e.target.closest('[data-del]');
@@ -230,7 +231,16 @@ async function showHome(){
     else if(o){cur=normalize(await dbGet('insp',o.dataset.open));tab=0;showEdit();}
     else if(d){if(confirm('Delete this inspection and its photos?')){const ph=await allFor(d.dataset.del);for(const p of ph)await dbDel('photos',p.id);await dbDel('insp',d.dataset.del);showHome();}}
     else if(e.target.id==='impBtn')$('#imp').click();
+    else if(e.target.id==='updBtn'){e.preventDefault();getLatest();}
   };
+}
+
+/* Forget the saved copy of the app (never the inspections) and load the newest version from the server. */
+async function getLatest(){
+  toast('Getting the latest version…');
+  try{for(const k of await caches.keys())await caches.delete(k);}catch(_){}
+  try{for(const r of await navigator.serviceWorker.getRegistrations())await r.unregister();}catch(_){}
+  location.reload();
 }
 
 /* ---------- Editor shell ---------- */
@@ -283,10 +293,13 @@ async function renderSheet(p){
    <div class="tools">
      <button class="tb ${tool==='pen'?'on':''}" data-tool="pen" aria-label="Pen">&#9998; Pen</button>
      <button class="tb ${tool==='hl'?'on':''}" data-tool="hl" aria-label="Highlighter">&#128396; Highlight</button>
-     <button class="tb ${tool==='erase'?'on':''}" data-tool="erase" aria-label="Eraser">&#9003;</button>
+     <button class="tb ${tool==='erase'?'on':''}" data-tool="erase" aria-label="Eraser">&#9003; Eraser</button>
      <span class="sep"></span>
-     ${(tool==='hl'?HL_COLORS:PEN_COLORS).map(c=>`<button class="swatch ${(tool==='hl'?SET.hl:SET.color)===c?'on':''}" data-color="${c}" style="background:${c}" aria-label="colour ${c}"></button>`).join('')}
-     <button class="tb" id="sizeBtn" aria-label="Line thickness"><span class="dotsz" style="width:${6+SET.size*5}px;height:${6+SET.size*5}px"></span></button>
+     ${tool==='erase'
+       ?`<button class="tb ${SET.erase==='stroke'?'on':''}" data-emode="stroke" aria-label="Erase whole strokes">Whole stroke</button>
+     <button class="tb ${SET.erase==='part'?'on':''}" data-emode="part" aria-label="Erase part of a stroke">Part of stroke</button>`
+       :`${(tool==='hl'?HL_COLORS:PEN_COLORS).map(c=>`<button class="swatch ${(tool==='hl'?SET.hl:SET.color)===c?'on':''}" data-color="${c}" style="background:${c}" aria-label="colour ${c}"></button>`).join('')}
+     <button class="tb" id="sizeBtn" aria-label="Line thickness"><span class="dotsz" style="width:${6+SET.size*5}px;height:${6+SET.size*5}px"></span></button>`}
      <span class="sep"></span>
      <button class="tb" id="undoBtn" aria-label="Undo">&#8630;</button>
      <button class="tb" id="redoBtn" aria-label="Redo">&#8631;</button>
@@ -321,15 +334,21 @@ async function renderSheet(p){
     else if(b.id==='addImgBtn'){$('#insImg').value='';$('#insImg').click();}
     else if(b.id==='undoBtn'){undo(ctx,p);}
     else if(b.id==='redoBtn'){redo(ctx,p);}
+    else if(b.dataset.emode){SET.erase=b.dataset.emode;saveSettings();renderSheet(p);}
     else if(b.id==='sizeBtn'){SET.size=(SET.size+1)%3;saveSettings();renderSheet(p);}
     else if(b.dataset.color){if(tool==='hl')SET.hl=b.dataset.color;else SET.color=b.dataset.color;saveSettings();renderSheet(p);}
     else if(b.id==='fingerBtn'){SET.finger=!SET.finger;saveSettings();renderSheet(p);}
   };
 }
+/* A recorded option gets a pale blue fill. One you tapped also gets a neat ring; one you circled by hand
+   keeps just the fill, so your own circle is the only ring on it. */
 function drawSelections(ctx,p){
+  const circled=new Set();
+  for(const st of cur.ink[p])(st.hits||[]).forEach(id=>circled.add(id));
   for(const o of PAGE_OPTS[p]){
     if(!cur.sel[o.id])continue;
     ctx.fillStyle='rgba(31,111,235,.20)';ctx.fillRect(o.x,o.y,o.w,o.h);
+    if(circled.has(o.id))continue;
     ctx.strokeStyle='rgba(26,63,176,.9)';ctx.lineWidth=1.1;
     ctx.beginPath();ctx.ellipse(o.x+o.w/2,o.y+o.h/2,o.w/2+2,o.h/2+1.5,0,0,Math.PI*2);ctx.stroke();
   }
@@ -384,18 +403,32 @@ function setOpt(o,on){
   if(on)cur.sel[o.id]=1;else delete cur.sel[o.id];
 }
 function inPoly(x,y,pts){let c=false;for(let i=0,j=pts.length-1;i<pts.length;j=i++){const [xi,yi]=pts[i],[xj,yj]=pts[j];if(((yi>y)!==(yj>y))&&(x<(xj-xi)*(y-yi)/(yj-yi)+xi))c=!c;}return c;}
+function selfCrosses(P){
+  const q=[],step=Math.max(1,Math.floor(P.length/80));
+  for(let i=0;i<P.length;i+=step)q.push(P[i]);q.push(P[P.length-1]);
+  const ccw=(a,b,c)=>(c[1]-a[1])*(b[0]-a[0])>(b[1]-a[1])*(c[0]-a[0]);
+  const hit=(a,b,c,d)=>ccw(a,c,d)!==ccw(b,c,d)&&ccw(a,b,c)!==ccw(a,b,d);
+  for(let i=0;i<q.length-1;i++)for(let j=i+2;j<q.length-1;j++)if(hit(q[i],q[i+1],q[j],q[j+1]))return true;
+  return false;
+}
 function recognise(p,st){
   // A roughly closed loop selects every option whose centre it encloses.
   const pts=st.pts;if(pts.length<6)return [];
   let x0=1e9,y0=1e9,x1=-1e9,y1=-1e9;for(const [x,y] of pts){x0=Math.min(x0,x);y0=Math.min(y0,y);x1=Math.max(x1,x);y1=Math.max(y1,y);}
   const diag=Math.hypot(x1-x0,y1-y0),gap=Math.hypot(pts[0][0]-pts[pts.length-1][0],pts[0][1]-pts[pts.length-1][1]);
-  if(x1-x0<6||y1-y0<5||gap>Math.max(10,diag*0.45))return [];
+  // A loop counts if its ends nearly meet, or if the line crosses itself (the usual overshoot of a quick circle).
+  if(x1-x0<6||y1-y0<5||!(gap<=Math.max(10,diag*0.7)||selfCrosses(pts)))return [];
   // Rows on the sheet are only ~14pt apart, so a hand-drawn loop often clips the rows above and
-  // below. Count an option only if it sits on the loop's own line and at least half of the word
-  // is inside the loop.
+  // below. Only options on the loop's own line count. Most of the word should be inside the loop; if
+  // the loop is sloppy and none qualifies, the best-covered word the loop is clearly around still counts.
   const cx=(x0+x1)/2,cy=(y0+y1)/2,byField={};
-  const cover=o=>{let n=0;for(let i=0;i<7;i++)for(let j=0;j<3;j++)if(inPoly(o.x+o.w*(i+0.5)/7,o.y+o.h*(j+0.5)/3,pts))n++;return n/21;};
-  let hits=PAGE_OPTS[p].filter(o=>Math.abs(o.y+o.h/2-cy)<7.5&&inPoly(o.x+o.w/2,o.y+o.h/2,pts)&&cover(o)>=0.5);
+  const cover=o=>{let n=0;for(let i=0;i<9;i++)for(let j=0;j<3;j++)if(inPoly(o.x+o.w*(i+0.5)/9,o.y+o.h*(j+0.5)/3,pts))n++;return n/27;};
+  const line=PAGE_OPTS[p].filter(o=>Math.abs(o.y+o.h/2-cy)<7.5);
+  let hits=line.filter(o=>cover(o)>=0.4);
+  if(!hits.length){
+    const near=line.filter(o=>cx>o.x-4&&cx<o.x+o.w+4).map(o=>({o,c:cover(o)})).filter(v=>v.c>=0.15).sort((a,b)=>b.c-a.c);
+    if(near.length)hits=[near[0].o];
+  }
   for(const o of hits){const k=FIELD[o.f].kind==='multi'?o.id:o.f;const d=Math.hypot(o.x+o.w/2-cx,o.y+o.h/2-cy);if(!byField[k]||d<byField[k].d)byField[k]={o,d};}
   return Object.values(byField).map(v=>v.o);
 }
@@ -412,11 +445,39 @@ function attachInk(cv,ctx,p){
   const r1=v=>Math.round(v*10)/10;
   const mk=(ev,pen)=>{const q=pt(ev).map(r1);return pen?[q[0],q[1],Math.round((ev.pressure||0.5)*100)/100]:q;};
   const draws=e=>e.pointerType==='pen'||e.pointerType==='mouse'||(e.pointerType==='touch'&&SET.finger);
-  const eraseAt=([x,y])=>{
-    const before=cur.ink[p].length;
-    cur.ink[p]=cur.ink[p].filter(s=>{const hit=s.pts.some(q=>Math.hypot(q[0]-x,q[1]-y)<7);if(hit)(s.hits||[]).forEach(id=>delete cur.sel[id]);return !hit;});
-    if(cur.ink[p].length!==before){drawSheet(ctx,p);save();}
+  /* Eraser: removes whole strokes, or just the part under it ("part" mode). Its size stays the same on
+     screen at any zoom. Erasing a circle un-selects what it circled; with nothing to erase under it, it
+     un-selects a tapped option. Strokes are never edited in place, so Undo can always bring them back. */
+  const eraseAt=([x,y],px)=>{
+    const r=Math.max(3,px/sheetScale),part=SET.erase==='part';
+    const segDist=(a,b)=>{const dx=b[0]-a[0],dy=b[1]-a[1],l2=dx*dx+dy*dy;let t=l2?((x-a[0])*dx+(y-a[1])*dy)/l2:0;t=Math.max(0,Math.min(1,t));return Math.hypot(a[0]+t*dx-x,a[1]+t*dy-y);};
+    const touches=s=>{const P=s.pts;if(P.length===1)return Math.hypot(P[0][0]-x,P[0][1]-y)<r;for(let i=1;i<P.length;i++)if(segDist(P[i-1],P[i])<r)return true;return false;};
+    const kept=[],dropped=[];
+    for(const s of cur.ink[p]){
+      if(!touches(s)){kept.push(s);continue;}
+      dropped.push(s);
+      if(!part)continue;
+      const P=s.pts,pieces=[];let run=[];
+      for(let i=0;i<P.length;i++){
+        if(Math.hypot(P[i][0]-x,P[i][1]-y)<r){if(run.length)pieces.push(run);run=[];continue;}
+        if(run.length&&segDist(run[run.length-1],P[i])<r){pieces.push(run);run=[];}   // a long step can jump across the eraser
+        run.push(P[i]);
+      }
+      if(run.length)pieces.push(run);
+      for(const pc of pieces)if(pc.length>=2)kept.push(Object.assign({},s,{pts:pc,hits:[]}));
+    }
+    let changed=dropped.length>0;
+    if(changed){
+      cur.ink[p]=kept;
+      const still=new Set(kept.flatMap(s=>s.hits||[]));
+      for(const s of dropped)(s.hits||[]).forEach(id=>{if(!still.has(id))delete cur.sel[id];});
+    }else{
+      const o=optAt(p,x,y);
+      if(o&&cur.sel[o.id]&&!cur.ink[p].some(s=>(s.hits||[]).includes(o.id))){delete cur.sel[o.id];changed=true;}
+    }
+    if(changed){drawSheet(ctx,p);save();}
   };
+  const erasePx=e=>e.pointerType==='touch'?22:14;
   cv.onpointerdown=e=>{
     if(e.pointerType==='pen'){penDown=true;lastPen=Date.now();}
     if(palm(e)){e.preventDefault();return;}
@@ -430,7 +491,7 @@ function attachInk(cv,ctx,p){
     }
     if(!draws(e)){tapStart={x:e.clientX,y:e.clientY,t:Date.now()};return;}
     e.preventDefault();try{cv.setPointerCapture(e.pointerId);}catch(_){}snapshot(p);
-    if(tool==='erase'){st={erase:true,pid:e.pointerId};eraseAt(pt(e));return;}
+    if(tool==='erase'){st={erase:true,pid:e.pointerId};eraseAt(pt(e),erasePx(e));return;}
     const pen=e.pointerType==='pen';
     st=tool==='hl'?{pts:[mk(e,false)],c:SET.hl,w:HL_W[SET.size],k:'hl',pid:e.pointerId}
                   :{pts:[mk(e,pen)],c:SET.color,w:PEN_W[SET.size],pen,pid:e.pointerId};
@@ -443,7 +504,7 @@ function attachInk(cv,ctx,p){
     }
     if(!st||e.pointerId!==st.pid)return;     // only the pointer that started the stroke can extend it
     const evs=e.getCoalescedEvents?e.getCoalescedEvents():[e];
-    if(st.erase){evs.forEach(ev=>eraseAt(pt(ev)));return;}
+    if(st.erase){evs.forEach(ev=>eraseAt(pt(ev),erasePx(ev)));return;}
     const from=st.pts.length;
     for(const ev of evs){const q=mk(ev,st.pen),l=st.pts[st.pts.length-1];if(Math.hypot(q[0]-l[0],q[1]-l[1])>0.5)st.pts.push(q);}
     if(st.pts.length===from)return;
@@ -925,7 +986,7 @@ $('#nextBtn').onclick=()=>{if(tab<TABS.length-1){tab++;renderTabs();renderSectio
   if(navigator.storage&&navigator.storage.persist)navigator.storage.persist().catch(()=>{});
   if('serviceWorker' in navigator&&location.protocol!=='file:'){
     const hadController=!!navigator.serviceWorker.controller;
-    navigator.serviceWorker.register('sw.js').catch(()=>{});
+    navigator.serviceWorker.register('sw.js',{updateViaCache:'none'}).catch(()=>{});
     // A new version just took over: on the home screen reload straight into it; mid-inspection wait so nothing is lost.
     navigator.serviceWorker.addEventListener('controllerchange',()=>{if(!hadController)return;if(view==='home')location.reload();else toast('Update ready - it starts next time you open the app');});
   }
