@@ -57,6 +57,21 @@ the first visit and keeps everything on the device.
   - The **− / % / +** buttons at the end of the toolbar zoom too; tap the **%** to go back to fit.
   - On a PC, hold Ctrl and use the mouse wheel.
 
+## Sketch tab: Draw
+The Sketch tab opens on **Draw**, an endless canvas with no pages. Draw the house, garage and guest house side by side,
+then zoom in or out as far as you like. **Measure (keypad)** is the length-and-arrow sketch with square-footage totals.
+- **Pencil draws.** One finger pans, and two fingers pan and zoom. With **Finger** on, one finger draws.
+- **Straighten:** a wall you draw roughly straight becomes a straight line, squared to 0/45/90° when it's close.
+  Curves and circles stay freehand.
+- **Snap:** wall ends land on the grid (1 ft squares when zoomed in), and on another wall's end so corners meet.
+- **Ft** shows each wall's length.
+- **Label** places room names (Bed 1, Bath 1, Kitchen…). Drag a label to move it; tap it to rename or delete it.
+- **Reference** adds a county or MLS sketch to trace over. Drag it into place, drag its orange corner to resize it,
+  then tap **Lock**. **Fade** changes how strong it looks.
+- **Fit** zooms to show the whole drawing. The drawing prints on its own PDF page and goes into the package as Drawing.png.
+- On the **field sheet**, the same **Straighten** works on the paper sketch grid: rough walls straighten and their
+  corners meet. Writing, circles and tally marks elsewhere are never changed.
+
 ## Room tally (Sketch tab)
 Below the sketch are three big counters: **BED#**, **BATH#** and **1/2 BTH#**. Tap **+** as you walk into each
 room. The counts fill the BED#, BATH# and 1/2 BTH# boxes on the field sheet, so there's nothing to recount.

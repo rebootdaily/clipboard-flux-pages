@@ -79,6 +79,15 @@ table.rooms td button.z{color:var(--mute);font-weight:400}
 .pick select{width:100%;border:0;border-radius:0;padding:6px;font-size:13px;display:none}
 .pick figure.on select{display:block}
 #sk .lab{cursor:move}
+main.drawmode{max-width:none;padding:8px 8px 0}
+.skmode{margin:0 0 8px}
+.dtools{position:relative;top:auto;border:1px solid var(--line);border-radius:10px 10px 0 0;border-bottom:0}
+.dchips{display:flex;flex-wrap:wrap;gap:6px;align-items:center;padding:6px 8px;border:1px solid var(--line);border-bottom:0;background:var(--card)}
+.dv{position:relative;border:1px solid var(--line);border-radius:0 0 10px 10px;overflow:hidden;touch-action:none;background:var(--card)}
+.dv canvas{display:block;touch-action:none}
+.tcompact{margin:8px 0 0;padding:8px}
+.tcompact .tn{font-size:26px;margin:0 0 4px}
+.tcompact .tally button{height:48px}
 #sk{width:100%;height:46vh;min-height:260px;background:var(--bg);border:1px solid var(--line);border-radius:10px;touch-action:none;display:block}
 .skctl{display:grid;grid-template-columns:1fr 1fr;gap:10px;max-width:520px}
 .pad{display:grid;grid-template-columns:repeat(3,1fr);gap:5px}
@@ -158,9 +167,11 @@ main.sheetmode{max-width:none;padding:0}
 <div id="toast"></div>
 <input type="file" id="lib" accept="image/*" multiple class="hide">
 <input type="file" id="insImg" accept="image/*" class="hide">
+<input type="file" id="drawRef" accept="image/*" class="hide">
 <input type="file" id="imp" accept=".zip,application/zip,.json,application/json,image/jpeg" multiple class="hide">
 <script src="sheet.js"></script>
 <script src="uad26.js"></script>
+<script src="draw.js"></script>
 <script>
 'use strict';
 /* =====================================================================
@@ -172,7 +183,7 @@ main.sheetmode{max-width:none;padding:0}
    ===================================================================== */
 
 const CACHE_PREFIX = 'fieldlite-v';   // this app's saved copies; the practice copy uses its own prefix so the two never touch each other
-const APP_VERSION = '12';   // shown on the home screen so a screenshot says which version is running
+const APP_VERSION = '13';   // shown on the home screen so a screenshot says which version is running
 const TABS = [
   ...SHEET.pages.map((_,i)=>({id:'p'+(i+1), page:i+1, title:SHEET.pages.length>1?'Page '+(i+1):'Field Sheet'})),
   {id:'photo', title:'Photos'}, {id:'sketch', title:'Sketch'}, {id:'export', title:'Export'}
@@ -320,7 +331,7 @@ function tabProgress(t){
   if(t.page){const p=t.page;
     const n=PAGE_OPTS[p].filter(o=>cur.sel[o.id]).length+SHEET.blanks.filter(b=>b.p===p&&cur.txt[b.id]).length;return n?String(n):'';}
   if(t.id==='photo')return cur._pc?String(cur._pc):'';
-  if(t.id==='sketch')return cur.sketch.areas.length?'✓':'';
+  if(t.id==='sketch')return cur.sketch.areas.length||DRAW.has()?'✓':'';
   return '';
 }
 function renderTabs(){
@@ -333,7 +344,7 @@ function renderTabs(){
 function renderSection(){
   window.scrollTo(0,0);
   const id=TABS[tab].id;
-  $('#main').classList.toggle('sheetmode',!!TABS[tab].page);
+  $('#main').classList.toggle('sheetmode',!!TABS[tab].page);$('#main').classList.remove('drawmode');
   $('#main').onclick=$('#main').oninput=$('#main').onchange=null;
   if(TABS[tab].page)return renderSheet(TABS[tab].page);
   if(id==='photo')return renderPhotos();
@@ -464,6 +475,7 @@ async function renderSheet(p,keep){
      <button class="tb" id="addImgBtn" aria-label="Insert image">&#128247; Image</button>
      <button class="tb ${tool==='img'?'on':''}" data-tool="img" aria-label="Move or resize images">&#10021; Move</button>
      <button class="tb ${SET.finger?'on':''}" id="fingerBtn" aria-label="Finger writes">&#9757; Finger ${SET.finger?'ON':'OFF'}</button>
+     <button class="tb ${sheetStraighten()?'on':''}" id="strBtn" aria-label="Straighten walls on the sketch grid">&#8725; Straighten</button>
      <span class="sep"></span>
      <button class="tb" id="zOut" aria-label="Zoom out" ${Z<=ZMIN?'disabled':''}>&minus;</button>
      <button class="tb zm" id="zFit" aria-label="Fit to width">${Math.round(Z*100)}%</button>
@@ -506,6 +518,7 @@ async function renderSheet(p,keep){
     else if(b.id==='sizeBtn'){SET.size=(SET.size+1)%3;saveSettings();renderSheet(p);}
     else if(b.dataset.color){if(tool==='hl')SET.hl=b.dataset.color;else SET.color=b.dataset.color;saveSettings();renderSheet(p);}
     else if(b.id==='fingerBtn'){SET.finger=!SET.finger;saveSettings();renderSheet(p);}
+    else if(b.id==='strBtn'){SET.draw=Object.assign({},SET.draw||{},{straighten:!sheetStraighten()});saveSettings();renderSheet(p);}
     else if(b.id==='zIn'||b.id==='zOut'||b.id==='zFit'){
       const r=sv.getBoundingClientRect(),cx=r.left+sv.clientWidth/2,cy=r.top+sv.clientHeight/2;
       zoomAt(b.id==='zFit'?1:Z*(b.id==='zIn'?1.25:0.8),cx,cy);
@@ -514,6 +527,29 @@ async function renderSheet(p,keep){
 }
 /* A recorded option gets a pale blue fill. One you tapped also gets a neat ring; one you circled by hand
    keeps just the fill, so your own circle is the only ring on it. */
+/* The paper sketch grid (under NOTES, above TOTAL): with Straighten on, a Pencil wall drawn there becomes a
+   straight line (Footprint's rule), squares up to 0/45/90 degrees when close, and its ends snap onto
+   another wall's end so corners meet. Strokes elsewhere on the sheet - circles, writing, tally marks -
+   are never changed. One setting with the Sketch tab's Straighten. */
+const sheetStraighten=()=>(SET.draw||{}).straighten!==false;
+const SKETCH_GRID=(()=>{const n=SHEET.blanks.find(b=>b.id==='notes'),t=TALLY_BOX.t_bed;
+  return n&&t?{p:n.p,x0:n.x,x1:n.x+n.w,y0:n.y,y1:t.y-16}:null;})();
+function straightenOnSheet(p,s){
+  const G=SKETCH_GRID;if(!G||G.p!==p||!sheetStraighten()||s.k==='hl')return;
+  const P=s.pts;if(P.some(q=>q[0]<G.x0||q[0]>G.x1||q[1]<G.y0||q[1]>G.y1))return;
+  if(!DRAW.isLine(P.map(q=>[q[0],q[1]])))return;
+  const tol=10/sheetScale,ends=[];
+  for(const o of cur.ink[p])if(o.pts.length===2&&o.straight)ends.push(o.pts[0],o.pts[1]);
+  const near=q=>{let best=null,bd=tol;for(const e of ends){const d=Math.hypot(e[0]-q[0],e[1]-q[1]);if(d<bd){bd=d;best=e;}}return best;};
+  let a=P[0].slice(0,2),b=P[P.length-1].slice(0,2);
+  const ea=near(a);if(ea)a=[ea[0],ea[1]];
+  const L=Math.hypot(b[0]-a[0],b[1]-a[1]),ang=Math.atan2(b[1]-a[1],b[0]-a[0])*180/Math.PI,k=Math.round(ang/45)*45;
+  if(Math.abs(ang-k)<=6){const r=k*Math.PI/180;b=[a[0]+Math.cos(r)*L,a[1]+Math.sin(r)*L];}
+  const eb=near(b);if(eb)b=[eb[0],eb[1]];
+  const r1=v=>Math.round(v*10)/10;
+  s.pts=s.pen?[[r1(a[0]),r1(a[1]),0.5],[r1(b[0]),r1(b[1]),0.5]]:[[r1(a[0]),r1(a[1])],[r1(b[0]),r1(b[1])]];
+  s.straight=1;
+}
 function drawSelections(ctx,p){
   const circled=new Set();
   for(const st of cur.ink[p])(st.hits||[]).forEach(id=>circled.add(id));
@@ -711,6 +747,7 @@ function attachInk(cv,ctx,p){
       if(o){setOpt(o,!cur.sel[o.id]);save();drawSheet(ctx,p);renderTabs();}else hist.pop();
       return;
     }
+    straightenOnSheet(p,s);
     const hits=recognise(p,s);
     if(hits.length){hits.forEach(o=>setOpt(o,true));s.hits=hits.map(o=>o.id);toast('✓ '+hits.map(o=>o.v).join(', '));}
     cur.ink[p].push(s);syncTally();save();drawSheet(ctx,p);renderTabs();
@@ -1013,13 +1050,15 @@ function sketchSVG(forExport){
 const ROOM_LABELS=['Bed','Bath','½ Bath','Kitchen','Living','Dining','Family','Laundry','Garage','Porch','Patio','Pool'];
 let skLabelPick=false,skPending=null;
 // Bed, Bath and ½ Bath are numbered as they are placed: Bed 1, Bed 2...
-function nextLabel(base){if(!['Bed','Bath','½ Bath'].includes(base))return base;
+function nextLabelIn(base,labels){if(!['Bed','Bath','½ Bath'].includes(base))return base;
   const re=new RegExp('^'+base.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')+' (\\d+)$');
-  const used=cur.sketch.labels.map(l=>(l.t.match(re)||[])[1]).filter(Boolean).map(Number);
+  const used=labels.map(l=>(l.t.match(re)||[])[1]).filter(Boolean).map(Number);
   return base+' '+(used.length?Math.max(...used)+1:1);}
+const allLabels=()=>[...cur.sketch.labels,...(DRAW.has()?DRAW.labels():[])];
+function nextLabel(base){return nextLabelIn(base,allLabels());}
 // Labels vs the room tally - a heads-up only; the tally stays the count of record.
 function labelMismatch(){
-  const L=cur.sketch.labels,n=re=>L.filter(l=>re.test(l.t)).length,out=[];
+  const L=allLabels(),n=re=>L.filter(l=>re.test(l.t)).length,out=[];
   for(const [re,box,name] of [[/^Bed\b/i,'t_bed','bedroom'],[/^Bath\b/i,'t_bath','full bath'],[/^½ ?Bath\b/i,'t_half','half bath']]){
     const k=n(re);if(k&&k!==tallyOf(box))out.push(`${k} ${name} label${k===1?'':'s'}, tally says ${tallyOf(box)}`);}
   return out;
@@ -1044,10 +1083,34 @@ function attachLabels(svg){
       if(n.trim())L.t=n.trim();else cur.sketch.labels=cur.sketch.labels.filter(l=>l!==L);save();renderSketch();};
   };
 }
+/* Buttons shared by both Sketch views: Draw/Measure switch and the room tally. */
+function sketchCommonClick(b){
+  const d=b.dataset;
+  if(d.skmode){SET.skMode=d.skmode;saveSettings();renderSketch();return true;}
+  if(d.tally){cur.tallyAdj=cur.tallyAdj||{};if(tallyOf(d.tally)+(+d.n)<0)return true;
+    cur.tallyAdj[d.tally]=(cur.tallyAdj[d.tally]||0)+(+d.n);syncTally();$('#tn_'+d.tally).textContent=tallyOf(d.tally);
+    const w=document.querySelector('.labwarn');if(w)w.innerHTML=labelMismatch().map(m=>`&#9888; ${esc(m)}`).join('<br>');save();return true;}
+  return false;
+}
+function tallyCard(compact){
+  return TALLY.length?`<div class="card ${compact?'tcompact':''}">${compact?'':'<h2>Room tally - tap as you walk through</h2>'}<div class="tally">${TALLY.map(x=>`<div class="tc">
+     <div class="tl">${esc(x.label)}${compact?` <span class="ts">${esc(x.sub)}</span>`:''}</div>${compact?'':`<div class="ts">${esc(x.sub)}</div>`}<div class="tn" id="tn_${x.box}">${tallyOf(x.box)}</div>
+     <div class="tb2"><button data-tally="${x.box}" data-n="-1" aria-label="${esc(x.sub)} minus one">&minus;</button><button class="plus" data-tally="${x.box}" data-n="1" aria-label="${esc(x.sub)} plus one">+</button></div></div>`).join('')}</div>
+   ${compact?'<p class="muted labwarn" style="margin:4px 0 0;color:var(--warn)"></p>':`<p class="muted" style="margin:8px 0 0">These fill the ${TALLY.map(x=>esc(x.label)).join(', ')} boxes on the field sheet. Tally marks you write in those boxes count too.</p>`}</div>`:'';
+}
 function renderSketch(){
+  const drawMode=(SET.skMode||'draw')==='draw';
+  const modeHtml=`<div class="chips skmode"><button class="chip ${drawMode?'on':''}" data-skmode="draw">&#9998; Draw</button><button class="chip ${drawMode?'':'on'}" data-skmode="keypad">&#128207; Measure (keypad)</button></div>`;
+  $('#main').classList.toggle('drawmode',drawMode);
+  if(drawMode){
+    $('#main').oninput=$('#main').onchange=null;
+    DRAW.render($('#main'),modeHtml,tallyCard(true));renderTabs();
+    const w=document.querySelector('.labwarn');if(w)w.innerHTML=labelMismatch().map(m=>`&#9888; ${esc(m)}`).join('<br>');
+    return;
+  }
   const A=cur.sketch.areas;if(skArea>=A.length)skArea=Math.max(0,A.length-1);
   const a=A[skArea],t=sketchTotals();
-  $('#main').innerHTML=`<div class="card">
+  $('#main').innerHTML=`${modeHtml}<div class="card">
    <div class="row" style="margin-bottom:8px"><select id="skSel" class="grow">${A.map((x,i)=>`<option value="${i}" ${i===skArea?'selected':''}>${esc(x.name)} (${x.kind}) - ${Math.round(areaSF(x))} sf${areaClosed(x)?'':' (open)'}</option>`).join('')||'<option>No areas yet</option>'}</select>
    <button class="btn sm pri" id="skNew">+ Area</button></div>
    <div id="skWrap">${sketchSVG(false)}</div>
@@ -1066,10 +1129,7 @@ function renderSketch(){
    <div class="row" style="margin-top:8px"><button class="btn sm" id="skUndo">Undo</button><button class="btn sm" id="skClose">Close shape</button><button class="btn sm" id="skRen">Rename</button><button class="btn sm warn" id="skDel">Delete area</button></div>
    <p class="muted">Walk the exterior clockwise from a corner: type length, tap direction. "Close shape" draws the last wall back to the start. Inches: use decimals (e.g. 12.5 = 12'6").</p>
   </div>`:''}
-  ${TALLY.length?`<div class="card"><h2>Room tally - tap as you walk through</h2><div class="tally">${TALLY.map(x=>`<div class="tc">
-     <div class="tl">${esc(x.label)}</div><div class="ts">${esc(x.sub)}</div><div class="tn" id="tn_${x.box}">${tallyOf(x.box)}</div>
-     <div class="tb2"><button data-tally="${x.box}" data-n="-1" aria-label="${esc(x.sub)} minus one">&minus;</button><button class="plus" data-tally="${x.box}" data-n="1" aria-label="${esc(x.sub)} plus one">+</button></div></div>`).join('')}</div>
-   <p class="muted" style="margin:8px 0 0">These fill the ${TALLY.map(x=>esc(x.label)).join(', ')} boxes on the field sheet. Tally marks you write in those boxes count too.</p></div>`:''}`;
+  ${tallyCard(false)}`;
   $('#skWrap').firstChild.setAttribute('id','sk');
   attachLabels($('#sk'));
   renderTabs();
@@ -1077,11 +1137,10 @@ function renderSketch(){
   $('#main').onchange=e=>{if(e.target.id==='skSel'){skArea=+e.target.value;renderSketch();}};
   $('#main').onclick=e=>{
     const b=e.target.closest('button');if(!b)return;const d=b.dataset;
+    if(sketchCommonClick(b))return;
     if(b.id==='lbAdd'){skLabelPick=!(skLabelPick||skPending);skPending=null;renderSketch();return;}
     if(d.lbl){let l=d.lbl;if(l==='__custom'){l=(prompt('Label (e.g. Office, Bonus room)')||'').trim();if(!l)return;}
       skPending=l;skLabelPick=false;renderSketch();return;}
-    if(d.tally){cur.tallyAdj=cur.tallyAdj||{};if(tallyOf(d.tally)+(+d.n)<0)return;
-      cur.tallyAdj[d.tally]=(cur.tallyAdj[d.tally]||0)+(+d.n);syncTally();$('#tn_'+d.tally).textContent=tallyOf(d.tally);save();return;}
     if(b.id==='skNew'){
       const kind=prompt('Area type: '+AREA_KINDS.join(', '),A.length?'Garage':'GLA');if(!kind)return;
       const k=AREA_KINDS.find(x=>x.toLowerCase()===kind.trim().toLowerCase())||'Other';
@@ -1167,6 +1226,7 @@ async function exportZip(){
   files.push({name:'inspection.json',data:enc.encode(JSON.stringify(json))});
   try{files.push({name:'TOTAL UAD 2.6.xml',data:enc.encode(uad26().xml)});}catch(err){console.warn('UAD 2.6 XML skipped',err);}
   if(cur.sketch.areas.length){const svg=sketchSVG(true);files.push({name:'Sketch.svg',data:enc.encode(svg)});try{files.push({name:'Sketch.png',data:await svgToPng(svg)});}catch(_){}}
+  try{const dc=await DRAW.image(2400);if(dc)files.push({name:'Drawing.png',data:new Uint8Array(await (await new Promise(r=>dc.toBlob(r,'image/png'))).arrayBuffer())});}catch(err){console.warn('Drawing skipped',err);}
   for(const x of photoIndex)files.push({name:x.name,data:new Uint8Array(await x.p.blob.arrayBuffer())});
   for(const r of refs)files.push({name:`refs/${r.id}.jpg`,data:new Uint8Array(await r.blob.arrayBuffer())});
   await deliver(makeZip(files),pkgName('zip'));
@@ -1232,6 +1292,11 @@ async function buildPdf(){
     newPage();doc.setFont('helvetica','bold');doc.setFontSize(13);doc.text('Building Sketch',M,y+12);y+=22;
     const t=sketchTotals();doc.setFont('helvetica','normal');doc.setFontSize(10);doc.text(Object.entries(t).map(([k,v])=>`${k}: ${v.toLocaleString()} sf`).join('    '),M,y+8);y+=18;
     const k=Math.min((W-2*M)/iw,(H-M-y)/ih);doc.addImage(jpg,'JPEG',M,y,iw*k,ih*k);
+  }
+  const dc=await DRAW.image(2400);   // the freehand sketch, on its own page
+  if(dc){
+    newPage();doc.setFont('helvetica','bold');doc.setFontSize(13);doc.text('Sketch',M,y+12);y+=26;
+    const jpg=await jpeg(dc),k=Math.min((W-2*M)/dc.width,(H-M-y)/dc.height);doc.addImage(jpg,'JPEG',M,y,dc.width*k,dc.height*k);
   }
   const ph=await sentPhotos(cur.id);   // only photos ticked to send
   const cw=(W-2*M-12)/2,ch=(H-2*M-30)/3-20;
