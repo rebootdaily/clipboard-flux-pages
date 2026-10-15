@@ -183,7 +183,7 @@ main.sheetmode{max-width:none;padding:0}
    ===================================================================== */
 
 const CACHE_PREFIX = 'fieldlite-v';   // this app's saved copies; the practice copy uses its own prefix so the two never touch each other
-const APP_VERSION = '16';   // shown on the home screen so a screenshot says which version is running
+const APP_VERSION = '17';   // shown on the home screen so a screenshot says which version is running
 const TABS = [
   ...SHEET.pages.map((_,i)=>({id:'p'+(i+1), page:i+1, title:SHEET.pages.length>1?'Page '+(i+1):'Field Sheet'})),
   {id:'photo', title:'Photos'}, {id:'sketch', title:'Sketch'}, {id:'export', title:'Export'}
@@ -192,7 +192,10 @@ const PHOTO_SHOTS = {
   imp: ['Front','Rear','Street','Side L','Side R','Address','Kitchen','Living','Dining','Family','Bath','Bedroom','Smoke detector','CO detector','Water heater','HVAC','Electric panel','Roof','Garage','Pool','Patio','Detached bldg','Defect'],
   land:['Front','Street','Street (opposite)','Rear','Side','Address / sign','Access','Adverse','Defect']
 };
-const AREA_KINDS = ['GLA','Garage','Porch','Patio','Deck','Basement','Carport','Other'];
+const AREA_KINDS = ['GLA','Garage','Carport','Basement','Porch','Patio','Deck','Gazebo','Accessory building','Other'];
+// What "+ Area" offers: [name, kind]. A name already in use gets a number (Garage 2).
+const AREA_MENU = [['Level 1','GLA'],['Level 2','GLA'],['Level 3','GLA'],['Finished basement','Basement'],['Garage','Garage'],['Carport','Carport'],
+  ['Porch','Porch'],['Enclosed porch','Porch'],['Patio','Patio'],['Deck','Deck'],['Gazebo','Gazebo'],['Accessory building','Accessory building'],['Shed','Accessory building']];
 /* Walk-through room tally on the Sketch tab. Each counter IS the matching write-in box on the field
    sheet (same stored value), so a count tapped here shows on the sheet and in the report - no recount.
    When the sheet is re-mapped, point `box` at the new write-in box ids. */
@@ -1031,12 +1034,56 @@ function skAddWall(a,dir){
   let n=parseFloat(skLen),snapped=false;
   if(!n){n=snapLen(a,dir);snapped=!!n;if(!n){toast(dir.length===1?'Type a length first (no corner ahead to line up with)':'Type a length first');return;}}
   a.segs.push({d:dir,n,up:!skPen});if(snapped)toast('Lined up with a corner: '+n+' ft');
-  skLen='';save();renderSketch();
+  skLen='';askOverlaps(a);save();renderSketch();
 }
 const SWIPE_DIRS=['R','DR','D','DL','L','UL','U','UR'];
 function swipeDir(dx,dy){return SWIPE_DIRS[(Math.round(Math.atan2(dy,dx)/(Math.PI/4))+8)%8];}
 function polyArea(pts){let s=0;for(let i=0;i<pts.length-1;i++)s+=pts[i][0]*pts[i+1][1]-pts[i+1][0]*pts[i][1];return Math.abs(s)/2;}
-function areaSF(a){const {pts}=areaPoints(a);if(pts.length<3)return 0;return Math.round(polyArea(pts.concat([pts[0]]))*10)/10;}
+// Overlap of two polygons, exactly: split into vertical slabs at every vertex and every edge crossing, where each
+// polygon's cross-section is a set of intervals whose lengths change linearly, so the middle of the slab gives the area.
+function polyOverlap(P,Q){
+  if(P.length<3||Q.length<3)return 0;
+  const edges=poly=>poly.map((p,i)=>[p,poly[(i+1)%poly.length]]);
+  const EP=edges(P),EQ=edges(Q),xs=new Set([...P,...Q].map(p=>p[0]));
+  for(const [a,b] of EP)for(const [c,d] of EQ){
+    const r=[b[0]-a[0],b[1]-a[1]],q=[d[0]-c[0],d[1]-c[1]],den=r[0]*q[1]-r[1]*q[0];if(Math.abs(den)<1e-12)continue;
+    const t=((c[0]-a[0])*q[1]-(c[1]-a[1])*q[0])/den,u=((c[0]-a[0])*r[1]-(c[1]-a[1])*r[0])/den;
+    if(t>=0&&t<=1&&u>=0&&u<=1)xs.add(a[0]+t*r[0]);
+  }
+  const iv=(E,x)=>{const ys=[];for(const [a,b] of E)if((a[0]<=x&&x<b[0])||(b[0]<=x&&x<a[0]))ys.push(a[1]+(b[1]-a[1])*(x-a[0])/(b[0]-a[0]));
+    ys.sort((m,n)=>m-n);const o=[];for(let i=0;i+1<ys.length;i+=2)o.push([ys[i],ys[i+1]]);return o;};
+  const X=[...xs].sort((m,n)=>m-n);let area=0;
+  for(let i=0;i+1<X.length;i++){
+    const w=X[i+1]-X[i];if(w<1e-9)continue;const xm=(X[i]+X[i+1])/2,A=iv(EP,xm),B=iv(EQ,xm);
+    for(const [a0,a1] of A)for(const [b0,b1] of B)area+=Math.max(0,Math.min(a1,b1)-Math.max(a0,b0))*w;
+  }
+  return area;
+}
+const areaById=id=>cur.sketch.areas.find(x=>x.id===id);
+// a.cut = ids of areas (a garage, a porch...) that are cut out of this one, so its sf leaves them out
+function cutSF(a){let n=0;for(const id of a.cut||[]){const c=areaById(id);if(c)n+=polyOverlap(areaPoints(a).pts,areaPoints(c).pts);}return n;}
+function areaSF(a){const {pts}=areaPoints(a);if(pts.length<3)return 0;return Math.max(0,Math.round((polyArea(pts.concat([pts[0]]))-cutSF(a))*10)/10);}
+// When a shape is closed over another area, offer to cut it out of that one (a garage under the house's roof line, say).
+function askOverlaps(a){
+  if(!areaClosed(a))return;
+  a.asked=a.asked||[];
+  for(const b of cur.sketch.areas){
+    if(b===a||!areaClosed(b)||a.asked.includes(b.id)||b.kind===a.kind||(a.cut||[]).includes(b.id)||(b.cut||[]).includes(a.id))continue;
+    const ov=polyOverlap(areaPoints(a).pts,areaPoints(b).pts);if(ov<1)continue;
+    a.asked.push(b.id);b.asked=b.asked||[];b.asked.push(a.id);
+    const base=a.kind==='GLA'&&b.kind!=='GLA'?a:b,cut=base===a?b:a,was=Math.round(areaSF(base));
+    if(confirm(`${cut.name} overlaps ${base.name} by ${Math.round(ov)} sf.\n\nCut ${cut.name} out of ${base.name}?\n${base.name} would go from ${was} sf to ${was-Math.round(ov)} sf.`)){base.cut=(base.cut||[]).concat(cut.id);toast(`${cut.name} cut out of ${base.name}`);}
+  }
+}
+function skNewArea(v){
+  const A=cur.sketch.areas;let name,kind;
+  if(v==='__other'){name=(prompt('Name of the area (e.g. Sunroom, Workshop)')||'').trim();if(!name){renderSketch();return;}kind='Other';}
+  else [name,kind]=v.split('|');
+  const base=name;for(let n=2;A.some(x=>x.name===name);n++)name=base+' '+n;
+  // a new area starts where the first one began, pen up so it can be moved into place
+  A.push({id:uid(),name,kind,ox:A.length?A[0].ox||0:0,oy:A.length?A[0].oy||0:0,segs:[]});
+  skArea=A.length-1;skPen=A.length===1;skLen='';save();renderSketch();
+}
 function areaClosed(a){const {pts}=areaPoints(a);if(pts.length<4)return false;const p=pts[0],q=pts[pts.length-1];return Math.hypot(p[0]-q[0],p[1]-q[1])<0.05;}
 function sketchTotals(){const t={};for(const a of cur.sketch.areas){t[a.kind]=(t[a.kind]||0)+areaSF(a);}for(const k in t)t[k]=Math.round(t[k]);return t;}
 function sketchSVG(forExport){
@@ -1047,7 +1094,7 @@ function sketchSVG(forExport){
   labels.forEach(l=>{minx=Math.min(minx,l.x-3);miny=Math.min(miny,l.y-2);maxx=Math.max(maxx,l.x+3);maxy=Math.max(maxy,l.y+2);});
   const pad=8;minx-=pad;miny-=pad;maxx+=pad;maxy+=pad;
   const W=maxx-minx,H=maxy-miny;const fs=Math.max(1.6,Math.max(W,H)/40);
-  const col={GLA:'#1f4e79',Garage:'#7a5c00',Porch:'#2e7d32',Patio:'#2e7d32',Deck:'#6d4c41',Basement:'#6a1b9a',Carport:'#7a5c00',Other:'#555'};
+  const col={GLA:'#1f4e79',Garage:'#7a5c00',Porch:'#2e7d32',Patio:'#2e7d32',Deck:'#6d4c41',Basement:'#6a1b9a',Carport:'#7a5c00',Gazebo:'#00796b','Accessory building':'#8d4b00',Other:'#555'};
   let s=`<svg xmlns="http://www.w3.org/2000/svg" viewBox="${minx} ${miny} ${W} ${H}" ${forExport?`width="${Math.round(W*10)}" height="${Math.round(H*10)}"`:''} font-family="Arial,sans-serif">`;
   if(forExport)s+=`<rect x="${minx}" y="${miny}" width="${W}" height="${H}" fill="#fff"/>`;
   // light 5' grid
@@ -1157,9 +1204,10 @@ function renderSketch(){
   const a=A[skArea],t=sketchTotals();
   $('#main').innerHTML=`${modeHtml}<div class="card">
    <div class="row" style="margin-bottom:8px"><select id="skSel" class="grow">${A.map((x,i)=>`<option value="${i}" ${i===skArea?'selected':''}>${esc(x.name)} (${x.kind}) - ${Math.round(areaSF(x))} sf${areaClosed(x)?'':' (open)'}</option>`).join('')||'<option>No areas yet</option>'}</select>
-   <button class="btn sm pri" id="skNew">+ Area</button></div>
+   <select id="skNewSel" class="btn sm pri" style="width:auto;flex:0 0 auto" aria-label="Add an area"><option value="">+ Area</option>${AREA_MENU.map(([n,k])=>`<option value="${esc(n)}|${esc(k)}">${esc(n)}</option>`).join('')}<option value="__other">Other…</option></select></div>
    <div id="skWrap">${sketchSVG(false)}</div>
    <div class="tot">${Object.entries(t).map(([k,v])=>`<span>${k}: ${v.toLocaleString()} sf</span>`).join('')||'<span class="muted">Add an area, type a length, tap a direction.</span>'}</div>
+   ${A.flatMap(x=>(x.cut||[]).map(id=>[x,areaById(id)]).filter(q=>q[1])).map(([x,c])=>`<p class="muted" style="margin:6px 0 0">${esc(x.name)} less ${esc(c.name)} (&minus;${Math.round(polyOverlap(areaPoints(x).pts,areaPoints(c).pts))} sf) <button class="btn sm" data-uncut="${x.id}|${c.id}">Put back</button></p>`).join('')}
    <div class="row" style="margin-top:8px"><button class="btn sm ${skLabelPick||skPending?'pri':''}" id="lbAdd">+ Label</button>
      <span class="muted grow">${skPending?`Tap the sketch where <b>${esc(nextLabel(skPending))}</b> goes.`:cur.sketch.labels.length?'Drag a label to move it; tap it to rename or delete.':'Label rooms: Bed, Bath, Kitchen...'}</span></div>
    ${skLabelPick?`<div class="chips" style="margin-top:6px">${ROOM_LABELS.map(l=>`<button class="chip" data-lbl="${esc(l)}">${esc(l)}</button>`).join('')}<button class="chip add" data-lbl="__custom">Custom…</button></div>`:''}
@@ -1179,21 +1227,16 @@ function renderSketch(){
   attachLabels($('#sk'));
   renderTabs();
   $('#main').oninput=null;
-  $('#main').onchange=e=>{if(e.target.id==='skSel'){skArea=+e.target.value;renderSketch();}};
+  $('#main').onchange=e=>{
+    if(e.target.id==='skSel'){skArea=+e.target.value;renderSketch();}
+    else if(e.target.id==='skNewSel'&&e.target.value)skNewArea(e.target.value);};
   $('#main').onclick=e=>{
     const b=e.target.closest('button');if(!b)return;const d=b.dataset;
     if(sketchCommonClick(b))return;
     if(b.id==='lbAdd'){skLabelPick=!(skLabelPick||skPending);skPending=null;renderSketch();return;}
     if(d.lbl){let l=d.lbl;if(l==='__custom'){l=(prompt('Label (e.g. Office, Bonus room)')||'').trim();if(!l)return;}
       skPending=l;skLabelPick=false;renderSketch();return;}
-    if(b.id==='skNew'){
-      const kind=prompt('Area type: '+AREA_KINDS.join(', '),A.length?'Garage':'GLA');if(!kind)return;
-      const k=AREA_KINDS.find(x=>x.toLowerCase()===kind.trim().toLowerCase())||'Other';
-      const name=k==='GLA'?(A.some(x=>x.kind==='GLA')?'GLA '+(A.filter(x=>x.kind==='GLA').length+1):'Level 1'):(k==='Other'?kind.trim():k);
-      // new area starts where the previous area began, pen up so it can be moved into place
-      A.push({id:uid(),name,kind:k,ox:A.length?A[0].ox||0:0,oy:A.length?A[0].oy||0:0,segs:[]});
-      skArea=A.length-1;skPen=A.length===1;skLen='';save();renderSketch();return;
-    }
+    if(d.uncut){const [bid,cid]=d.uncut.split('|'),base=areaById(bid);if(base){base.cut=(base.cut||[]).filter(x=>x!==cid);save();renderSketch();}return;}
     if(!a)return;
     if(d.k){if(d.k==='⌫')skLen=skLen.slice(0,-1);else if(skLen.length<6&&!(d.k==='.'&&skLen.includes('.')))skLen+=d.k;$('#skLen').innerHTML=(skLen||'0')+'<span class="muted"> ft</span>';return;}
     if(d.d==='PEN'){skPen=!skPen;renderSketch();return;}
@@ -1203,7 +1246,7 @@ function renderSketch(){
       if(Math.abs(dx)>0.01&&Math.abs(dy)>0.01){ if(Math.abs(Math.abs(dx)-Math.abs(dy))<0.05){a.segs.push({d:(dy<0?'U':'D')+(dx<0?'L':'R'),n:Math.round(Math.hypot(dx,dy)*100)/100});} else {a.segs.push({d:dx<0?'L':'R',n:Math.round(Math.abs(dx)*100)/100});a.segs.push({d:dy<0?'U':'D',n:Math.round(Math.abs(dy)*100)/100});} }
       else if(Math.abs(dx)>0.01)a.segs.push({d:dx<0?'L':'R',n:Math.round(Math.abs(dx)*100)/100});
       else if(Math.abs(dy)>0.01)a.segs.push({d:dy<0?'U':'D',n:Math.round(Math.abs(dy)*100)/100});
-      save();renderSketch();toast(Math.round(areaSF(a))+' sf');}
+      askOverlaps(a);save();renderSketch();toast(Math.round(areaSF(a))+' sf');}
     else if(b.id==='skRen'){const n=prompt('Area name',a.name);if(n){a.name=n.trim();save();renderSketch();}}
     else if(b.id==='skDel'){if(confirm('Delete '+a.name+'?')){A.splice(skArea,1);skArea=Math.max(0,skArea-1);save();renderSketch();}}
   };
