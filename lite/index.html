@@ -183,7 +183,7 @@ main.sheetmode{max-width:none;padding:0}
    ===================================================================== */
 
 const CACHE_PREFIX = 'fieldlite-v';   // this app's saved copies; the practice copy uses its own prefix so the two never touch each other
-const APP_VERSION = '15';   // shown on the home screen so a screenshot says which version is running
+const APP_VERSION = '16';   // shown on the home screen so a screenshot says which version is running
 const TABS = [
   ...SHEET.pages.map((_,i)=>({id:'p'+(i+1), page:i+1, title:SHEET.pages.length>1?'Page '+(i+1):'Field Sheet'})),
   {id:'photo', title:'Photos'}, {id:'sketch', title:'Sketch'}, {id:'export', title:'Export'}
@@ -999,7 +999,7 @@ $('#lib').onchange=e=>addFiles(e.target.files);
 // An area is a list of segments {d:'R'|'L'|'U'|'D'|'UR'|..., n:feet, up:bool}.
 // "up" segments move the pen without drawing (to position an attached area).
 const DIRV={U:[0,-1],D:[0,1],L:[-1,0],R:[1,0],UR:[1,-1],UL:[-1,-1],DR:[1,1],DL:[-1,1]};
-let skLen='',skArea=0,skPen=true;
+let skLen='',skArea=0,skPen=true;const SWIPE_MIN=30;
 function areaPoints(a){
   let x=a.ox||0,y=a.oy||0;const pts=[];let started=false;const segs=[];
   for(const s of a.segs){
@@ -1026,6 +1026,15 @@ function snapLen(a,dir){
   }
   return best===null?null:Math.round(best*100)/100;
 }
+// One wall from the typed length (or, with none typed, to the nearest corner ahead), used by the arrow buttons and by swiping.
+function skAddWall(a,dir){
+  let n=parseFloat(skLen),snapped=false;
+  if(!n){n=snapLen(a,dir);snapped=!!n;if(!n){toast(dir.length===1?'Type a length first (no corner ahead to line up with)':'Type a length first');return;}}
+  a.segs.push({d:dir,n,up:!skPen});if(snapped)toast('Lined up with a corner: '+n+' ft');
+  skLen='';save();renderSketch();
+}
+const SWIPE_DIRS=['R','DR','D','DL','L','UL','U','UR'];
+function swipeDir(dx,dy){return SWIPE_DIRS[(Math.round(Math.atan2(dy,dx)/(Math.PI/4))+8)%8];}
 function polyArea(pts){let s=0;for(let i=0;i<pts.length-1;i++)s+=pts[i][0]*pts[i+1][1]-pts[i+1][0]*pts[i][1];return Math.abs(s)/2;}
 function areaSF(a){const {pts}=areaPoints(a);if(pts.length<3)return 0;return Math.round(polyArea(pts.concat([pts[0]]))*10)/10;}
 function areaClosed(a){const {pts}=areaPoints(a);if(pts.length<4)return false;const p=pts[0],q=pts[pts.length-1];return Math.hypot(p[0]-q[0],p[1]-q[1])<0.05;}
@@ -1085,7 +1094,8 @@ function attachLabels(svg){
   const toSvg=e=>{const p=svg.createSVGPoint();p.x=e.clientX;p.y=e.clientY;const q=p.matrixTransform(svg.getScreenCTM().inverse());return [Math.round(q.x*10)/10,Math.round(q.y*10)/10];};
   svg.onpointerdown=e=>{
     if(skPending){e.preventDefault();const [x,y]=toSvg(e);cur.sketch.labels.push({id:uid(),t:nextLabel(skPending),x,y});skPending=null;save();renderSketch();return;}
-    const el=e.target.closest&&e.target.closest('[data-lab]');if(!el)return;
+    const el=e.target.closest&&e.target.closest('[data-lab]');
+    if(!el){startSwipe(e,svg,toSvg);return;}
     e.preventDefault();try{svg.setPointerCapture(e.pointerId);}catch(_){}
     const L=cur.sketch.labels.find(l=>l.id===el.dataset.lab),s0=toSvg(e),x0=L.x,y0=L.y,c0=[e.clientX,e.clientY];let moved=false;
     svg.onpointermove=ev=>{if(!moved&&Math.hypot(ev.clientX-c0[0],ev.clientY-c0[1])<6)return;moved=true;
@@ -1096,6 +1106,27 @@ function attachLabels(svg){
       const n=prompt('Rename this label - clear it to delete it',L.t);if(n===null)return;
       if(n.trim())L.t=n.trim();else cur.sketch.labels=cur.sketch.labels.filter(l=>l!==L);save();renderSketch();};
   };
+}
+/* With a length typed, a swipe on the sketch (finger or Pencil) draws that wall in the swiped direction,
+   squared to the nearest of the 8 arrow directions, so the arrow button is optional. A line follows the
+   swipe to show which way it will go. */
+function startSwipe(e,svg,toSvg){
+  const a=cur.sketch.areas[skArea];if(!a||!parseFloat(skLen)||e.button>0)return;
+  e.preventDefault();try{svg.setPointerCapture(e.pointerId);}catch(_){}
+  const c0=[e.clientX,e.clientY],q0=toSvg(e),pid=e.pointerId,NS='http://www.w3.org/2000/svg';
+  const ln=document.createElementNS(NS,'line');
+  ln.setAttribute('stroke','#1f6feb');ln.setAttribute('stroke-width','3');ln.setAttribute('stroke-dasharray','8 5');ln.setAttribute('stroke-linecap','round');ln.setAttribute('pointer-events','none');
+  const far=ev=>Math.hypot(ev.clientX-c0[0],ev.clientY-c0[1])>=SWIPE_MIN;
+  svg.onpointermove=ev=>{
+    if(ev.pointerId!==pid)return;
+    if(!far(ev)){ln.remove();return;}
+    if(!ln.parentNode)svg.appendChild(ln);
+    const q=toSvg(ev);ln.setAttribute('x1',q0[0]);ln.setAttribute('y1',q0[1]);ln.setAttribute('x2',q[0]);ln.setAttribute('y2',q[1]);};
+  svg.onpointerup=svg.onpointercancel=ev=>{
+    if(ev.pointerId!==pid)return;
+    svg.onpointermove=svg.onpointerup=svg.onpointercancel=null;ln.remove();
+    if(ev.type!=='pointerup'||!far(ev))return;
+    skAddWall(a,swipeDir(ev.clientX-c0[0],ev.clientY-c0[1]));};
 }
 /* Buttons shared by both Sketch views: Draw/Measure switch and the room tally. */
 function sketchCommonClick(b){
@@ -1138,7 +1169,7 @@ function renderSketch(){
     <div><div class="lenbox" id="skLen">${skLen||'0'}<span class="muted"> ft</span></div>
       <div class="keys">${['7','8','9','4','5','6','1','2','3','.','0','⌫'].map(k=>`<button data-k="${k}">${k}</button>`).join('')}</div></div>
     <div><div class="pad">${[['UL','&#8598;'],['U','&#8593;'],['UR','&#8599;'],['L','&#8592;'],['PEN',skPen?'DRAW':'MOVE'],['R','&#8594;'],['DL','&#8601;'],['D','&#8595;'],['DR','&#8600;']].map(([d,s])=>`<button data-d="${d}" class="${d==='PEN'?'pen':'dir'}">${s}</button>`).join('')}</div>
-      <p class="muted" style="margin:6px 0 0"><b>Snap:</b> leave the length empty and tap &#8592; &#8593; &#8594; &#8595; to run the wall to the nearest corner.<br>${skPen?'<b>DRAW</b>: arrows draw walls.':'<b>MOVE</b>: arrows slide the start point without drawing - use it to place a garage/porch against the house. Tap center to start drawing.'}</p></div>
+      <p class="muted" style="margin:6px 0 0"><b>Swipe:</b> type a length, then swipe on the sketch in the direction you want.<br><b>Snap:</b> leave the length empty and tap &#8592; &#8593; &#8594; &#8595; to run the wall to the nearest corner.<br>${skPen?'<b>DRAW</b>: arrows draw walls.':'<b>MOVE</b>: arrows slide the start point without drawing - use it to place a garage/porch against the house. Tap center to start drawing.'}</p></div>
    </div>
    <div class="row" style="margin-top:8px"><button class="btn sm" id="skUndo">Undo</button><button class="btn sm" id="skClose">Close shape</button><button class="btn sm" id="skRen">Rename</button><button class="btn sm warn" id="skDel">Delete area</button></div>
    <p class="muted">Walk the exterior clockwise from a corner: type length, tap direction. "Close shape" draws the last wall back to the start. Inches: use decimals (e.g. 12.5 = 12'6").</p>
@@ -1166,9 +1197,7 @@ function renderSketch(){
     if(!a)return;
     if(d.k){if(d.k==='⌫')skLen=skLen.slice(0,-1);else if(skLen.length<6&&!(d.k==='.'&&skLen.includes('.')))skLen+=d.k;$('#skLen').innerHTML=(skLen||'0')+'<span class="muted"> ft</span>';return;}
     if(d.d==='PEN'){skPen=!skPen;renderSketch();return;}
-    if(d.d){let n=parseFloat(skLen),snapped=false;
-      if(!n){n=snapLen(a,d.d);snapped=!!n;if(!n){toast(d.d.length===1?'Type a length first (no corner ahead to line up with)':'Type a length first');return;}}
-      a.segs.push({d:d.d,n,up:!skPen});if(snapped)toast('Lined up with a corner: '+n+' ft');if(!skPen){/* stay in move mode */}skLen='';save();renderSketch();return;}
+    if(d.d){skAddWall(a,d.d);return;}
     if(b.id==='skUndo'){a.segs.pop();save();renderSketch();}
     else if(b.id==='skClose'){const g=areaPoints(a);if(g.pts.length<3){toast('Draw at least 2 walls');return;}const [x0,y0]=g.pts[0],[x1,y1]=g.end;const dx=x0-x1,dy=y0-y1;
       if(Math.abs(dx)>0.01&&Math.abs(dy)>0.01){ if(Math.abs(Math.abs(dx)-Math.abs(dy))<0.05){a.segs.push({d:(dy<0?'U':'D')+(dx<0?'L':'R'),n:Math.round(Math.hypot(dx,dy)*100)/100});} else {a.segs.push({d:dx<0?'L':'R',n:Math.round(Math.abs(dx)*100)/100});a.segs.push({d:dy<0?'U':'D',n:Math.round(Math.abs(dy)*100)/100});} }
