@@ -15,7 +15,9 @@
    path is at most 12% longer than that line). Circles and curves stay freehand, lightly smoothed.
    Snap then:
      - squares a wall to 0/45/90 degrees when it is within 6 degrees,
-     - lands its ends on another wall's end when close (so shapes close), otherwise on the grid.
+     - lands its ends on another wall's end when close (so shapes close),
+     - otherwise lines each end up with the x or y of another wall's end when close (so a wall runs to
+       exactly where an earlier wall stops), otherwise on the grid.
 
    Data: cur.sketch.draw = {strokes: [{t:'line', a:[x,y], b:[x,y], w} | {t:'free', pts:[[x,y]...], w}],
                             labels: [{id, t, x, y}], ref: {id, x, y, w, h, locked, op} | null,
@@ -70,7 +72,20 @@ const DRAW = (() => {
     }
     return best && [best[0], best[1]];
   }
-  function snapPt(p, s) { const e = nearEnd(p, s); if (e) return e; const g = gridStep(s); return [r2(Math.round(p[0] / g) * g), r2(Math.round(p[1] / g) * g)]; }
+  // a coordinate (axis 0 = x, 1 = y) shared by the end of another wall, within SNAP_PX on screen: lines a new wall up with one already drawn
+  function alignCoord(v, axis, s) {
+    let best = null, bd = SNAP_PX / s;
+    for (const st of D().strokes) {
+      if (st.t !== 'line') continue;
+      for (const q of [st.a, st.b]) { const d = Math.abs(q[axis] - v); if (d < bd) { bd = d; best = q[axis]; } }
+    }
+    return best;
+  }
+  function snapPt(p, s) {
+    const e = nearEnd(p, s); if (e) return e;
+    const g = gridStep(s), q = [0, 1].map(i => { const al = alignCoord(p[i], i, s); return al !== null ? al : r2(Math.round(p[i] / g) * g); });
+    return q;
+  }
   function snapLine(a, b, s) {
     const o = opts();
     if (!o.snap) return [a, b];
@@ -83,7 +98,11 @@ const DRAW = (() => {
     if (Math.abs(ang - k) <= ANGLE_SNAP_DEG) {           // square it up, then snap its length to the grid
       const rad = k * Math.PI / 180, ux = Math.round(Math.cos(rad) * 1e6) / 1e6, uy = Math.round(Math.sin(rad) * 1e6) / 1e6;
       const step = k % 90 === 0 ? g : g * Math.SQRT2;
-      const n = Math.max(1, Math.round(L / step)) * step;
+      let n = Math.max(1, Math.round(L / step)) * step;
+      if (k % 90 === 0) {   // a straight wall ends in line with another wall's end when close, else on the grid
+        const ax = Math.abs(ux) > 0.5 ? 0 : 1, al = alignCoord(a[ax] + (ax ? uy : ux) * L, ax, s);
+        if (al !== null && Math.abs(al - a[ax]) > 1e-6) n = Math.abs(al - a[ax]);
+      }
       return [a, [r2(a[0] + ux * n), r2(a[1] + uy * n)]];
     }
     return [a, snapPt(b, s)];

@@ -183,7 +183,7 @@ main.sheetmode{max-width:none;padding:0}
    ===================================================================== */
 
 const CACHE_PREFIX = 'fieldlite-v';   // this app's saved copies; the practice copy uses its own prefix so the two never touch each other
-const APP_VERSION = '13';   // shown on the home screen so a screenshot says which version is running
+const APP_VERSION = '15';   // shown on the home screen so a screenshot says which version is running
 const TABS = [
   ...SHEET.pages.map((_,i)=>({id:'p'+(i+1), page:i+1, title:SHEET.pages.length>1?'Page '+(i+1):'Field Sheet'})),
   {id:'photo', title:'Photos'}, {id:'sketch', title:'Sketch'}, {id:'export', title:'Export'}
@@ -1012,6 +1012,20 @@ function areaPoints(a){
   }
   return {pts,segs,end:[x,y]};
 }
+// Snap: with no length typed, an up/down/left/right arrow runs the wall to the nearest corner ahead of the pen
+// (any area, including this one's start), so it lines up with a wall already drawn.
+function snapLen(a,dir){
+  const v=DIRV[dir];if(dir.length!==1)return null;
+  const [px,py]=areaPoints(a).end,horiz=v[0]!==0;let best=null;
+  for(const ar of cur.sketch.areas){
+    const g=areaPoints(ar);
+    for(const [x,y] of g.pts.concat([g.end,[ar.ox||0,ar.oy||0]])){
+      const along=horiz?(x-px)*v[0]:(y-py)*v[1];
+      if(along>0.05&&(best===null||along<best))best=along;
+    }
+  }
+  return best===null?null:Math.round(best*100)/100;
+}
 function polyArea(pts){let s=0;for(let i=0;i<pts.length-1;i++)s+=pts[i][0]*pts[i+1][1]-pts[i+1][0]*pts[i][1];return Math.abs(s)/2;}
 function areaSF(a){const {pts}=areaPoints(a);if(pts.length<3)return 0;return Math.round(polyArea(pts.concat([pts[0]]))*10)/10;}
 function areaClosed(a){const {pts}=areaPoints(a);if(pts.length<4)return false;const p=pts[0],q=pts[pts.length-1];return Math.hypot(p[0]-q[0],p[1]-q[1])<0.05;}
@@ -1124,7 +1138,7 @@ function renderSketch(){
     <div><div class="lenbox" id="skLen">${skLen||'0'}<span class="muted"> ft</span></div>
       <div class="keys">${['7','8','9','4','5','6','1','2','3','.','0','⌫'].map(k=>`<button data-k="${k}">${k}</button>`).join('')}</div></div>
     <div><div class="pad">${[['UL','&#8598;'],['U','&#8593;'],['UR','&#8599;'],['L','&#8592;'],['PEN',skPen?'DRAW':'MOVE'],['R','&#8594;'],['DL','&#8601;'],['D','&#8595;'],['DR','&#8600;']].map(([d,s])=>`<button data-d="${d}" class="${d==='PEN'?'pen':'dir'}">${s}</button>`).join('')}</div>
-      <p class="muted" style="margin:6px 0 0">${skPen?'<b>DRAW</b>: arrows draw walls.':'<b>MOVE</b>: arrows slide the start point without drawing - use it to place a garage/porch against the house. Tap center to start drawing.'}</p></div>
+      <p class="muted" style="margin:6px 0 0"><b>Snap:</b> leave the length empty and tap &#8592; &#8593; &#8594; &#8595; to run the wall to the nearest corner.<br>${skPen?'<b>DRAW</b>: arrows draw walls.':'<b>MOVE</b>: arrows slide the start point without drawing - use it to place a garage/porch against the house. Tap center to start drawing.'}</p></div>
    </div>
    <div class="row" style="margin-top:8px"><button class="btn sm" id="skUndo">Undo</button><button class="btn sm" id="skClose">Close shape</button><button class="btn sm" id="skRen">Rename</button><button class="btn sm warn" id="skDel">Delete area</button></div>
    <p class="muted">Walk the exterior clockwise from a corner: type length, tap direction. "Close shape" draws the last wall back to the start. Inches: use decimals (e.g. 12.5 = 12'6").</p>
@@ -1152,7 +1166,9 @@ function renderSketch(){
     if(!a)return;
     if(d.k){if(d.k==='⌫')skLen=skLen.slice(0,-1);else if(skLen.length<6&&!(d.k==='.'&&skLen.includes('.')))skLen+=d.k;$('#skLen').innerHTML=(skLen||'0')+'<span class="muted"> ft</span>';return;}
     if(d.d==='PEN'){skPen=!skPen;renderSketch();return;}
-    if(d.d){const n=parseFloat(skLen);if(!n){toast('Type a length first');return;}a.segs.push({d:d.d,n,up:!skPen});if(!skPen){/* stay in move mode */}skLen='';save();renderSketch();return;}
+    if(d.d){let n=parseFloat(skLen),snapped=false;
+      if(!n){n=snapLen(a,d.d);snapped=!!n;if(!n){toast(d.d.length===1?'Type a length first (no corner ahead to line up with)':'Type a length first');return;}}
+      a.segs.push({d:d.d,n,up:!skPen});if(snapped)toast('Lined up with a corner: '+n+' ft');if(!skPen){/* stay in move mode */}skLen='';save();renderSketch();return;}
     if(b.id==='skUndo'){a.segs.pop();save();renderSketch();}
     else if(b.id==='skClose'){const g=areaPoints(a);if(g.pts.length<3){toast('Draw at least 2 walls');return;}const [x0,y0]=g.pts[0],[x1,y1]=g.end;const dx=x0-x1,dy=y0-y1;
       if(Math.abs(dx)>0.01&&Math.abs(dy)>0.01){ if(Math.abs(Math.abs(dx)-Math.abs(dy))<0.05){a.segs.push({d:(dy<0?'U':'D')+(dx<0?'L':'R'),n:Math.round(Math.hypot(dx,dy)*100)/100});} else {a.segs.push({d:dx<0?'L':'R',n:Math.round(Math.abs(dx)*100)/100});a.segs.push({d:dy<0?'U':'D',n:Math.round(Math.abs(dy)*100)/100});} }
